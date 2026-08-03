@@ -1,0 +1,48 @@
+family,quarter,short_name,full_name,hf_repo,params,access,lb_source,lb_model,aggregate_accuracy,per_question_source,per_question_file,per_question_benchmark,per_question_frozen,reuse_verdict,needs_inference
+Llama,2023Q1,L1,Llama-1,meta-llama/Llama-1,7B,gated,,,,,,,,none,True
+Llama,2023Q3,L2,Llama-2,meta-llama/Llama-2-70b-hf,70B,gated,helm,meta/llama-2-70b,0.690571143711722,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Llama,2024Q2,L3,Llama-3,meta-llama/Meta-Llama-3-70B-Instruct,70B,gated,helm,meta/llama-3-70b,0.7867112946873664,openllm_mmlu_pro,hf://datasets/open-llm-leaderboard/meta-llama__Meta-Llama-3-70B-Instruct-details/meta-llama__Meta-Llama-3-70B-Instruct/samples_leaderboard_mmlu_pro_2024-06-19T08-22-58.348428.json,mmlu_pro,2024-06-19,cross-check-only,True
+Llama,2024Q3,3.1,Llama-3.1,meta-llama/Meta-Llama-3.1-70B-Instruct,70B,gated,helm,meta/llama-3.1-70b-instruct-turbo,0.8090727816550349,openllm_mmlu_pro,hf://datasets/open-llm-leaderboard/meta-llama__Meta-Llama-3.1-70B-Instruct-details/meta-llama__Meta-Llama-3.1-70B-Instruct/samples_leaderboard_mmlu_pro_2024-07-19T18-47-29.522341.jsonl,mmlu_pro,2024-07-19,cross-check-only,True
+Llama,2024Q3,3.2,Llama-3.2,meta-llama/Llama-3.2-90B-Vision-Instruct,90B,gated,helm,meta/llama-3.2-90b-vision-instruct-turbo,0.8108531548212505,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Llama,2024Q4,3.3,Llama-3.3,meta-llama/Llama-3.3-70B-Instruct,70B,gated,hf,meta-llama/Llama-3.3-70B-Instruct,0.5332446808510638,openllm_mmlu_pro,hf://datasets/open-llm-leaderboard/meta-llama__Llama-3.3-70B-Instruct-details/meta-llama__Llama-3.3-70B-Instruct/samples_leaderboard_mmlu_pro_2024-12-04T14-39-18.066641.jsonl,mmlu_pro,2024-12-04,cross-check-only,True
+Llama,2025Q2,L4,Llama-4,meta-llama/Llama-4-Maverick-17B-128E-Instruct,17B/128E,gated,,,,,,,,none,True
+Qwen,2023Q3,7B,Qwen-7B,Qwen/Qwen-7B,7B,public,,,,,,,,none,True
+Qwen,2024Q1,1.5,Qwen1.5,Qwen/Qwen1.5-72B-Chat,72B,public,helm,qwen/qwen1.5-72b,0.7740350377439111,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Qwen,2024Q2,2,Qwen2,Qwen/Qwen2-72B-Instruct,72B,public,helm,qwen/qwen2-72b-instruct,0.8274462327303803,openllm_mmlu_pro,hf://datasets/open-llm-leaderboard/Qwen__Qwen2-72B-Instruct-details/Qwen__Qwen2-72B-Instruct/samples_leaderboard_mmlu_pro_2024-06-25T09-33-51.178365.json,mmlu_pro,2024-06-25,cross-check-only,True
+Qwen,2024Q3,2.5,Qwen2.5,Qwen/Qwen2.5-72B-Instruct,72B,public,hf,Qwen/Qwen2.5-72B-Instruct,0.5625831117021277,openllm_mmlu_pro,hf://datasets/open-llm-leaderboard/Qwen__Qwen2.5-72B-Instruct-details/Qwen__Qwen2.5-72B-Instruct/samples_leaderboard_mmlu_pro_2024-10-17T09-04-04.637164.jsonl,mmlu_pro,2024-10-17,cross-check-only,True
+Qwen,2025Q2,3,Qwen3,Qwen/Qwen3-30B-A3B-Instruct,30B/3B,gated,,,,,,,,none,True
+Qwen,2026Q1,3.5,Qwen3.5,Qwen/Qwen3.5-32B,32B,gated,,,,,,,,none,True
+Qwen,2026Q2,3.6,Qwen3.6,Qwen/Qwen3.6-32B,32B,gated,,,,,,,,none,True
+DeepSeek,2024Q4,V3,DeepSeek-V3,deepseek-ai/DeepSeek-V3,671B/37B,public,,,,,,,,none,True
+DeepSeek,2025Q1,R1,DeepSeek-R1,deepseek-ai/DeepSeek-R1,671B/37B,public,,,,,,,,none,True
+DeepSeek,2025Q3,V3.1,DeepSeek-V3.1,deepseek-ai/DeepSeek-V3.1,671B/37B,public,,,,,,,,none,True
+DeepSeek,2025Q4,V3.2,DeepSeek-V3.2,deepseek-ai/DeepSeek-V3.2,685B/37B,public,,,,,,,,none,True
+DeepSeek,2026Q2,V4,DeepSeek-V4,deepseek-ai/DeepSeek-V4,~700B,gated,,,,,,,,none,True
+Mistral,2023Q3,7B,Mistral-7B,mistralai/Mistral-7B-Instruct-v0.3,7B,public,helm,mistralai/mistral-7b-instruct-v0.3,0.5892323030907278,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Mistral,2023Q4,Mixtral,Mixtral-8x7B,mistralai/Mixtral-8x7B-Instruct-v0.1,46B/13B,public,helm,mistralai/mixtral-8x7b-32kseqlen,0.7069505768409059,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Mistral,2024Q2,8x22B,Mixtral-8x22B,mistralai/Mixtral-8x22B-Instruct-v0.1,141B/39B,public,helm,mistralai/mixtral-8x22b,0.7733941034040734,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Mistral,2024Q3,L2,Mistral-Large-2,mistralai/Mistral-Large-2407,123B,gated,helm,mistralai/mistral-large-2407,0.806580259222333,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Mistral,2024Q3,Small,Mistral-Small-2,mistralai/Mistral-Small-Instruct-2409,24B,public,hf,mistralai/Mistral-Small-Instruct-2409,0.409906914893617,openllm_mmlu_pro,hf://datasets/open-llm-leaderboard/mistralai__Mistral-Small-Instruct-2409-details/mistralai__Mistral-Small-Instruct-2409/samples_leaderboard_mmlu_pro_2024-09-25T04-27-26.494709.jsonl,mmlu_pro,2024-09-25,cross-check-only,True
+Mistral,2025Q1,S3,Mistral-Small-3,mistralai/Mistral-Small-3-24B-Instruct-2501,24B,gated,,,,,,,,none,True
+Mistral,2025Q1,S3.1,Mistral-Small-3.1,mistralai/Mistral-Small-3.1-24B-Instruct-2503,24B,public,,,,,,,,none,True
+Mistral,2025Q2,M3,Mistral-Medium-3,mistralai/Mistral-Medium-3.1-32B-Instruct-2503,32B,gated,,,,,,,,none,True
+Mistral,2025Q2,S3.2,Mistral-Small-3.2,mistralai/Mistral-Small-3.2-24B-Instruct-2510,24B,gated,,,,,,,,none,True
+Mistral,2025Q4,L3,Mistral-Large-3,mistralai/Mistral-Large-3,123B,public,,,,,,,,none,True
+Mistral,2025Q4,Min3,Ministral-3,mistralai/Ministral-3B-Instruct,3B,gated,,,,,,,,none,True
+Mistral,2025Q4,Dev2,Devstral-2,mistralai/Devstral-Small-2509,24B,gated,,,,,,,,none,True
+Mistral,2026Q1,S4,Mistral-Small-4,mistralai/Mistral-Small-4-32B-Instruct-2603,32B,gated,,,,,,,,none,True
+Mistral,2026Q2,M3.5,Mistral-Medium-3.5,mistralai/Mistral-Medium-3.5,32B,gated,,,,,,,,none,True
+Phi,2023Q2,1,Phi-1,microsoft/phi-1,1.3B,public,,,,,,,,none,True
+Phi,2023Q3,1.5,Phi-1.5,microsoft/phi-1_5,1.3B,public,,,,,,,,none,True
+Phi,2023Q4,2,Phi-2,microsoft/phi-2,2.7B,public,helm,microsoft/phi-2,0.5656601623700328,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Phi,2024Q2,3,Phi-3,microsoft/Phi-3-medium-4k-instruct,14B,public,helm,microsoft/phi-3-medium-4k-instruct,0.7737501780373166,openllm_mmlu_pro,hf://datasets/open-llm-leaderboard/microsoft__Phi-3-medium-4k-instruct-details/microsoft__Phi-3-medium-4k-instruct/samples_leaderboard_mmlu_pro_2024-06-17T10-38-50.763081.json,mmlu_pro,2024-06-17,cross-check-only,True
+Phi,2024Q3,3.5,Phi-3.5,microsoft/Phi-3.5-mini-instruct,3.8B,public,hf,microsoft/Phi-3.5-mini-instruct,0.3961934840425531,openllm_mmlu_pro,hf://datasets/open-llm-leaderboard/microsoft__Phi-3.5-mini-instruct-details/microsoft__Phi-3.5-mini-instruct/samples_leaderboard_mmlu_pro_2024-08-21T14-30-23.941628.jsonl,mmlu_pro,2024-08-21,cross-check-only,True
+Phi,2024Q4,4,Phi-4,microsoft/Phi-4-mini-instruct,3.8B,public,,,,,,,,none,True
+Phi,2025Q2,4-r,Phi-4-reasoning-plus,microsoft/Phi-4-reasoning-plus,11B,public,,,,,,,,none,True
+Phi,2026Q1,4-r-v,Phi-4-reasoning-vision-15B,microsoft/Phi-4-reasoning-vision-15B,15B,public,,,,,,,,none,True
+Gemma,2024Q1,1,Gemma-1,google/gemma-7b,7B,gated,helm,google/gemma-7b,0.651759008688221,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Gemma,2024Q2,2,Gemma-2,google/gemma-2-9b,9B,gated,helm,google/gemma-2-9b,0.7042444096282581,helm_mmlu,all_mmlu_data_limitedcols.csv (Kim GitHub; not in-repo),helm_mmlu,,cross-check-only,True
+Gemma,2025Q1,3,Gemma-3,google/gemma-3-27b-it,27B,gated,,,,,,,,none,True
+Gemma,2025Q2,3n,Gemma-3n,google/gemma-3n-4b-it,4B,gated,,,,,,,,none,True
+Gemma,2026Q2,4,Gemma-4,google/gemma-4,~12B,gated,,,,,,,,none,True
+Gemma,2026Q2,4-12B,Gemma-4-12B,google/gemma-4-12b-it,12B,public,,,,,,,,none,True

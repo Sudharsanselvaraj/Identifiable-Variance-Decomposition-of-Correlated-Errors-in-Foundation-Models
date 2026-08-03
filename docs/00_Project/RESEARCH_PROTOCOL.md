@@ -85,6 +85,27 @@ entirely on CPU/offline data.
   θ_M tables (`analysis/reml.py`); (2f) bootstrap CIs + trait-error MC
   (`analysis/bootstrap.py`); (2g) sensitivity (`phase2_sensitivity.py`);
   (2h) figures + report (`analysis/plots.py`, `analysis/report.py`).
+- **Runbook (2a) — execution order + gated checklist:** the fresh-eval pass is
+  confirmed the only compliant source of per-question data (artifact audit
+  2026-08-03: 0/47 public reuse; `datasets/coverage/artifact_audit.csv`) and the
+  panel rides the same run at zero extra GPU. Run on one 8xH200-141GB (fp8)
+  node; per-model memory/GPU plan in `datasets/coverage/gpu_cost_estimate.csv`;
+  realistic ~12–24 wall-hours, ~$100–300. Order of work:
+  1. **Pass 1 — token-free:** `python3 -m lineage_era.phase2_run_all --skip-gated`
+     (23/47) from `src/` on the GPU host. No HF token needed.
+  2. **Accept the 24 gated-model licenses** (HF UI per-repo, or
+     `huggingface-cli login` + per-repo accept): meta-llama 7 (Llama-1/2/3/3.1/
+     3.2/3.3/4), Qwen 3 (Qwen3/3.5/3.6), DeepSeek 1 (DeepSeek-V4), Mistral org
+     8 (Mistral-Large-2, Mistral-Small-3, Mistral-Medium-3, Mistral-Small-3.2,
+     Ministral-3, Devstral-2, Mistral-Small-4, Mistral-Medium-3.5), Google 5
+     (Gemma-1/2/3/3n/4). Full list: `access` column of
+     `datasets/coverage/gpu_cost_estimate.csv`.
+  3. **Pass 2 — gated:** export `HF_TOKEN`, re-run without `--skip-gated`;
+     resume is automatic (`done_models()` skips pass-1 results). Manifest order
+     is family-major; the 5 DeepSeek-class (671–700B) run last in fp8 on the
+     141GB cards — the highest-memory step, not a blocker.
+  4. **Validate intake:** `analysis/eval_check.py` (abort on contract
+     violation) → Step 4 decomposition.
 - **Synthetic pre-flight (no GPU):** battery S1–S6 (`phase2_simulate.py`)
   validates the gate before real numbers — currently ALL PASS.
 - **Exit gate (G2):** identifiability audit PASS on real data; partition

@@ -1,7 +1,7 @@
 # Dataset Inventory
 
-**STATUS: trait = fresh MMLU 5-shot eval on all 47 (decided 2026-08-03); run
-venue open.** Phase 1 F4 settled the modeling target: a continuous per-model
+**STATUS: trait = fresh MMLU 5-shot eval on all 47 (Path A LOCKED 2026-08-03);
+run venue open.** Phase 1 F4 settled the modeling target: a continuous per-model
 trait aggregated from item-level responses — raw binary items are NOT modeled
 directly. Kim et al. (arXiv:2506.07962, ICML 2025, **CC BY 4.0**) ships
 per-model MMLU accuracy in-repo, but leaderboard data is frozen ~2024 and
@@ -10,6 +10,19 @@ therefore produced by a fresh evaluation of ALL 47 connected-subset models on
 MMLU 5-shot (strict common item set); Kim's values are kept only as a
 validation cross-check. Infrastructure: `src/lineage_era/phase2_eval.py`
 (47/47 manifest + lm-eval-harness runner). Run venue / HF token / budget open.
+
+## Artifact-availability audit (2026-08-03)
+
+Per-model x source reuse table: `datasets/coverage/artifact_audit.csv` (built
+by `src/lineage_era/analysis/artifact_audit.py`). Verdict: **protocol-matched
+per-question reuse = 0/47** — openllm MMLU-PRO per-sample JSONL exists for 8/47
+(wrong benchmark, frozen ≤ Dec 2024, 401-gated), HELM per-question MMLU exists
+for 10/47 (HELM item set/question ids — no bridge to `cais/mmlu`, no DeepSeek),
+aggregate MMLU exists for 18/47 (score-only cross-check, register A22), and
+29/47 have no public artifact. Every model therefore needs fresh inference.
+GPU plan: `datasets/coverage/gpu_cost_estimate.csv` (built by
+`src/lineage_era/analysis/gpu_cost.py`) — one 8xH200-141GB (fp8) node, ~12–24
+wall-hours, ~$100–300; hard gate = the 24 gated models, not cost.
 
 ## Availability finding (2026-08-03)
 

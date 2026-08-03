@@ -356,14 +356,57 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 
 ---
 
+## 2026-08-03 — Artifact-availability audit: 0/47 reusable; fresh eval on all 47 CONFIRMED (Path A)
+
+- **Decision:** Run the fresh MMLU 5-shot eval on **ALL 47** connected-subset
+  models (Path A, locked). Public item-level artifacts cannot replace it:
+  protocol-matched per-question reuse is **0/47**. Evidence:
+  `datasets/coverage/artifact_audit.csv` (47-row per-model x source table, built
+  by `analysis/artifact_audit.py`) and `datasets/coverage/gpu_cost_estimate.csv`
+  (per-model memory/compute plan, built by `analysis/gpu_cost.py`).
+- **Reason — the audit, source by source:**
+  - Open LLM Leaderboard v2 per-sample JSONL: 8/47 exact-repo files exist but on
+    **MMLU-PRO** (10-choice) — wrong benchmark; frozen ≤ Dec 2024; the files are
+    gated behind repo-terms acceptance (verified 401).
+  - HELM per-question tall file (`all_mmlu_data_limitedcols.csv`, Kim GitHub):
+    14/47 models present but on HELM's own MMLU item set/template with HELM
+    question ids — no common-question bridge to `cais/mmlu`, and **no DeepSeek**
+    (family gate 5/6 fails).
+  - Aggregate leaderboard MMLU (Kim CSVs): 18/47 score-only — retained ONLY as a
+    validation cross-check (register A22), never as the trait or the panel.
+  - 29/47 have no public artifact at all (mostly post-freeze 2025Q1+ incl. every
+    DeepSeek; a few pre-2024 stragglers — Llama-1, Qwen-7B, Phi-1/1.5, Phi-4,
+    DeepSeek-V3 — never reached leaderboard v2).
+  - **Cost-collapsing fact:** the error-similarity panel rides the SAME fresh
+    run at zero extra GPU — `phase2_eval.py` already emits per-question JSONL
+    (`log_samples=True`). So the only decision left was one vs. many runs.
+- **Cost estimate (planning, not benchmark):** MMLU 5-shot loglikelihood
+  ~6.4M tokens/model (no generation, memory-bound); one 8xH200-141GB (fp8)
+  node: small/mid packed on 80GB cards, 70–141B on 4x80GB, DeepSeek 671–700B
+  class in fp8 → realistic ~12–24 wall-hours, ~$100–300 for 1–2 days. The hard
+  gate is the **24 gated models** (license acceptance + HF_TOKEN), not cost.
+- **Alternatives considered:** reuse the OLLB MMLU-PRO per-question files for 8
+  (rejected: different benchmark + item set, breaks the strict common item set
+  and comparability with Kim et al.); use the HELM tall file for 14 (rejected:
+  no item-level bridge to a fresh `cais/mmlu` run); hybrid reuse+fresh (rejected:
+  two-source trait, still DeepSeek-gapped).
+- **Risk:** compute + license friction only; no scientific risk — same benchmark
+  (MMLU 5-shot) as the paper's comparison target.
+- **Status:** ACCEPTED. Path A locked. Next: user executes the runbook
+  (`phase2_run_all.py`, gated license checklist for the 24) on a GPU host;
+  results → `datasets/phase2_eval_results.csv`, then Step 4 decomposition.
+
 ## Pending / open
 
-- **Phase 2 fresh eval pass — RUN EXECUTION (in progress).** Scope and
-  benchmark decided (all 47, MMLU 5-shot); runbook built:
-  `src/lineage_era/phase2_run_all.py` (GPU orchestrator with resume) + manifest
-  `src/lineage_era/phase2_eval.py`. User will execute it on a GPU host with an
-  HF token (licenses accepted for the 24 gated models); results land in
-  `datasets/phase2_eval_results.csv`. Per-model caveats documented: Phi-1/1.5/2
-  need `max_length=2048,truncation=True`; sliding-window models use `sdpa`.
-  Once the CSV is back, proceed to Step 4 (`phase2_decomposition.py` ->
-  `PHASE2_REPORT.md`).
+- **Phase 2 fresh eval pass — RUN EXECUTION (in progress, Path A locked).**
+  Scope and benchmark decided (all 47, MMLU 5-shot); artifact-availability
+  audit CONFIRMED 0/47 public per-question reuse and the GPU plan
+  (`datasets/coverage/artifact_audit.csv` +
+  `datasets/coverage/gpu_cost_estimate.csv`, see the 2026-08-03 entry above).
+  Runbook built: `src/lineage_era/phase2_run_all.py` (GPU orchestrator with
+  resume) + manifest `src/lineage_era/phase2_eval.py`. User will execute it on
+  a GPU host with an HF token (licenses accepted for the 24 gated models);
+  results land in `datasets/phase2_eval_results.csv`. Per-model caveats
+  documented: Phi-1/1.5/2 need `max_length=2048,truncation=True`;
+  sliding-window models use `sdpa`. Once the CSV is back, proceed to Step 4
+  (`phase2_decomposition.py` -> `PHASE2_REPORT.md`).

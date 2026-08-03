@@ -1,0 +1,48 @@
+full_name,family,quarter,params,access,org,total_params_b,active_params_b,weights_gb_bf16,gpus_80gb_bf16,weights_gb_fp8,gpus_80gb_fp8,gpus_141gb_fp8,gpu_class,est_minutes_single_gpu
+Llama-1,Llama,2023Q1,7B,gated,meta-llama,7.0,7.0,14.0,1,7.0,1,1,1x80GB,9.938615555555554
+Llama-2,Llama,2023Q3,70B,gated,meta-llama,70.0,70.0,140.0,2,70.0,1,1,2x80GB,99.38615555555556
+Llama-3,Llama,2024Q2,70B,gated,meta-llama,70.0,70.0,140.0,2,70.0,1,1,2x80GB,99.38615555555556
+Llama-3.1,Llama,2024Q3,70B,gated,meta-llama,70.0,70.0,140.0,2,70.0,1,1,2x80GB,99.38615555555556
+Llama-3.2,Llama,2024Q3,90B,gated,meta-llama,90.0,90.0,180.0,3,90.0,2,1,4x80GB,127.7822
+Llama-3.3,Llama,2024Q4,70B,gated,meta-llama,70.0,70.0,140.0,2,70.0,1,1,2x80GB,99.38615555555556
+Llama-4,Llama,2025Q2,17B/128E,gated,meta-llama,400.0,17.0,800.0,11,400.0,6,4,8x80GB (fp8),24.13663777777778
+Qwen-7B,Qwen,2023Q3,7B,public,Qwen,7.0,7.0,14.0,1,7.0,1,1,1x80GB,9.938615555555554
+Qwen1.5,Qwen,2024Q1,72B,public,Qwen,72.0,72.0,144.0,2,72.0,1,1,2x80GB,102.22576000000001
+Qwen2,Qwen,2024Q2,72B,public,Qwen,72.0,72.0,144.0,2,72.0,1,1,2x80GB,102.22576000000001
+Qwen2.5,Qwen,2024Q3,72B,public,Qwen,72.0,72.0,144.0,2,72.0,1,1,2x80GB,102.22576000000001
+Qwen3,Qwen,2025Q2,30B/3B,gated,Qwen,30.0,3.0,60.0,1,30.0,1,1,1x80GB,4.259406666666667
+Qwen3.5,Qwen,2026Q1,32B,gated,Qwen,32.0,32.0,64.0,1,32.0,1,1,1x80GB,45.43367111111112
+Qwen3.6,Qwen,2026Q2,32B,gated,Qwen,32.0,32.0,64.0,1,32.0,1,1,1x80GB,45.43367111111112
+DeepSeek-V3,DeepSeek,2024Q4,671B/37B,public,deepseek-ai,671.0,37.0,1342.0,19,671.0,10,6,8xH200-141GB (fp8),52.53268222222222
+DeepSeek-R1,DeepSeek,2025Q1,671B/37B,public,deepseek-ai,671.0,37.0,1342.0,19,671.0,10,6,8xH200-141GB (fp8),52.53268222222222
+DeepSeek-V3.1,DeepSeek,2025Q3,671B/37B,public,deepseek-ai,671.0,37.0,1342.0,19,671.0,10,6,8xH200-141GB (fp8),52.53268222222222
+DeepSeek-V3.2,DeepSeek,2025Q4,685B/37B,public,deepseek-ai,685.0,37.0,1370.0,19,685.0,10,6,8xH200-141GB (fp8),52.53268222222222
+DeepSeek-V4,DeepSeek,2026Q2,~700B,gated,deepseek-ai,700.0,37.0,1400.0,19,700.0,10,6,8xH200-141GB (fp8),52.53268222222222
+Mistral-7B,Mistral,2023Q3,7B,public,mistralai,7.0,7.0,14.0,1,7.0,1,1,1x80GB,9.938615555555554
+Mixtral-8x7B,Mistral,2023Q4,46B/13B,public,mistralai,46.0,13.0,92.0,2,46.0,1,1,2x80GB,18.457428888888888
+Mixtral-8x22B,Mistral,2024Q2,141B/39B,public,mistralai,141.0,39.0,282.0,4,141.0,2,2,4x80GB,55.37228666666667
+Mistral-Large-2,Mistral,2024Q3,123B,gated,mistralai,123.0,123.0,246.0,4,123.0,2,1,4x80GB,174.63567333333333
+Mistral-Small-2,Mistral,2024Q3,24B,public,mistralai,24.0,24.0,48.0,1,24.0,1,1,1x80GB,34.075253333333336
+Mistral-Small-3,Mistral,2025Q1,24B,gated,mistralai,24.0,24.0,48.0,1,24.0,1,1,1x80GB,34.075253333333336
+Mistral-Small-3.1,Mistral,2025Q1,24B,public,mistralai,24.0,24.0,48.0,1,24.0,1,1,1x80GB,34.075253333333336
+Mistral-Medium-3,Mistral,2025Q2,32B,gated,mistralai,32.0,32.0,64.0,1,32.0,1,1,1x80GB,45.43367111111112
+Mistral-Small-3.2,Mistral,2025Q2,24B,gated,mistralai,24.0,24.0,48.0,1,24.0,1,1,1x80GB,34.075253333333336
+Mistral-Large-3,Mistral,2025Q4,123B,public,mistralai,123.0,123.0,246.0,4,123.0,2,1,4x80GB,174.63567333333333
+Ministral-3,Mistral,2025Q4,3B,gated,mistralai,3.0,3.0,6.0,1,3.0,1,1,1x80GB,4.259406666666667
+Devstral-2,Mistral,2025Q4,24B,gated,mistralai,24.0,24.0,48.0,1,24.0,1,1,1x80GB,34.075253333333336
+Mistral-Small-4,Mistral,2026Q1,32B,gated,mistralai,32.0,32.0,64.0,1,32.0,1,1,1x80GB,45.43367111111112
+Mistral-Medium-3.5,Mistral,2026Q2,32B,gated,mistralai,32.0,32.0,64.0,1,32.0,1,1,1x80GB,45.43367111111112
+Phi-1,Phi,2023Q2,1.3B,public,microsoft,1.3,1.3,2.6,1,1.3,1,1,1x80GB,1.845742888888889
+Phi-1.5,Phi,2023Q3,1.3B,public,microsoft,1.3,1.3,2.6,1,1.3,1,1,1x80GB,1.845742888888889
+Phi-2,Phi,2023Q4,2.7B,public,microsoft,2.7,2.7,5.4,1,2.7,1,1,1x80GB,3.833466
+Phi-3,Phi,2024Q2,14B,public,microsoft,14.0,14.0,28.0,1,14.0,1,1,1x80GB,19.877231111111108
+Phi-3.5,Phi,2024Q3,3.8B,public,microsoft,3.8,3.8,7.6,1,3.8,1,1,1x80GB,5.395248444444444
+Phi-4,Phi,2024Q4,3.8B,public,microsoft,3.8,3.8,7.6,1,3.8,1,1,1x80GB,5.395248444444444
+Phi-4-reasoning-plus,Phi,2025Q2,11B,public,microsoft,11.0,11.0,22.0,1,11.0,1,1,1x80GB,15.617824444444445
+Phi-4-reasoning-vision-15B,Phi,2026Q1,15B,public,microsoft,15.0,15.0,30.0,1,15.0,1,1,1x80GB,21.29703333333333
+Gemma-1,Gemma,2024Q1,7B,gated,google,7.0,7.0,14.0,1,7.0,1,1,1x80GB,9.938615555555554
+Gemma-2,Gemma,2024Q2,9B,gated,google,9.0,9.0,18.0,1,9.0,1,1,1x80GB,12.778220000000001
+Gemma-3,Gemma,2025Q1,27B,gated,google,27.0,27.0,54.0,1,27.0,1,1,1x80GB,38.33466
+Gemma-3n,Gemma,2025Q2,4B,gated,google,4.0,4.0,8.0,1,4.0,1,1,1x80GB,5.67920888888889
+Gemma-4,Gemma,2026Q2,~12B,gated,google,12.0,12.0,24.0,1,12.0,1,1,1x80GB,17.037626666666668
+Gemma-4-12B,Gemma,2026Q2,12B,public,google,12.0,12.0,24.0,1,12.0,1,1,1x80GB,17.037626666666668
