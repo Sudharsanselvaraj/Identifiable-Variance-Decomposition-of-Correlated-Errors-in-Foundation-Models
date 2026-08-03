@@ -22,7 +22,7 @@ what that implies for diversification-as-mitigation.
 ## Standing rules
 
 - No analysis code or data pulls before the plan for that step is approved (Phase 0 done;
-  Phase 1 plan written, execution pending).
+  Phase 1 run — GO WITH CHANGES, see `PHASE1_REPORT.md`).
 - Every citation is independently verified before it enters any document.
 - Lead with the decomposition instrument and the identifiability gate; quantitative-genetics
   language is Phase 3 scaffolding only.

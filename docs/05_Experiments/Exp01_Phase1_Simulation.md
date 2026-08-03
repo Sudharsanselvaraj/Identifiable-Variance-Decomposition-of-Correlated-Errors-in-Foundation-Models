@@ -1,6 +1,6 @@
 # Exp01 — Phase 1 Simulation Validation
 
-**Status:** DESIGNED — not run. Requires Phase 1 plan approval + `statsmodels` install.
+**Status:** RUN (2026-08-03) — see `PHASE1_REPORT.md` (root). Verdict: **GO WITH CHANGES**.
 
 ## Purpose
 
@@ -27,7 +27,20 @@ Bias and MSE of components and shares; CI coverage; D3 aliasing detection rate.
 
 ## Results
 
-_(To be filled after run: `PHASE1_REPORT.md`.)_
+See `PHASE1_REPORT.md` (root) for the full report. Summary (seed 1):
+
+- **D1** (30×14×2, 300-rep calibration): share bias ≤ 2.5 pp, coverage 95–96%.
+- **D2** (47-model occupancy): share bias ≤ 5.3 pp (family, scenario A), coverage 95–100%.
+- **D3** (nested): detected in 100% of reps by all three detectors; silent coverage 0%.
+- **Liability** (item-level probit, I=300): LPM and GLMM agree on family share;
+  era variance underpowered at the 47-model occupancy on binary data (GLMM era
+  boundary 20–60%), recoverable at D1 occupancy. Path decided: LPM-REML on
+  per-model continuous traits for Phase 2.
+- **L×E**: interaction non-identified at D2 (SE ratio ≈ 10⁴); documented.
+
+Verdict: **GO WITH CHANGES** (changes = Phase 2 LPM-REML/continuous path;
+item-level binary era claims at 47 models are underpowered; report F=6
+family-share bias ≈ −5 pp).
 
 ## Interpretation / Failure
 

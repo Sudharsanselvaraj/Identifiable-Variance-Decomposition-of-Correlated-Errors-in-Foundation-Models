@@ -44,5 +44,9 @@ traits, not pipeline facets).
 ## Environment
 
 - Python 3.11 (numpy 1.26.4, scipy 1.13.1, pandas 2.2.2); no R.
-- `statsmodels` absent — install pre-approved by user.
+- `statsmodels` is installed but NOT used for the LPM path: its single-group +
+  `vc_formula` form does not maximize the crossed REML objective (Phase 1
+  finding). LPM-REML = direct REML maximizer in `src/lineage_era/estimator.py`
+  (Woodbury-accelerated, verified against ANOVA MoM). Binomial GLMM
+  (`BinomBayesMixedGLM`) remains the item-level reference.
 - Deliverables: `phase1_simulation.py`, `PHASE1_REPORT.md` (bias tables, verdicts).

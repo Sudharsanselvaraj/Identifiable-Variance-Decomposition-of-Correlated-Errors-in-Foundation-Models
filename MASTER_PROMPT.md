@@ -66,9 +66,15 @@ identifiable — and what that implies for diversification-as-mitigation.
 - [x] **Phase 0 — Identifiability gate (COMPLETE, 2026-08-02):** HF-verified
   contingency table classified CROSSED (unbalanced/incomplete); decision gate PASS;
   GO to Phase 1. See Phase 0 log below.
-- [ ] Phase 1 — Simulation validation of the crossed random-effects estimator
-  (known ground truth, both crossed and nested designs, bias under
-  mis-specification).
+- [x] **Phase 1 — Simulation validation of the crossed random-effects estimator
+  (COMPLETE, 2026-08-03):** Verdict **GO WITH CHANGES** (`PHASE1_REPORT.md`).
+  D1 recovers (bias ≤ 2.5 pp, coverage 95–96%); D2 recovers within tolerance
+  (bias ≤ 5.3 pp, coverage 95–100%, family bias at F=6 documented);
+  D3 nested mis-specification fails detectably (100%). Path decided:
+  LPM-REML on per-model continuous traits for Phase 2; item-level binary era
+  claims at the 47-model occupancy are underpowered. Change log:
+  estimator = direct REML maximizer (statsmodels MixedLM crossed-vc was
+  suboptimal); D1 families raised 6→30.
 - [ ] Phase 2 — Real-data decomposition on the provably connected subset only.
   V_lineage + V_era + V_unique partition. Era-convergence trend collapses into a
   table here, not a standalone result.

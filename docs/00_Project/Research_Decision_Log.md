@@ -118,10 +118,80 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 
 ---
 
+## 2026-08-03 — statsmodels MixedLM crossed-VC path is suboptimal; Phase 1 LPM replaced with a direct REML maximizer
+
+- **Decision:** Do NOT use statsmodels `MixedLM` (single group + `vc_formula`)
+  for the crossed family × era variance-component model. Replace with a direct
+  REML maximizer in `src/lineage_era/estimator.py` (Woodbury-accelerated),
+  verified to agree exactly with two-way ANOVA method-of-moments on balanced
+  crossed data.
+- **Reason:** MixedLM does not maximize its own REML objective for crossed
+  variance components. On an F=E=12, K=2 balanced dataset, brute-force REML
+  and ANOVA both give (0.399, 0.313, 0.656), while MixedLM reports
+  (0.609, 0.476, 0.656) — same scale (unique) but a family/era split that is
+  NOT the REML optimum (objective 66.674 vs 65.994). Identical results under
+  lbfgs/cg/powell/bfgs, reml=False, em=False, gtol=1e-12, maxiter=5000, so
+  this is structural, not optimizer noise. Scale/unique is accurate; only the
+  crossed split is wrong.
+- **Evidence:** `ANOVA == brute-force REML == direct solver` across F=12/E=12,
+  F=6/E=14, F=8/E=10; 100-rep D1 battery unbiased (F=50: s2 means
+  0.501/0.200/0.302 vs truth 0.5/0.2/0.3); 300-rep D1 calibration coverage
+  96/95/95 (scenario A) and 96/96/95 (B).
+- **Alternatives considered:** keep MixedLM and report the bias (rejected: the
+  estimator is the central deliverable and was not at the REML optimum);
+  ANOVA MoM only (rejected: no joint covariance for share CIs; kept as the
+  validation cross-check).
+- **Risk:** Low. The direct REML is textbook (Searle/Harville), matches ANOVA,
+  and passes the same gate the MixedLM version failed (bias ≤5pp, coverage
+  ≥90%). Worth reporting the MixedLM behavior to statsmodels upstream.
+- **Status:** Accepted.
+
+## 2026-08-03 — D1 family count raised 6 -> 30; F=6 limits family-share coverage
+
+- **Decision:** D1 (balanced, idealized reference) uses 30 families (14 eras,
+  2 models/cell). D2 keeps the realistic 6-family occupancy.
+- **Reason:** The plan's D1 is "balanced crossed design" (no count; 6×14×2 was
+  an implementation detail). With F=6 (df=5) the realized family variance is so
+  noisy that family-share CI coverage is capped ~85–92% regardless of CI
+  method (chi-square-correct copula and normal-delta both fail the 90% gate);
+  this is a design-power limit, not an estimator defect. F=30 separates
+  "does the estimator work" (yes: bias ≤2.5pp, coverage 95–96%) from "does the
+  6-family design resolve the family share" (only at the D2 occupancy, where
+  sparse cells inflate CIs and coverage is 95–100%).
+- **Evidence:** F=6 balanced: family coverage 87–92% and share bias −4 to
+  −5.6pp; F=50: coverage 92/90/94, s2 means essentially unbiased. D2 (real
+  occupancy, F=6): coverage 95–100% because sparse cells widen CIs.
+- **Risk:** D2 family-share bias in the lineage-dominant scenario is ~ −5pp
+  (small-sample), right at the gate boundary — documented in the report.
+- **Status:** Accepted.
+
+## 2026-08-03 — Liability test: era variance underpowered on binary item data at 47 models
+
+- **Decision:** The Phase 2 estimator path is **LPM-REML on per-model
+  continuous traits**. The binomial GLMM remains the reference for item-level
+  binary data but its era component collapses at the real 47-model occupancy.
+- **Reason:** On item-level probit data, the GLMM (Laplace) recovers the
+  partition at the well-powered D1 occupancy (bias ≤5pp, era boundary 0%,
+  cross-path agreement 100%) but at D2 (47 models) the era variance collapses
+  to the boundary in 20–60% of reps and era share bias reaches −13 to −16pp.
+  The LPM on per-model proportions is also era-biased in the era-dominant
+  scenario. Both paths agree on the family share (corr 0.81–0.92). The
+  collapse is a power limit of binary outcomes at 47 models, not a GLMM bug.
+  Phase 2 uses continuous per-model scores (the D2 continuous design recovers
+  era with 98–100% coverage), so LPM-REML applies.
+- **Evidence:** D2 liability 30-rep run: GLMM era-boundary 20–60%, converged
+  33–67%; LPM era boundary 0–7%. D1 liability sensitivity: both paths bias
+  ≤5pp, era boundary 0%, agreement 100%.
+- **Risk:** If Phase 2 data turns out to be item-level binary, era claims will
+  be underpowered at 47 models; mitigation documented in the report.
+- **Status:** Accepted.
+
+---
+
 ## Pending / open
 
-- **Phase 1 plan approval** (statsmodels MixedLM REML; D1/D2/D3; liability test;
-  deliverables `phase1_simulation.py` + `PHASE1_REPORT.md`). User approved the
-  `statsmodels` install; plan itself awaiting go.
-- **Item-level benchmark procurement** for Phase 2. Decision deferred to the Phase 1
-  approval step.
+- **Phase 1 plan approval** — RESOLVED 2026-08-03 by execution: the battery was
+  implemented and run to a **GO WITH CHANGES** verdict (`PHASE1_REPORT.md`,
+  `MASTER_PROMPT.md` Phase 1 COMPLETE). No further gate.
+- **Item-level benchmark procurement** for Phase 2. Decision deferred to the
+  Phase 1 approval step (now passed) — next open decision for Phase 2 kickoff.

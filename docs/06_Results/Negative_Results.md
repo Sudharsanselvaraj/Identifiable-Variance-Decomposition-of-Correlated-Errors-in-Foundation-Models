@@ -20,8 +20,30 @@ to be reframed.
 
 ## Completed negative findings
 
-_(None yet. Phase 1 D3 aliasing is the first expected one.)_
+- **2026-08-03 (Phase 1, liability test):** At the real 47-model occupancy,
+  item-level **binary** outcomes cannot resolve the era variance component —
+  the GLMM drives era to the boundary in 20–60% of reps and both LPM-REML and
+  GLMM under-estimate era when it should dominate (era-share bias to −13/−16 pp).
+  The same data at the well-powered D1 occupancy recovers (bias ≤ 5 pp, era
+  boundary 0%), and the D2 **continuous** design recovers era with 98–100%
+  coverage. Conclusion: the D2-era-binary collapse is a power limit, not an
+  estimator defect. Consequence for Phase 2: era claims require per-model
+  **continuous** traits (LPM-REML path); item-level binary era claims at 47
+  models are underpowered.
+- **2026-08-03 (Phase 1, estimator stack):** statsmodels `MixedLM` with a
+  single group + `vc_formula` does not maximize its own REML objective for
+  crossed variance components (suboptimal family/era split; e.g. 0.609/0.476
+  vs the REML/ANOVA 0.399/0.313 on an F=E=12 balanced dataset). Replaced with a
+  direct REML maximizer (verified against ANOVA MoM). Logged here so the
+  MixedLM numbers are never quoted as estimator output.
+- **2026-08-03 (Phase 1, D3):** As pre-registered, the nested design **was**
+  detected — 100% of reps flagged by all three detectors (collinearity, SE
+  inflation, profile flatness), 0% silent coverage. This is the expected
+  aliasing failure, resolved in the estimator's favor (it fails detectably).
 
 ## Failed ideas log (append as they occur)
 
-- _(to be filled)_
+- **2026-08-03:** Share CI via t-inflated covariance and via chi-square/copula
+  on the log-variances both under-covered at F=6 (family share ~85–92%).
+  Reverted to normal MC delta on log-variances with log-draw clipping ±30 —
+  coverage 95–96% at F=30. The F=6 limit is a design-power floor, not a CI fix.

@@ -1,0 +1,4 @@
+scenario,s2_LE_est_mean,s2_LE_se_ratio_mean,boundary_zero_pct,collinear_with_pct,converged_with_pct,converged_without_pct
+A,0.1739188623413492,10052.475110218295,0.0,0.0,100.0,100.0
+B,0.13154465202163848,20156.159537051844,0.0,0.0,100.0,100.0
+C,0.10910541124334303,10129.517011921189,0.0,0.0,100.0,100.0
