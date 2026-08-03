@@ -7,7 +7,9 @@ Modules:
     identifiability.py  first-class gate before the variance partition
     reml.py          CrossedREML engine + θ_P / θ_M model layer
     bootstrap.py     share CIs (delta + trait-error Monte-Carlo)
-    plots.py         figures (design heatmap, BLUPs, shares, era trend)
+    error_similarity.py  secondary panel: pairwise error similarity + null ladder
+    plots.py         figures (design heatmap, BLUPs, shares, era trend,
+                     error-similarity heatmap/dendrogram/network/embedding)
     report.py        PHASE2_REPORT.md + summary/tables blocks
 
 The top-level ``phase2_*.py`` / ``estimator.py`` names are kept as thin

@@ -36,6 +36,11 @@ Full notation: `docs/02_Theory/Mathematical_Formulation.md`.
    per-question samples exist, `subject_acc.csv`.
 3. Trait SE is binomial from the CSV counts, or sample SE from the per-question
    JSONL (`datasets/eval_samples/`).
+4. The same per-question samples feed the **error-similarity secondary panel**
+   (`analysis/error_similarity.py`, wired into `phase2_decomposition.py`) —
+   pairwise within/between-family error overlap, its null ladder, and the
+   pre-registered chance-corrected measure rule (phi); `--no-samples` disables
+   both the per-question trait SE refinement and the panel.
 
 ## Item set
 

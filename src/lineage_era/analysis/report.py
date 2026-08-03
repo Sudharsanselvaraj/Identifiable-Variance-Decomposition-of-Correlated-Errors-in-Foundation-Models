@@ -20,6 +20,50 @@ def _fmt(v) -> str:
     return f"{v:.3f}" if isinstance(v, float) else str(v)
 
 
+def error_similarity_section(out_dir: Path) -> list[str]:
+    """Markdown for the secondary error-similarity panel (empty if skipped)."""
+    ladder = out_dir / "null_ladder.csv"
+    if not ladder.exists():
+        return []
+    from .error_similarity import PRIMARY_MEASURE
+    ld = pd.read_csv(ladder)
+    wf = ld.set_index("group").loc["within_family"]
+    bf = ld.set_index("group").loc["between_family"]
+    wr = ld.set_index("group").loc["within_era"]
+    cm = pd.read_csv(out_dir / "community_comparison.csv")
+    c = cm.iloc[0]
+    lines = [
+        "## Error similarity (secondary panel)",
+        "",
+        "Supporting observational layer for the decomposition; never part of the "
+        "θ_P gate. Pairwise item-level error overlap on the common MMLU item set, "
+        "situated against the null ladder (observed -> matched-accuracy shuffle -> "
+        "item-difficulty shuffle -> analytic independence). Primary measure: "
+        f"**{PRIMARY_MEASURE}** (locked by the pre-registered selection rule, "
+        "Research_Decision_Log 2026-08-03; all six measures are in "
+        "`error_similarity.csv`).",
+        "",
+        f"- Within-family overlap: **{_fmt(wf['observed'])}** vs matched-accuracy "
+        f"null {_fmt(wf['matched_accuracy_mean'])} "
+        f"(z = {_fmt(wf['z_matched_accuracy'])}); within-family exceeds "
+        f"between-family ({_fmt(bf['observed'])}).",
+        f"- Within-era overlap: {_fmt(wr['observed'])} "
+        f"(null {_fmt(wr['matched_accuracy_mean'])}).",
+        f"- Louvain communities: {int(c['n_communities'])} on the top-k network "
+        f"({int(c['n_edges'])} edges); adjusted Rand index vs family "
+        f"{_fmt(c['ari_vs_family'])} vs era {_fmt(c['ari_vs_era'])} — "
+        f"{'family-aligned' if c['ari_vs_family'] >= c['ari_vs_era'] else 'era-aligned'} "
+        "(descriptive only).",
+        "- Full outputs: `error_similarity.csv`, `similarity_matrix.csv`, "
+        "`null_ladder.csv`, `family_era_overlap.csv`, `edge_stability.csv`, "
+        "`community_comparison.csv`; figures "
+        "`error_heatmap`, `error_dendrogram`, `error_network`, "
+        "`error_embedding_pca`, `error_embedding_tsne`.",
+        "",
+    ]
+    return lines
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out-dir", default="results/phase2")
@@ -84,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     ]
     figs = sorted(p.name for p in (out_dir / "figures").glob("*.pdf"))
     lines += [f"- `{f}`" for f in figs] + [""]
+    lines += error_similarity_section(out_dir)
 
     lines += ["## Caveats carried from Phase 0 (occupancy.CAVEATS)", ""]
     from ..occupancy import CAVEATS

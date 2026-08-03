@@ -6,7 +6,8 @@
 
 Pipeline: trait (fresh eval / synthetic) -> metadata -> identifiability audit
 (ABORT on hard fail, exit 2) -> θ_P model + θ_M tables -> bootstrap CIs ->
-sensitivity -> figures -> tables -> PHASE2_REPORT.md.
+sensitivity -> error-similarity panel (real data only) -> figures -> tables ->
+PHASE2_REPORT.md.
 
 Real-data inputs (default): datasets/phase2_eval_results.csv (GPU runbook),
 datasets/eval_samples/ (per-question JSONL), and the built-in occupancy table.
@@ -114,6 +115,18 @@ def main(argv: list[str] | None = None) -> int:
                            "--out-dir", str(out_dir)])
     phase2_sensitivity.main(["--df", str(out_dir / "trait_table.csv"),
                              "--out-dir", str(out_dir)])
+    if not args.synthetic:
+        samples = phase2_trait.load_question_samples()
+        if not samples.empty:
+            from . import phase2_error_similarity
+            phase2_error_similarity.main([
+                "--samples-dir", str(DATASETS / "eval_samples"),
+                "--trait-csv", str(out_dir / "trait_table.csv"),
+                "--out-dir", str(out_dir),
+                "--seed", str(args.seed)])
+        else:
+            print("No per-question samples; error-similarity panel skipped.",
+                  file=sys.stderr)
     phase2_figures.main(["--out-dir", str(out_dir)])
     phase2_tables.main(["--out-dir", str(out_dir)])
     phase2_report.main(["--out-dir", str(out_dir)])

@@ -108,6 +108,124 @@ def era_trend(era_effects: pd.DataFrame, out: Path) -> None:
     plt.close(fig)
 
 
+# ------------------------------------------------ error-similarity figures --
+def _family_colors(fam_series: pd.Series) -> list:
+    ordered = sorted(fam_series.dropna().unique())
+    code = {f: PALETTE(i % 10) for i, f in enumerate(ordered)}
+    return [code.get(f, (0.5, 0.5, 0.5)) for f in fam_series]
+
+
+def _era_markers(era_series: pd.Series) -> list:
+    markers = ["o", "s", "^", "D", "P", "X", "v", "<", ">", "h"]
+    ordered = sorted(era_series.dropna().unique())
+    code = {e: markers[i % len(markers)] for i, e in enumerate(ordered)}
+    return [code.get(e, "o") for e in era_series]
+
+
+def error_heatmap(mat: np.ndarray, models: list[str], fam_series: pd.Series,
+                  order: list[int], out: Path) -> None:
+    labels = [models[i] for i in order]
+    colors = _family_colors(fam_series.reindex(labels))
+    fig, ax = plt.subplots(figsize=(max(6, 0.16 * len(models)) + 1,
+                                    max(6, 0.16 * len(models))))
+    im = ax.imshow(mat[np.ix_(order, order)], cmap="YlGnBu", vmin=-0.3,
+                   vmax=1.0, aspect="auto")
+    ax.set_xticks(range(len(labels)), labels, rotation=90, fontsize=6)
+    ax.set_yticks(range(len(labels)), labels, fontsize=6)
+    for i, c in enumerate(colors):
+        ax.get_yticklabels()[i].set_color(c)
+    fig.colorbar(im, ax=ax, label="primary error similarity", shrink=0.7)
+    ax.set_title("Pairwise error similarity (average-linkage order)")
+    fig.tight_layout()
+    fig.savefig(out / "error_heatmap.pdf")
+    plt.close(fig)
+
+
+def error_dendrogram(mat: np.ndarray, models: list[str], fam_series: pd.Series,
+                     out: Path) -> None:
+    from scipy.cluster.hierarchy import dendrogram
+    Z = linkage_from_mat(mat)
+    fig, ax = plt.subplots(figsize=(max(7, 0.22 * len(models)), 4.5))
+    d = dendrogram(Z, labels=models, ax=ax, leaf_font_size=7)
+    color = {m: c for m, c in zip(models, _family_colors(fam_series.reindex(models)))}
+    for i, leaf in enumerate(d["ivl"]):
+        ax.get_xticklabels()[i].set_color(color.get(leaf, (0.5, 0.5, 0.5)))
+    ax.set_ylabel("1 - primary error similarity")
+    ax.set_title("Average-linkage clustering of models by error similarity")
+    fig.tight_layout()
+    fig.savefig(out / "error_dendrogram.pdf")
+    plt.close(fig)
+
+
+def linkage_from_mat(mat: np.ndarray):
+    from scipy.cluster.hierarchy import linkage
+    dist = 1.0 - mat
+    dist = (dist + dist.T) / 2.0
+    np.fill_diagonal(dist, 0.0)
+    return linkage(dist[np.triu_indices(len(mat), k=1)], method="average")
+
+
+def error_network(edges: pd.DataFrame, models: list[str], fam_series: pd.Series,
+                  era_series: pd.Series, out: Path, seed: int = 2026) -> None:
+    import networkx as nx
+
+    G = nx.Graph()
+    G.add_nodes_from(models)
+    for _, r in edges.iterrows():
+        G.add_edge(r["i"], r["j"], weight=r["weight"])
+    pos = nx.spring_layout(G, seed=seed, k=0.7, iterations=120)
+    node_colors = _family_colors(fam_series.reindex(models))
+    node_markers = _era_markers(era_series.reindex(models))
+    widths = [0.5 + 3.0 * G[u][v]["weight"] for u, v in G.edges()]
+
+    fig, ax = plt.subplots(figsize=(max(8, 0.32 * len(models)),
+                                    max(8, 0.32 * len(models))))
+    nx.draw_networkx_edges(G, pos, ax=ax, width=widths, alpha=0.55,
+                           edge_color="#888888")
+    for i, m in enumerate(models):
+        ax.scatter(*pos[m], s=90, color=node_colors[i], marker=node_markers[i],
+                   edgecolors="black", linewidths=0.4, zorder=3)
+        ax.annotate(m, pos[m], fontsize=5, xytext=(4, 4),
+                    textcoords="offset points")
+    ax.set_title("Model error-similarity network (top-k edges, "
+                 "color=family, marker=era)")
+    ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(out / "error_network.pdf")
+    plt.close(fig)
+
+
+def error_embedding(mat: np.ndarray, models: list[str], fam_series: pd.Series,
+                    era_series: pd.Series, out: Path, seed: int = 2026) -> None:
+    from sklearn.decomposition import PCA
+    from sklearn.manifold import TSNE
+
+    node_colors = _family_colors(fam_series.reindex(models))
+    node_markers = _era_markers(era_series.reindex(models))
+
+    def scatter(coords, title, fname):
+        fig, ax = plt.subplots(figsize=(7.5, 6.5))
+        for i, m in enumerate(models):
+            ax.scatter(*coords[i], s=80, color=node_colors[i],
+                       marker=node_markers[i], edgecolors="black",
+                       linewidths=0.4, zorder=3)
+            ax.annotate(m, coords[i], fontsize=5, xytext=(4, 4),
+                        textcoords="offset points")
+        ax.set_title(title)
+        ax.axis("off")
+        fig.tight_layout()
+        fig.savefig(out / fname)
+        plt.close(fig)
+
+    pca = PCA(n_components=2, random_state=seed).fit_transform(mat)
+    scatter(pca, "Model error-similarity: PCA (color=family, marker=era)",
+            "error_embedding_pca.pdf")
+    tsne = TSNE(n_components=2, random_state=seed, perplexity=min(15, len(models) - 1),
+                init="pca").fit_transform(mat)
+    scatter(tsne, "Model error-similarity: t-SNE (color=family, marker=era)",
+            "error_embedding_tsne.pdf")
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out-dir", default="results/phase2")

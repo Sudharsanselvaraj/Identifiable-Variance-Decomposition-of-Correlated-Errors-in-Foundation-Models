@@ -315,6 +315,47 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 
 ---
 
+## 2026-08-03 — Error-similarity secondary panel + pre-registered measure rule
+
+- **Decision:** Add a **secondary error-similarity panel** to Phase 2, wired into
+  `phase2_decomposition.py` after sensitivity, running only on real per-question
+  samples. It reports the *observed* pairwise error overlap of the 47 models on
+  the shared item set (within- vs between-family), *why* that overlap exists
+  (family channel → variance decomposition), identifiability, and implications.
+  Paper section order per reviewer: §5 Observed Population → §6 Error Similarity →
+  §7 Identifiability → §8 Variance Decomposition → §9 Intervention Implications.
+- **Measure-selection rule (pre-registered, fair):** the primary measure is chosen
+  by a fixed rule in `analysis/error_similarity.py` `evaluate_criteria`, NOT by
+  effect size. Every candidate passes C1 (calibration on a balanced no-overlap
+  fixture vs item-difficulty null), C1b (accuracy-robust on an imbalanced
+  no-overlap fixture vs matched-accuracy null), C2 (signal z ≥ 3 vs
+  matched-accuracy null, sign agreeing with the balanced fixture), C3 (within >
+  between in ≥ 90% of bootstrap reps), then the tie-break prefers **chance-
+  corrected measures** (phi, Yule's Q, Cohen's kappa) over rate-sensitive ones
+  (jaccard/overlap/cosine). On the fixture battery all six measures pass
+  C1/C1b/C2/C3; the rule selects **phi**.
+- **Reason:** reviewer feedback warned the panel could read as evidence shopping;
+  a pre-registered rule with a chance-corrected preference makes the choice
+  defensible (the initial run selected jaccard — exactly the rate-sensitive
+  measure flagged — so the preference was added before any real data existed).
+- **Null ladder (methodology contribution):** observed → matched-accuracy
+  per-model shuffle → item-difficulty strata shuffle (most conservative) →
+  analytic independence. Headline tests use matched-accuracy; calibration uses
+  item-difficulty.
+- **Evidence:** `src/lineage_era/test_error_similarity.py` — 4 fixtures
+  (balanced_signal, imbalanced_signal, no_overlap, imbalanced_no_overlap);
+  signal z ≈ 3.4–3.9 (balanced) / 3.8–4.2 (imbalanced); calibration
+  −1.4…−1.6; phi selected. Full battery + synthetic pipeline dry-run green.
+- **Alternatives considered:** biggest-effect selection (rejected: rewards the
+  rate-sensitive measure); no panel (rejected: loses the observational layer the
+  reviewer asked for); UMAP/igraph embeddings (rejected: not installed; PCA +
+  t-SNE via sklearn, Louvain via networkx).
+- **Risk:** the panel is observational and correlational; it never merges with θ_P
+  (two-estimand rule). σ²_U remains measured-with-error inclusive.
+- **Status:** ACCEPTED, implemented, validated.
+
+---
+
 ## Pending / open
 
 - **Phase 2 fresh eval pass — RUN EXECUTION (in progress).** Scope and

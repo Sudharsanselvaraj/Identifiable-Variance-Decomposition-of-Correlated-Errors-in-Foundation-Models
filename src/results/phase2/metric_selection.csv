@@ -1,0 +1,7 @@
+measure,C1_calibrated,C1b_accuracy_robust,C2_robust_imbalanced,C3_stable_sign,C3_stability,C4_chance_corrected,within_family_z_balanced,within_family_z_imbalanced,calibration_z_no_overlap,accuracy_robust_z,selected
+jaccard,True,True,True,True,1.0,False,3.863,4.205,-1.402,1.621,False
+overlap,True,True,True,True,1.0,False,3.624,3.924,-1.456,1.505,False
+cosine,True,True,True,True,1.0,False,3.631,3.936,-1.45,1.525,False
+phi,True,True,True,True,1.0,True,3.62,3.948,-1.486,1.603,True
+yule_q,True,True,True,True,1.0,True,3.361,3.76,-1.584,1.292,False
+cohen_kappa,True,True,True,True,1.0,True,3.62,3.955,-1.482,1.604,False

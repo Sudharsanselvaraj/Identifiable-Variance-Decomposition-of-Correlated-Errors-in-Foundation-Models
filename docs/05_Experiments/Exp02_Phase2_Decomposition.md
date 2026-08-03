@@ -28,6 +28,13 @@ subset; produce the partition table; report the era-convergence trend as a table
 4. Report partition σ²_L / σ²_E / σ²_U with CIs as a table — not a headline.
 5. Report θ_M separately on co-released cohorts and staggered fine-tune chains; never
    merge into θ_P (two-estimand rule).
+6. **Secondary panel — error similarity** (observational, supporting; runs
+   automatically after sensitivity when per-question samples exist): pairwise
+   within- vs between-family error overlap on the shared item set, reported via a
+   pre-registered chance-corrected measure (rule locks phi, not effect size; see
+   `analysis/error_similarity.py` `evaluate_criteria` + `metric_selection.csv`),
+   against the null ladder (matched-accuracy / item-difficulty / independence).
+   Pre-registered in the decision log 2026-08-03.
 
 ## Data
 
