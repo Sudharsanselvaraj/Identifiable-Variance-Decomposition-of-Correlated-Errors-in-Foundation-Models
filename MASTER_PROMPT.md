@@ -76,8 +76,13 @@ identifiable — and what that implies for diversification-as-mitigation.
   estimator = direct REML maximizer (statsmodels MixedLM crossed-vc was
   suboptimal); D1 families raised 6→30.
 - [ ] Phase 2 — Real-data decomposition on the provably connected subset only.
-  V_lineage + V_era + V_unique partition. Era-convergence trend collapses into a
-  table here, not a standalone result.
+  V_lineage + V_era + V_unique partition. **KICKOFF PIVOT (2026-08-03):** fit
+  LPM-REML (`CrossedREML`) on a **continuous per-model trait** aggregated from
+  item-level responses (mean accuracy or IRT ability) — never the raw binary
+  items (Phase 1 F4: era underpowered at 47 models on binary). Procurement
+  targets item-level logs to aggregate; primary candidate Kim et al.
+  (2506.07962) public data. Era-convergence trend collapses into a table here,
+  not a standalone result.
 - [ ] Phase 3 — Secondary analogies (heritability, selection differential,
   breeder's-equation test), gated behind Phase 2 surviving.
 

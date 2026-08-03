@@ -4,17 +4,21 @@ The estimator class and the decision path. Source: `proposal.md` §7.1.
 
 ## Estimator
 
-`statsmodels.MixedLM` — linear mixed model fit by **REML** (restricted maximum
-likelihood), crossed random effects (family, era). This is the same estimator class as
-TEE's G-theory decompositions (Messing, 2026), applied to a different object (model
-traits, not pipeline facets).
+`CrossedREML` (`src/lineage_era/estimator.py`) — direct restricted-likelihood
+(REML) maximizer over log-variances for crossed random effects (family, era),
+Woodbury-accelerated, share CIs via Monte-Carlo delta on the log-variances.
+This is the same estimator class as TEE's G-theory decompositions (Messing,
+2026), applied to a different object (model traits, not pipeline facets).
+Validated in Phase 1: matches ANOVA MoM on balanced data, bias ≤ 2.5 pp,
+coverage 95–96% at F=30. (Plan's `statsmodels.MixedLM` crossed-vc form was
+found NOT to maximize the REML objective — see decision log; not used.)
 
 ## Model forms
 
 | Form | Description | When used |
 |---|---|---|
-| **LPM-REML** | Linear probability model on binary error responses; REML on the crossed random effects | Candidate path; accepted only if the Phase 1 liability test shows acceptable bias |
-| **GLMM** | Generalized linear mixed model (logit link) on the liability/threshold model | Alternative path; chosen if LPM-REML bias under the liability test is unacceptable |
+| **LPM-REML** | Linear mixed model (REML) on a continuous per-model trait; crossed random effects (family, era) | **ACCEPTED path (Phase 1 PASS, GO WITH CHANGES).** Continuous per-model trait = aggregation of item-level responses (mean accuracy or IRT ability) — raw binary items are not modeled directly (Phase 1 F4 era-power limit) |
+| **GLMM** | Generalized linear mixed model (logit link) on item-level binary responses | Robustness check only; era claims from binary items at the 47-model occupancy are underpowered (Phase 1 F4: GLMM era-boundary collapse 20–60%) |
 
 ## The Phase 1 liability decision (decides the Phase 2 path)
 
@@ -24,6 +28,12 @@ traits, not pipeline facets).
 4. Measure bias in the variance components under both.
 5. Choose the path with acceptable bias; if both fail detectably, the instrument is unfit
    (RQ2 gate).
+
+**Outcome (2026-08-03):** LPM-REML on continuous per-model traits chosen. At the
+real 47-model occupancy the GLMM era component collapses to the boundary
+(20–60% of reps, era-share bias to −13/−16 pp) while continuous-trait recovery
+is 98–100% era coverage (D2 continuous). The LPM-REML path is the Phase 1
+validated estimator (`CrossedREML`); GLMM is demoted to robustness check.
 
 ## Uncertainty
 

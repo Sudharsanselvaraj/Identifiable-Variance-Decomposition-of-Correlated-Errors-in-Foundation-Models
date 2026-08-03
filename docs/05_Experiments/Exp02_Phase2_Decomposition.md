@@ -1,6 +1,8 @@
 # Exp02 — Phase 2 Real-Data Decomposition
 
-**Status:** DESIGNED — blocked on Phase 1 PASS + item-level benchmark procurement.
+**Status:** DESIGNED — Phase 1 PASSED (GO WITH CHANGES); path decided
+(LPM-REML on continuous per-model traits). Remaining blocker: item-level
+benchmark availability check (procurement path in `Dataset_Inventory.md`).
 
 ## Purpose
 
@@ -10,19 +12,25 @@ subset; produce the partition table; report the era-convergence trend as a table
 
 ## Design
 
-1. Assemble item-level error responses for the connected subset models
-   (`docs/03_Data/Dataset_Inventory.md`).
+1. Assemble item-level response logs for the connected subset models
+   (`docs/03_Data/Dataset_Inventory.md`) and **aggregate to a continuous
+   per-model trait** (mean accuracy or IRT person ability over the common item
+   set). Raw per-item Bernoulli responses are NOT the fitted outcome (Phase 1
+   F4: era underpowered on binary at 47 models).
 2. Build family × quarter design matrix from Phase 0 table + parent–offspring edges from
    technical reports/papers (`base_model` too sparse — 5 verified edges).
-3. Fit the mixed model validated in Phase 1 (LPM-REML or GLMM per Phase 1 decision).
+3. Fit the validated Phase 1 estimator: **LPM-REML (CrossedREML) on the
+   continuous per-model trait**. Binomial GLMM only as a robustness check, with
+   the F4 era-power caveat.
 4. Report partition σ²_L / σ²_E / σ²_U with CIs as a table — not a headline.
 5. Report θ_M separately on co-released cohorts and staggered fine-tune chains; never
    merge into θ_P (two-estimand rule).
 
 ## Data
 
-Connected subset models, public item-level benchmark responses. Coverage and
-contamination caveats in `Dataset_Inventory.md`.
+Connected subset models, public item-level benchmark responses (primary
+candidate: Kim et al. 2506.07962 public data, aggregated per model). Coverage,
+contamination, and aggregation caveats in `Dataset_Inventory.md`.
 
 ## Metrics
 

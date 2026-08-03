@@ -329,11 +329,16 @@ program and fix or drop the instrument. No real-data claim precedes this gate.
 
 ### 7.2 Phase 2 — Real-data decomposition on the connected subset
 
-1. Assemble item-level error responses for the connected subset models.
+1. Assemble item-level error responses for the connected subset models and
+   **aggregate to a continuous per-model trait** (mean accuracy or IRT person
+   ability over the common item set; raw item-level binary is a data source,
+   not the fitted outcome — Phase 1 F4).
 2. Build the family × quarter design matrix from the Phase 0 table plus parent–offspring
    edges drawn from technical reports/papers (the `base_model` field is too sparse; only
    5 verified edges).
-3. Fit the mixed model validated in Phase 1 (LPM-REML or GLMM per the Phase 1 decision).
+3. Fit the Phase 1 validated estimator: **LPM-REML (CrossedREML) on the
+   continuous per-model trait** (Phase 1 decision 2026-08-03). GLMM is a
+   robustness check only, with the F4 era-power caveat.
 4. Report the partition σ²_L / σ²_E / σ²_U with CIs as a **table**, not a headline.
    The era-convergence trend (RQ5) collapses into a table entry; it is not a standalone
    result.
@@ -381,7 +386,7 @@ Phases 1–2.
 |---|---|---|
 | HF API (`/api/models/{id}`) | Proven in Phase 0 (~45 models verified) | `createdAt` ≠ release date (4 documented divergences); meta-llama org auth-gated |
 | `cardData.base_model` | Verified | Sparse: only 5 cross-generation edges; parent–offspring edges for the design come from technical reports |
-| Item-level benchmark responses | TO BE PROCURED | Procurement decision settled in the Phase 1 approval step; public evaluation suites that publish item-level responses |
+| Item-level benchmark responses | Path decided (Phase 1 F4): aggregate to a continuous per-model trait (mean accuracy / IRT ability) — raw binary items not modeled directly | Availability/license check on connected subset pending; primary candidate Kim et al. (2506.07962) public data, aggregated per model |
 | Release record | Settled | Era = public release date, not HF timestamp (Phase 0 method) |
 
 ### 9.3 Population facts that constrain the analysis

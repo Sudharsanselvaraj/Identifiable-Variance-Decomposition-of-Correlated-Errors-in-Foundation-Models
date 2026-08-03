@@ -186,12 +186,42 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
   be underpowered at 47 models; mitigation documented in the report.
 - **Status:** Accepted.
 
+## 2026-08-03 — Phase 2 estimator path + procurement constraint (from Phase 1 F4)
+
+- **Decision:** Phase 2 fits **LPM-REML on a continuous per-model trait** —
+  never the raw item-level binary responses. The trait is an aggregation of
+  item-level responses into a per-model continuous score: accuracy proportion
+  or an IRT-style ability estimate (e.g., 2PL/3PL person score over the common
+  item set). This is the Phase 2 kickoff pivot and a procurement constraint.
+- **Reason:** Phase 1 F4 — item-level binary outcomes cannot resolve the era
+  variance component at the real 47-model occupancy (GLMM era-boundary
+  collapse 20–60%; era-share bias to −13/−16 pp), while per-model continuous
+  traits recover era with 98–100% coverage (D2 continuous). The LPM-REML path
+  was validated in Phase 1; it operates on continuous model-level traits
+  anyway.
+- **Procurement consequence:** benchmark procurement targets *item-level
+  response logs* (as before) but the modeling target is the **aggregated
+  per-model score**, not per-item Bernoulli fit. Compatible with reusing Kim
+  et al.'s public data (arXiv:2506.07962, ICML 2025): aggregate their
+  item-level results per model — strictly less work than modeling raw binary
+  responses, and the same data serves a continuous-trait design.
+- **Alternatives considered:** fit GLMM directly on item-level binary (rejected
+  by F4 power limit at 47 models); treat per-model proportions as Gaussian
+  directly (accepted for LPM; IRT ability as the precision-weighted upgrade if
+  item counts are thin).
+- **Risk:** aggregation discards item-level information and measurement-error
+  structure; mitigated by reporting trait standard errors / item counts with
+  every share CI. Variance of the trait estimator lands in σ²_U; document that
+  σ²_U is measured-with-error inclusive.
+- **Status:** Accepted.
+
 ---
 
 ## Pending / open
 
-- **Phase 1 plan approval** — RESOLVED 2026-08-03 by execution: the battery was
-  implemented and run to a **GO WITH CHANGES** verdict (`PHASE1_REPORT.md`,
-  `MASTER_PROMPT.md` Phase 1 COMPLETE). No further gate.
-- **Item-level benchmark procurement** for Phase 2. Decision deferred to the
-  Phase 1 approval step (now passed) — next open decision for Phase 2 kickoff.
+- **Item-level benchmark procurement for Phase 2** — DECISION MADE 2026-08-03
+  (this entry): target = public item-level response logs aggregated into a
+  continuous per-model trait; primary candidate = Kim et al. (arXiv:2506.07962)
+  public data, aggregated per model. Remaining work = availability/license
+  check on the connected subset, then fill `docs/03_Data/Dataset_Inventory.md`
+  inventory table. No further estimator-path decision pending.
