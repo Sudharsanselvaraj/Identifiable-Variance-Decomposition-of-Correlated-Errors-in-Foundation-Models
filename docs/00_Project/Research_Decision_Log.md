@@ -95,6 +95,29 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 
 ---
 
+## 2026-08-03 — Phase 0 codified into code; one record annotation flagged
+
+- **Decision:** Codify the Phase 0 record into `src/lineage_era/occupancy.py`
+  (models, edges, caveats, era divergences, offline consistency check). The
+  table is the authoritative occupancy source for D2; the consistency check
+  reproduces every hard Phase 0 stat exactly.
+- **Reason:** D2 requires occupancy copied from the Phase 0 table; codifying it
+  makes the simulation reproducible and auditable offline.
+- **Evidence:** `occupancy.check_consistency()` reproduces 6 families × 14
+  quarters, 47 models, 5 edges, 11/14 quarters ≥2 families, all row spans
+  exactly. **Finding:** the Phase 0 log's dense-cell annotation (2024Q2=5,
+  2024Q3=5, 2025Q2=6) does NOT match the table (2024Q2=5, 2024Q3=4, 2025Q2=5)
+  under either a family-count or model-count reading. Annotation treated as
+  inaccurate; table remains authoritative for D2.
+- **Alternatives considered:** Correct the annotation silently (rejected:
+  table is the verified record); fail hard on the mismatch (rejected: it is a
+  descriptive note, not a gate criterion).
+- **Risk:** None for D2 (occupancy comes from the table). Logged so the
+  annotation is not re-quoted in the paper as a verified number.
+- **Status:** Accepted.
+
+---
+
 ## Pending / open
 
 - **Phase 1 plan approval** (statsmodels MixedLM REML; D1/D2/D3; liability test;
