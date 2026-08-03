@@ -29,6 +29,8 @@ Top-level package modules are re-export shims for compatibility; the real code l
 | Module | Purpose |
 |---|---|
 | `trait.py` | Aggregate per-question responses into a continuous per-model trait |
+| `eval_check.py` | Eval intake validator — fails fast if the GPU-runbook CSV/samples are mis-shaped |
+| `eval_simulate.py` | Shape-exact simulated eval output for GPU-free pipeline dry-runs |
 | `metadata.py` | Family/era design matrix from the Phase 0 table + verified `base_model` edges |
 | `population.py` | Connected-subset population construction (erosion, gating, membership) |
 | `identifiability.py` | Identifiability pre-checks (κ, rank, VIF, profile flatness) before any fit |
@@ -53,3 +55,7 @@ Top-level package modules are re-export shims for compatibility; the real code l
   `datasets/phase2_eval_results.csv` back into the repo, then run
   `python3 -m lineage_era.phase2_decomposition` (see `RESEARCH_PROTOCOL.md`, Stage 2).
   G2 pending.
+- The intake validator (`analysis/eval_check.py`) checks the eval CSV + per-question
+  samples against the 47-model contract and aborts with a precise message on any
+  violation; a shape-exact simulated-eval dry-run (`analysis/eval_simulate.py` +
+  `results/phase2_sim_dryrun/`) exercises the full real-data path GPU-free.

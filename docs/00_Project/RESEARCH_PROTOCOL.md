@@ -78,7 +78,8 @@ entirely on CPU/offline data.
 - **Inputs:** eval manifest (`analysis/`), occupancy design, Phase 1-validated
   estimator.
 - **Actions:** (2a) fresh eval pass on a GPU host (`phase2_run_all.py`);
-  (2b) trait assembly (`analysis/trait.py`); (2c) design frame
+  (2b) eval intake validation (`analysis/eval_check.py`, abort on contract
+  violation) + trait assembly (`analysis/trait.py`); (2c) design frame
   (`analysis/metadata.py`); (2d) **identifiability gate**
   (`analysis/identifiability.py`, hard-fail = abort); (2e) θ_P partition +
   θ_M tables (`analysis/reml.py`); (2f) bootstrap CIs + trait-error MC

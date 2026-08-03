@@ -2,6 +2,8 @@
 
 Modules:
     trait.py         per-model trait assembly from fresh eval output
+    eval_check.py    eval intake validator (fail fast on mis-shaped runbook out)
+    eval_simulate.py shape-exact simulated eval output for GPU-free dry-runs
     metadata.py      occupancy x manifest design frame (incl. leak/chain flags)
     population.py    population construction, coverage gate, Kim reconciliation
     identifiability.py  first-class gate before the variance partition

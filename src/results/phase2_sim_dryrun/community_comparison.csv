@@ -1,0 +1,2 @@
+algorithm,n_communities,n_edges,ari_vs_family,ari_vs_era,interpretation
+louvain,6,97,0.02892675272555459,-0.008561107047425697,family-aligned

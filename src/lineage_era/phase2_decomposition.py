@@ -40,18 +40,30 @@ def synthetic_trait_table(seed: int, scenario: dict,
     return out
 
 
-def run_trait(out_dir: Path, synthetic: bool, seed: int) -> pd.DataFrame:
+def run_trait(out_dir: Path, synthetic: bool, seed: int,
+              eval_csv: Path | None = None,
+              samples_dir: Path | None = None) -> pd.DataFrame:
     if synthetic:
         trait = synthetic_trait_table(seed, dgp.SCENARIOS["C"], trait_se=0.02)
         trait.to_csv(out_dir / "trait_table.csv", index=False)
         return trait
     from . import phase2_trait
-    eval_df = phase2_trait.load_eval_results()
-    samples = phase2_trait.load_question_samples()
+    from .analysis import eval_check
+    csv_path = eval_csv or phase2_trait.DEFAULT_EVAL_CSV
+    samp_path = samples_dir or phase2_trait.DEFAULT_SAMPLES_DIR
+    report = eval_check.validate_eval(csv_path, samp_path)
+    for w in report["warnings"]:
+        print(f"  eval WARN {w}")
+    if not report["ok"]:
+        for e in report["errors"]:
+            print(f"  eval FAIL {e}", file=sys.stderr)
+        print("ABORTING: eval intake validation failed.", file=sys.stderr)
+        raise SystemExit(3)
+    eval_df = phase2_trait.load_eval_results(csv_path)
+    samples = phase2_trait.load_question_samples(samp_path)
     trait = phase2_trait.assemble_trait(eval_df, samples=samples)
     trait.to_csv(out_dir / "trait_table.csv", index=False)
     return trait
-
 
 def run_metadata(out_dir: Path) -> pd.DataFrame:
     from . import phase2_metadata
@@ -69,12 +81,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--results-dir", default="results/phase2")
     p.add_argument("--seed", type=int, default=2026)
     p.add_argument("--bootstrap-reps", type=int, default=500)
+    p.add_argument("--eval-csv", default=None,
+                   help="eval CSV override (default datasets/phase2_eval_results.csv)")
+    p.add_argument("--samples-dir", default=None,
+                   help="per-question JSONL dir override (default datasets/eval_samples)")
     args = p.parse_args(argv)
 
     out_dir = Path(args.results_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    trait = run_trait(out_dir, args.synthetic, args.seed)
+    trait = run_trait(out_dir, args.synthetic, args.seed,
+                      Path(args.eval_csv) if args.eval_csv else None,
+                      Path(args.samples_dir) if args.samples_dir else None)
     run_metadata(out_dir)
 
     from . import phase2_identifiability as audit_mod
@@ -116,11 +134,15 @@ def main(argv: list[str] | None = None) -> int:
     phase2_sensitivity.main(["--df", str(out_dir / "trait_table.csv"),
                              "--out-dir", str(out_dir)])
     if not args.synthetic:
-        samples = phase2_trait.load_question_samples()
+        from . import phase2_trait
+        samples = phase2_trait.load_question_samples(
+            Path(args.samples_dir) if args.samples_dir
+            else phase2_trait.DEFAULT_SAMPLES_DIR)
         if not samples.empty:
             from . import phase2_error_similarity
             phase2_error_similarity.main([
-                "--samples-dir", str(DATASETS / "eval_samples"),
+                "--samples-dir", str(Path(args.samples_dir) if args.samples_dir
+                                     else DATASETS / "eval_samples"),
                 "--trait-csv", str(out_dir / "trait_table.csv"),
                 "--out-dir", str(out_dir),
                 "--seed", str(args.seed)])

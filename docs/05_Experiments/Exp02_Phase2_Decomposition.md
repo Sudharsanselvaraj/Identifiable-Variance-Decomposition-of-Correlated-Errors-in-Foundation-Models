@@ -42,6 +42,22 @@ Connected subset models, public item-level benchmark responses (primary
 candidate: Kim et al. 2506.07962 public data, aggregated per model). Coverage,
 contamination, and aggregation caveats in `Dataset_Inventory.md`.
 
+## Intake validation + GPU-free dry-run
+
+- `analysis/eval_check.py` validates the runbook output (CSV columns, exactly
+  the 47 connected-subset models, acc/samples sanity, per-question JSONL row
+  counts, `correct` values, common-item-set A15) and **aborts the pipeline with
+  a precise message on any violation** (exit 3). Missing per-question samples
+  are a warning, not a fail.
+- `analysis/eval_simulate.py` writes shape-exact simulated eval output
+  (`datasets/phase2_eval_results.sim.csv` + `eval_samples.sim/`) from a
+  per-question DGP with known family/era/model effects on the accuracy scale,
+  so the full real-data path runs GPU-free. Dry-run artifact:
+  `src/results/phase2_sim_dryrun/`. Single-seed share recovery is noisy at the
+  6-family occupancy (register A21); round-trip checks use mean-over-seeds.
+- Validated by `src/lineage_era/test_eval_check.py` (11 tests: validator
+  pass/fail paths + round-trip).
+
 ## Metrics
 
 Variance shares with CIs; per-item-set precision; era-convergence slope (table entry).
