@@ -215,13 +215,80 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
   σ²_U is measured-with-error inclusive.
 - **Status:** Accepted.
 
+## 2026-08-03 — Phase 2 coverage check: leaderboard data covers 18/47; gate FAILS; fresh eval pass required
+
+- **Decision:** Recorded coverage outcome and the resulting procurement gate
+  (pending user cost decision). Phase 2 data assembly implemented as
+  `src/lineage_era/phase2_data.py` (reconciliation map + coverage gate) and run
+  against Kim et al. (arXiv:2506.07962, CC BY 4.0) MMLU accuracy files.
+- **Coverage result:** 18/47 connected-subset models (38.3%). By family:
+  Llama 5, Qwen 3, DeepSeek 0, Mistral 5, Phi 3, Gemma 2. Gates: models
+  18 < 24 (bar: >=50%), families 5 < 6 (DeepSeek absent) → **FAIL**.
+- **Cause:** the shared-MMLU-item leaderboard data is structurally frozen —
+  Kim's HF v1 file (451 models) and HELM (71 models) stop ~2024; Open LLM
+  Leaderboard v2 (MMLU-PRO) snapshot in Kim's repo AND the live v2 API
+  (checked 2026-08-03) freeze at submission 2025-03-13. All 29 missing models
+  are 2025Q1+ releases (Qwen3/3.5/3.6, Llama-4, Gemma-3/3n/4, DeepSeek-V3+,
+  Phi-4, Mistral-Small-3+ incl. Devstral-2), including every modern DeepSeek.
+- **Implication:** the 29 gap models are only reachable by a fresh evaluation
+  pass on the connected subset. That also yields a strict common item set
+  (better than Kim's data, which mixes two leaderboards' MMLU subsets).
+  Cost/budget decision is the open item (recorded as pending).
+- **Alternatives considered (rejected for the full decomposition):** proceed on
+  18/47 (Phase 1 shows family bias ~ -5pp at F=6 and era underpower; with
+  DeepSeek absent the crossed family dimension is broken — would produce
+  unreliable shares); re-scope the subset to exclude 2026 models and use
+  Kim+v2 for the rest (still leaves 2025Q2-Q4 gaps and DeepSeek absent).
+- **Status:** gate outcome ACCEPTED; the cost decision for the fresh eval pass
+  is pending user input.
+
+## 2026-08-03 — Fresh eval pass on all 47 models; benchmark = MMLU 5-shot
+
+- **Decision:** Produce the Phase 2 per-model trait by a fresh evaluation of
+  ALL 47 connected-subset models on one fixed benchmark — MMLU 5-shot — giving
+  a strict common item set. No leaderboard-derived accuracy is reused for the
+  trait (Kim et al.'s 18-model MMLU values are retained only as a validation
+  cross-check, not as the trait source).
+- **Reason:** leaderboard data covers only 18/47 and mixes two MMLU subsets;
+  a single fresh pass on one item set fixes comparability and reaches the
+  DeepSeek/2025+ models that no leaderboard carries. User approved the
+  "all 47 / one benchmark" scope over "gaps only" and "proceed on 18".
+- **Benchmark rationale:** MMLU 5-shot (not MMLU-PRO) keeps the trait
+  semantically identical to the Kim et al. benchmark the paper is compared
+  against; also the cheapest per model (loglikelihood, no generation).
+- **Implementation:** `src/lineage_era/phase2_eval.py` — canonical HF
+  checkpoint per connected-subset model (manifest verified 47/47 via HF API on
+  2026-08-03), access class (23 token-free, 24 gated), lm-eval-harness 0.4.12
+  runner (loglikelihood; eager attention default). MMLU dataset (`cais/mmlu`)
+  downloaded.
+- **Availability facts:** every one of the 47 has a canonical HF repo; the
+  2026 frontier models (Qwen3.5/3.6, DeepSeek-V4, Mistral-Small-4,
+  Mistral-Medium-3.5, Gemma-4) exist but are gated. Gated models need
+  HF_TOKEN with license accepted.
+- **Environment constraint:** the dev Mac (Apple M5, 17 GB, MPS allocator
+  errors, slow CPU) cannot produce the numbers; the full run needs a GPU host.
+  Local CPU/MPS runs are pipeline pilots only (validated through model load +
+  task setup).
+- **Per-model caveats for the full run:** Phi-1/1.5/2 are 2048-token context —
+  some MMLU 5-shot prompts exceed it and crash; these need max_length handling.
+  Sliding-window models (Qwen, Mistral) should use `sdpa` (not eager) on GPU.
+- **Alternatives considered:** MMLU-PRO (rejected: breaks comparability with
+  the 18 Kim values and with the paper's benchmark framing); gaps-only eval
+  (rejected: two-source trait, weaker comparability).
+- **Risk:** compute/budget; mitigated by the loglikelihood scoring (fast) and
+  by it being the same benchmark Kim et al. used.
+- **Status:** benchmark decision ACCEPTED; run venue / HF token / cost open.
+
 ---
 
 ## Pending / open
 
-- **Item-level benchmark procurement for Phase 2** — DECISION MADE 2026-08-03
-  (this entry): target = public item-level response logs aggregated into a
-  continuous per-model trait; primary candidate = Kim et al. (arXiv:2506.07962)
-  public data, aggregated per model. Remaining work = availability/license
-  check on the connected subset, then fill `docs/03_Data/Dataset_Inventory.md`
-  inventory table. No further estimator-path decision pending.
+- **Phase 2 fresh eval pass — RUN EXECUTION (in progress).** Scope and
+  benchmark decided (all 47, MMLU 5-shot); runbook built:
+  `src/lineage_era/phase2_run_all.py` (GPU orchestrator with resume) + manifest
+  `src/lineage_era/phase2_eval.py`. User will execute it on a GPU host with an
+  HF token (licenses accepted for the 24 gated models); results land in
+  `datasets/phase2_eval_results.csv`. Per-model caveats documented: Phi-1/1.5/2
+  need `max_length=2048,truncation=True`; sliding-window models use `sdpa`.
+  Once the CSV is back, proceed to Step 4 (`phase2_decomposition.py` ->
+  `PHASE2_REPORT.md`).
