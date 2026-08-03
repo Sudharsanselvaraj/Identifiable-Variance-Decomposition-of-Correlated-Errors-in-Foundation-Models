@@ -1,15 +1,20 @@
 # Dataset Inventory
 
-**STATUS: trait = fresh MMLU 5-shot eval on all 47 (Path A LOCKED 2026-08-03);
-run venue open.** Phase 1 F4 settled the modeling target: a continuous per-model
-trait aggregated from item-level responses — raw binary items are NOT modeled
-directly. Kim et al. (arXiv:2506.07962, ICML 2025, **CC BY 4.0**) ships
-per-model MMLU accuracy in-repo, but leaderboard data is frozen ~2024 and
-covers only 18/47 connected-subset models (DeepSeek absent). The trait is
-therefore produced by a fresh evaluation of ALL 47 connected-subset models on
-MMLU 5-shot (strict common item set); Kim's values are kept only as a
-validation cross-check. Infrastructure: `src/lineage_era/phase2_eval.py`
-(47/47 manifest + lm-eval-harness runner). Run venue / HF token / budget open.
+**STATUS: trait = fresh MMLU 5-shot eval on the G3 minimum valid population,
+22 of 47 (Path A LOCKED 2026-08-03; G3 gate PASS 2026-08-03); run venue open.**
+Phase 1 F4 settled the modeling target: a continuous per-model trait aggregated
+from item-level responses — raw binary items are NOT modeled directly. Kim et al.
+(arXiv:2506.07962, ICML 2025, **CC BY 4.0**) ships per-model MMLU accuracy
+in-repo, but leaderboard data is frozen ~2024 and covers only 18/47
+connected-subset models (DeepSeek absent). The trait is therefore produced by a
+fresh evaluation of the G3 subset — 22 of 47 connected-subset models on MMLU
+5-shot (strict common item set); Kim's values are kept only as a validation
+cross-check. The G3 gate (`datasets/coverage/g3_report.md`) showed the 22-model
+population clears the strict Phase 1 D2 bar (mean-over-reps bias + margin
+confirmation), so the extra 25 models are not GPU-justified. Infrastructure:
+`src/lineage_era/phase2_eval.py` (47/47 manifest + lm-eval-harness runner) and
+`src/lineage_era/phase2_run_all.py` (defaults to the G3 subset). Run venue /
+HF token / budget open.
 
 ## Artifact-availability audit (2026-08-03)
 
@@ -22,7 +27,8 @@ aggregate MMLU exists for 18/47 (score-only cross-check, register A22), and
 29/47 have no public artifact. Every model therefore needs fresh inference.
 GPU plan: `datasets/coverage/gpu_cost_estimate.csv` (built by
 `src/lineage_era/analysis/gpu_cost.py`) — one 8xH200-141GB (fp8) node, ~12–24
-wall-hours, ~$100–300; hard gate = the 24 gated models, not cost.
+wall-hours for all 47, ~$100–300; hard gate = the gated models, not cost. The
+G3 gate (2026-08-03) cut the scope to 22 models (~67% of that cost).
 
 ## Availability finding (2026-08-03)
 
@@ -45,18 +51,26 @@ wall-hours, ~$100–300; hard gate = the 24 gated models, not cost.
 
 - **Benchmark:** MMLU 5-shot (loglikelihood scoring; matches Kim et al. and the
   paper's framing). `cais/mmlu` dataset (all 57 subjects) downloaded.
-- **Manifest:** all 47 connected-subset models have a canonical HF checkpoint
-  (verified 2026-08-03). 23 token-free; 24 gated (meta-llama org, Qwen3+,
-  DeepSeek-V4, Mistral org gated items, Gemma-1/2/3/3n/4) — gated models need
-  `HF_TOKEN` with the license accepted. 2026 frontier cells (Qwen3.5/3.6,
-  DeepSeek-V4, Mistral-Small-4, Mistral-Medium-3.5, Gemma-4) exist but are
-  gated.
-- **Runner:** `python3 -m lineage_era.phase2_eval --model <full_name>`
-  (from `src/`); full per-model commands generated from the manifest.
+- **Scope — G3 minimum valid population (22 of 47):** `datasets/coverage/
+  minimal_population.csv` (built by `src/lineage_era/analysis/
+  population_optimizer.py`; report `datasets/coverage/g3_report.md`). The
+  structural minimum (21) is identifiable but sits exactly on the strict bar
+  (knife-edge, register A25), so the first confirmed-clearing population is 22.
+  Subset: 14 public + 8 gated; est. ~710 vs 2154 single-GPU minutes (67% cut).
+- **Manifest:** the 22 subset models have a canonical HF checkpoint (verified
+  2026-08-03). Gated in the subset: meta-llama 3 (Llama-1/3.1/3.3), Mistral org
+  4 (Mistral-Small-3/3.2/4, Devstral-2), Google 1 (Gemma-3n) — need `HF_TOKEN`
+  with the license accepted.
+- **Runner:** `python3 -m lineage_era.phase2_run_all --device cuda:0` (from
+  `src/`; defaults to the G3 subset; `--only <full_name>` for one model;
+  `--subset <csv>` to run a different set, e.g. all 47).
 - **Per-model caveats:** Phi-1/1.5/2 are 2048-token context — some MMLU 5-shot
   prompts exceed it and crash; needs `max_length` handling (their paper's MMLU
   values are also at 2048, so truncation is the faithful reading). Sliding-window
   models (Qwen, Mistral) should use `sdpa` on GPU, not `eager`.
+- **Intake validation:** `python3 -m lineage_era.phase2_eval_check --manifest
+  datasets/coverage/minimal_population.csv` (validates the 22-row intake against
+  the G3 subset instead of the full 47).
 - **Environment:** dev Mac cannot run evals at usable speed (M5 CPU, 17 GB,
   MPS allocator errors). Full run needs a GPU host; local runs are pilots only
   (pipeline validated through model load + task setup).
@@ -100,7 +114,7 @@ per-model score  --(LPM-REML crossed fit)-->  theta_P: s2_L, s2_E, s2_U + share 
 
 | Benchmark | Version | License | Questions | Split | Known contamination | Response logs available | Models covered |
 |---|---|---|---|---|---|---|---|
-| MMLU (fresh pass) | 5-shot, loglikelihood | `cais/mmlu` | 14,042 | dev 5-shot / test | possible (disclose) | per-model acc via lm-eval 0.4.12 | 47/47 (target) |
+| MMLU (fresh pass) | 5-shot, loglikelihood | `cais/mmlu` | 14,042 | dev 5-shot / test | possible (disclose) | per-model acc via lm-eval 0.4.12 | 22/47 (G3 subset) |
 
 ## Fallback plan
 

@@ -396,17 +396,68 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
   (`phase2_run_all.py`, gated license checklist for the 24) on a GPU host;
   results → `datasets/phase2_eval_results.csv`, then Step 4 decomposition.
 
+## 2026-08-03 — G3 gate: minimum VALID population = 22 of 47 (pre-registered before GPU spend)
+
+- **Decision:** Before ANY Phase 2 GPU spend, select the smallest connected-subset
+  population whose family × quarter design is identifiable AND whose era recovery
+  clears the strict Phase 1 D2-continuous bar. Result: **run 22 of 47 models**, not
+  all 47. G3 is a pre-run gate — no real accuracy data is consulted (structural +
+  fixed-design-DGP selection only).
+- **Rule (pre-registered):**
+  1. Minimize model count subject to hard constraints: all 6 families present with
+     ≥ 2-quarter span; every quarter 2023Q1–2026Q2 keeps ≥ 1 model; ≥ 2 quarters
+     with ≥ 2 families (crossed); the in-subset VERIFIED_EDGES endpoints AND the
+     Mistral-Small chain are kept (θ_M survives); the induced design passes
+     `identifiability.structural_checks` (full rank, VIF ≤ 10).
+  2. Tie-break on cost (public > gated, then `est_minutes_single_gpu`) — scipy
+     Highs MILP, deterministic.
+  3. "Valid" = fixed-design battery (scenarios A and B, mean over converged reps,
+     register A21) clears |era share bias| ≤ 5pp AND CI coverage ≥ 90%.
+  4. **Two-stage + margin (added this session, pre-registration-consistent):** the
+     per-rep share-bias distribution is heavy-tailed (SD ~22–26pp), so candidates
+     that clear the bar at 300 reps must ALSO clear it with ≥ 1pp margin (|bias|
+     ≤ 4pp) at a 1000-rep confirmation. Rationale: the 21-model structural minimum
+     sits *exactly* on the bar (B-bias ≈ −5.0pp at 1000–2000 reps, SE ≈ 0.6–0.8pp),
+     an un-resolvable knife-edge; the margin rejects it.
+- **Outcome:** structural minimum n0 = 21 (identifiable) but knife-edge → rejected.
+  **Minimum VALID population = 22** (winner: Llama-1/3.1/3.3, Phi-1/1.5/2/3/4,
+  4-reasoning-plus, 4-reasoning-vision-15B, Mistral-7B, Small-3/3.1/3.2/4,
+  Devstral-2, DeepSeek-V3.1/V3.2, Gemma-3n/4-12B, Qwen-7B/1.5; 14 public + 8 gated).
+  Winner clears the bar at 300 reps (A 2.44pp, B −0.78pp) AND the margin
+  confirmation at 1000 reps (A 2.19pp, B −2.36pp); robust at 2000 reps (A 1.71pp,
+  B −3.16pp).
+- **Cost:** ~710 vs 2154 est. single-GPU minutes (67% cut, ~1,444 min saved);
+  GPU spend is no longer "scientifically justified only at 47" — 22 suffice.
+- **Evidence:** `src/lineage_era/analysis/population_optimizer.py` (optimizer +
+  validator), `datasets/coverage/minimal_population.csv` (kept/dropped +
+  per-model reason), `datasets/coverage/g3_report.md` (search trace + validation
+  table), `src/lineage_era/test_population_optimizer.py` (11 tests).
+- **Wiring:** `phase2_run_all.py --subset` now defaults to the G3 CSV; `eval_check
+  --manifest` validates a reduced-run intake against the 22-row subset instead of
+  the full 47.
+- **Alternatives considered:** reject the gate (rejected: unfounded GPU spend);
+  accept the knife-edge 21 (rejected: decision flips with reps — not defensible);
+  raise reps to settle 21 (rejected: heavy tail → SE ~0.6pp even at 2000, boundary
+  unresolved); median instead of mean (rejected: diverges from the Phase 1 D2
+  convention, register A21).
+- **Risk:** the subset still needs its own full eval; the error-similarity panel
+  rides the same run. If a subset model fails at eval time, the runbook resumes
+  and `eval_check --manifest` catches shape problems.
+- **Status:** ACCEPTED, implemented, validated (11/11 tests, ruff clean).
+
 ## Pending / open
 
-- **Phase 2 fresh eval pass — RUN EXECUTION (in progress, Path A locked).**
-  Scope and benchmark decided (all 47, MMLU 5-shot); artifact-availability
-  audit CONFIRMED 0/47 public per-question reuse and the GPU plan
-  (`datasets/coverage/artifact_audit.csv` +
-  `datasets/coverage/gpu_cost_estimate.csv`, see the 2026-08-03 entry above).
+- **Phase 2 fresh eval pass — RUN EXECUTION (in progress, Path A + G3 gate locked).**
+  Scope: the G3 minimum valid population — **22 of 47 models** (MMLU 5-shot;
+  `datasets/coverage/minimal_population.csv`, see the G3 entry above). The
+  artifact-availability audit CONFIRMED 0/47 public per-question reuse
+  (`datasets/coverage/artifact_audit.csv` + `datasets/coverage/gpu_cost_estimate.csv`).
   Runbook built: `src/lineage_era/phase2_run_all.py` (GPU orchestrator with
-  resume) + manifest `src/lineage_era/phase2_eval.py`. User will execute it on
-  a GPU host with an HF token (licenses accepted for the 24 gated models);
-  results land in `datasets/phase2_eval_results.csv`. Per-model caveats
-  documented: Phi-1/1.5/2 need `max_length=2048,truncation=True`;
+  resume; **defaults to the G3 22-model subset**, `--subset` overrides back to 47)
+  + manifest `src/lineage_era/phase2_eval.py`. User will execute it on a GPU host
+  with an HF token (licenses accepted for the 8 gated models in the subset);
+  results land in `datasets/phase2_eval_results.csv` and are validated at intake
+  with `eval_check --manifest datasets/coverage/minimal_population.csv`. Per-model
+  caveats documented: Phi-1/1.5/2 need `max_length=2048,truncation=True`;
   sliding-window models use `sdpa`. Once the CSV is back, proceed to Step 4
   (`phase2_decomposition.py` -> `PHASE2_REPORT.md`).

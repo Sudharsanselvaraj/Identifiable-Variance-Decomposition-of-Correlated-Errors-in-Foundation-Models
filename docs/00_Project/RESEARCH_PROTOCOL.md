@@ -72,13 +72,16 @@ entirely on CPU/offline data.
 
 ### Phase 2 — Trait measurement + statistical decomposition (IN PROGRESS)
 
-- **Goal:** fresh MMLU 5-shot trait on all 47 connected-subset models, run
-  through the identifiability gate, then decompose into σ²_L / σ²_E / σ²_U with
-  intervals, plus the mechanistic θ_M tables.
+- **Goal:** fresh MMLU 5-shot trait on the **G3 minimum valid population (22 of
+  47** connected-subset models), run through the identifiability gate, then
+  decompose into σ²_L / σ²_E / σ²_U with intervals, plus the mechanistic θ_M
+  tables.
 - **Inputs:** eval manifest (`analysis/`), occupancy design, Phase 1-validated
-  estimator.
-- **Actions:** (2a) fresh eval pass on a GPU host (`phase2_run_all.py`);
-  (2b) eval intake validation (`analysis/eval_check.py`, abort on contract
+  estimator, G3 subset (`datasets/coverage/minimal_population.csv`).
+- **Actions:** (2a) **G3 population gate** (`analysis/population_optimizer.py`,
+  DONE → 22 of 47) then fresh eval pass on a GPU host (`phase2_run_all.py`,
+  defaults to the subset); (2b) eval intake validation (`analysis/eval_check.py
+  --manifest datasets/coverage/minimal_population.csv`, abort on contract
   violation) + trait assembly (`analysis/trait.py`); (2c) design frame
   (`analysis/metadata.py`); (2d) **identifiability gate**
   (`analysis/identifiability.py`, hard-fail = abort); (2e) θ_P partition +
@@ -88,26 +91,28 @@ entirely on CPU/offline data.
 - **Runbook (2a) — execution order + gated checklist:** the fresh-eval pass is
   confirmed the only compliant source of per-question data (artifact audit
   2026-08-03: 0/47 public reuse; `datasets/coverage/artifact_audit.csv`) and the
-  panel rides the same run at zero extra GPU. Run on one 8xH200-141GB (fp8)
-  node; per-model memory/GPU plan in `datasets/coverage/gpu_cost_estimate.csv`;
-  realistic ~12–24 wall-hours, ~$100–300. Order of work:
+  panel rides the same run at zero extra GPU. The G3 gate (pre-registered
+  2026-08-03) set the scope to **22 of 47** — ~67% of the single-GPU cost. Run
+  on one 8xH200-141GB (fp8) node; per-model memory/GPU plan in
+  `datasets/coverage/gpu_cost_estimate.csv`. Order of work:
+  0. **G3 population gate (DONE: PASS).** `phase2_population_optimizer.py` →
+     22/47 (`datasets/coverage/minimal_population.csv`); `phase2_run_all.py`
+     defaults to this subset (`--subset` overrides back to all 47).
   1. **Pass 1 — token-free:** `python3 -m lineage_era.phase2_run_all --skip-gated`
-     (23/47) from `src/` on the GPU host. No HF token needed.
-  2. **Accept the 24 gated-model licenses** (HF UI per-repo, or
-     `huggingface-cli login` + per-repo accept): meta-llama 7 (Llama-1/2/3/3.1/
-     3.2/3.3/4), Qwen 3 (Qwen3/3.5/3.6), DeepSeek 1 (DeepSeek-V4), Mistral org
-     8 (Mistral-Large-2, Mistral-Small-3, Mistral-Medium-3, Mistral-Small-3.2,
-     Ministral-3, Devstral-2, Mistral-Small-4, Mistral-Medium-3.5), Google 5
-     (Gemma-1/2/3/3n/4). Full list: `access` column of
-     `datasets/coverage/gpu_cost_estimate.csv`.
+     (14/22 public) from `src/` on the GPU host. No HF token needed.
+  2. **Accept the 8 subset-gated licenses** (HF UI per-repo, or
+     `huggingface-cli login` + per-repo accept): meta-llama 3 (Llama-1/3.1/3.3),
+     Mistral org 4 (Mistral-Small-3/3.2/4, Devstral-2), Google 1 (Gemma-3n).
   3. **Pass 2 — gated:** export `HF_TOKEN`, re-run without `--skip-gated`;
-     resume is automatic (`done_models()` skips pass-1 results). Manifest order
-     is family-major; the 5 DeepSeek-class (671–700B) run last in fp8 on the
-     141GB cards — the highest-memory step, not a blocker.
-  4. **Validate intake:** `analysis/eval_check.py` (abort on contract
+     resume is automatic (`done_models()` skips pass-1 results). DeepSeek-V3.1/
+     V3.2 (671B class) run in fp8 on the 141GB cards — the highest-memory step,
+     not a blocker.
+  4. **Validate intake:** `analysis/eval_check.py --manifest
+     datasets/coverage/minimal_population.csv` (22 rows, abort on contract
      violation) → Step 4 decomposition.
 - **Synthetic pre-flight (no GPU):** battery S1–S6 (`phase2_simulate.py`)
-  validates the gate before real numbers — currently ALL PASS.
+  validates the gate before real numbers — currently ALL PASS; G3 adds the
+  fixed-design battery in `population_optimizer.py`.
 - **Exit gate (G2):** identifiability audit PASS on real data; partition
   reported **against the register**; θ_M reported separately; small-sample
   limits disclosed.
@@ -139,4 +144,8 @@ entirely on CPU/offline data.
 | G0 | Phase 0 | Crossed design verified | PASS |
 | G1 | Phase 1 | D2 recovery + D3 detectable + liability decision | PASS (GO WITH CHANGES) |
 | G2 | Phase 2 | Real-data audit PASS; partition reported against register | PENDING (GPU eval) |
-| G3 | Pre-submission | Novelty audit + kill test + CFP check | PENDING |
+| G3 | Phase 2 pre-run | Minimum VALID population gate: identifiable + strict-bar + margin confirmation | PASS (22 of 47) |
+| G4 | Pre-submission | Novelty audit + kill test + CFP check | PENDING |
+
+> Note: the pre-submission gate was renumbered G3 → G4 (2026-08-03) when the
+> Phase 2 minimum-valid-population gate took the G3 label.

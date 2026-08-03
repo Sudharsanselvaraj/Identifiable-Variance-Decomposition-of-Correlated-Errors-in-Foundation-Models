@@ -7,8 +7,11 @@ instead of surfacing as a confusing mid-pipeline error.
 
 Contract (written by ``phase2_eval.append_result`` / ``write_samples``):
 - CSV columns: full_name, hf_repo, acc, acc_norm, samples (others tolerated).
-- Exactly one row per connected-subset model (``occupancy.model_table()``): no
-  missing, no extras, no duplicates.
+- Exactly one row per model in the expected manifest: no missing, no extras,
+  no duplicates. By default the manifest is the full 47-model connected subset
+  (``occupancy.model_table()``); pass ``--manifest`` (e.g. the G3
+  ``datasets/coverage/minimal_population.csv``) to validate a reduced-run
+  intake against that subset instead.
 - acc in (0, 1], samples integer > 0, no NaN.
 - Per-question JSONL: one file per model, one row per scored question;
   row count == the CSV ``samples`` cell; ``correct`` in {0, 1} (unscored rows
@@ -19,15 +22,14 @@ and skips the error-similarity panel); every other violation is a hard fail.
 
 Usage (from src/):
     python3 -m lineage_era.phase2_eval_check [--csv ...] [--samples-dir ...]
+    python3 -m lineage_era.phase2_eval_check --manifest datasets/coverage/minimal_population.csv
 """
 from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from ..occupancy import model_table
@@ -257,9 +259,32 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--csv", default="datasets/phase2_eval_results.csv")
     p.add_argument("--samples-dir", default="datasets/eval_samples")
+    p.add_argument("--manifest", default=None,
+                   help="subset CSV with a full_name column (e.g. the G3 "
+                        "minimal_population.csv) to validate against instead "
+                        "of the full 47-model connected subset")
     args = p.parse_args(argv)
 
-    report = validate_eval(Path(args.csv), Path(args.samples_dir))
+    manifest = model_table()
+    if args.manifest:
+        manifest_path = Path(args.manifest)
+        if not manifest_path.exists():
+            print(f"FAIL {args.manifest}: not found")
+            return 1
+        mdf = pd.read_csv(manifest_path)
+        if "full_name" not in mdf.columns:
+            print(f"FAIL {args.manifest}: needs a 'full_name' column")
+            return 1
+        if "kept" in mdf.columns:
+            mdf = mdf[mdf["kept"].astype(str).str.strip().str.lower() == "true"]
+        manifest = mdf[["full_name"]]
+        unknown = sorted(set(manifest["full_name"]) - set(EVAL_MANIFEST))
+        if unknown:
+            print(f"FAIL {args.manifest}: unknown full_name(s): {unknown}")
+            return 1
+
+    report = validate_eval(Path(args.csv), Path(args.samples_dir),
+                           manifest=manifest)
     print(f"eval intake: {report['summary']}")
     for w in report["warnings"]:
         print(f"  WARN {w}")

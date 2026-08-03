@@ -1,11 +1,14 @@
 # Exp02 — Phase 2 Real-Data Decomposition
 
-**Status:** INSTRUMENT BUILT — G1 PASSED (GO WITH CHANGES); path decided
-(fresh MMLU eval, LPM-REML on continuous per-model traits). Awaiting the
-GPU-host eval run; execution runbook in
-[`RESEARCH_PROTOCOL.md`](../00_Project/RESEARCH_PROTOCOL.md) (Stage 2),
+**Status:** INSTRUMENT BUILT — G1 PASSED (GO WITH CHANGES); G3 population gate
+**PASS (22 of 47)**; path decided (fresh MMLU eval on the G3 subset, LPM-REML on
+continuous per-model traits). Awaiting the GPU-host eval run; execution runbook
+in [`RESEARCH_PROTOCOL.md`](../00_Project/RESEARCH_PROTOCOL.md) (Stage 2),
 replacing the earlier external-data procurement plan (fresh-eval decision,
 [`Research_Decision_Log.md`](../00_Project/Research_Decision_Log.md) 2026-08-03).
+The G3 gate (decision log 2026-08-03, `analysis/population_optimizer.py`) showed
+the 22-model minimum valid population clears the strict Phase 1 D2 bar (with
+margin confirmation, register A25), so the run scope is the subset — not all 47.
 
 ## Purpose
 
@@ -45,16 +48,20 @@ contamination, and aggregation caveats in `Dataset_Inventory.md`.
 ## Intake validation + GPU-free dry-run
 
 - `analysis/eval_check.py` validates the runbook output (CSV columns, exactly
-  the 47 connected-subset models, acc/samples sanity, per-question JSONL row
-  counts, `correct` values, common-item-set A15) and **aborts the pipeline with
-  a precise message on any violation** (exit 3). Missing per-question samples
-  are a warning, not a fail.
+  the expected connected-subset models — the full 47 by default or the G3
+  22-row subset with `--manifest datasets/coverage/minimal_population.csv` —
+  acc/samples sanity, per-question JSONL row counts, `correct` values,
+  common-item-set A15) and **aborts the pipeline with a precise message on any
+  violation** (exit 3). Missing per-question samples are a warning, not a fail.
 - `analysis/eval_simulate.py` writes shape-exact simulated eval output
   (`datasets/phase2_eval_results.sim.csv` + `eval_samples.sim/`) from a
   per-question DGP with known family/era/model effects on the accuracy scale,
   so the full real-data path runs GPU-free. Dry-run artifact:
   `src/results/phase2_sim_dryrun/`. Single-seed share recovery is noisy at the
   6-family occupancy (register A21); round-trip checks use mean-over-seeds.
+- `analysis/population_optimizer.py` (G3 gate) pre-validates the *design* on
+  GPU-free fixed-design simulations before any spend; `test_population_optimizer.py`
+  (11 tests) pins the gate invariants + runbook plumbing.
 - Validated by `src/lineage_era/test_eval_check.py` (11 tests: validator
   pass/fail paths + round-trip).
 
