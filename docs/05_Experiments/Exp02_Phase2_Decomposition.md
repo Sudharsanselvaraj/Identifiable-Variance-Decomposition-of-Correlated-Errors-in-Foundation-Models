@@ -1,8 +1,11 @@
 # Exp02 — Phase 2 Real-Data Decomposition
 
-**Status:** DESIGNED — Phase 1 PASSED (GO WITH CHANGES); path decided
-(LPM-REML on continuous per-model traits). Remaining blocker: item-level
-benchmark availability check (procurement path in `Dataset_Inventory.md`).
+**Status:** INSTRUMENT BUILT — G1 PASSED (GO WITH CHANGES); path decided
+(fresh MMLU eval, LPM-REML on continuous per-model traits). Awaiting the
+GPU-host eval run; execution runbook in
+[`RESEARCH_PROTOCOL.md`](../00_Project/RESEARCH_PROTOCOL.md) (Stage 2),
+replacing the earlier external-data procurement plan (fresh-eval decision,
+[`Research_Decision_Log.md`](../00_Project/Research_Decision_Log.md) 2026-08-03).
 
 ## Purpose
 
