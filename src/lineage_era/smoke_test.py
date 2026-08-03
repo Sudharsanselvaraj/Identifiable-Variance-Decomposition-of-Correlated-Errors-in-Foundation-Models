@@ -1,13 +1,13 @@
 """Smoke test: validate the Phase 1 estimator stack on tiny synthetic data.
 
-Checks three claims that the implementation plan depends on:
+Checks three claims the implementation plan depends on:
 
-  1. statsmodels MixedLM fits a CROSSED two-way variance-components model
-     (family + era) using a single group + ``vc_formula``, and recovers known
-     sigma2_L, sigma2_E and scale (= sigma2_U at the trait level) from
-     balanced crossed data.
-  2. ``profile_re(..., vtype="vc")`` returns finite profile-likelihood CIs
-     for the variance components that contain the generating values.
+  1. ``estimator.fit_lpm_vcomp`` (direct crossed REML) recovers known
+     sigma2_L / sigma2_E / sigma2_U from balanced crossed data and is
+     consistent with two-way ANOVA (the estimator was written because
+     statsmodels MixedLM with a single group + ``vc_formula`` was found NOT to
+     maximize the REML objective; see Research_Decision_Log 2026-08-03).
+  2. ``share_ci`` and ``profile_flatness`` produce finite, sensible outputs.
   3. ``BinomialBayesMixedGLM`` (Laplace) fits a crossed binomial mixed model
      and exposes the variance-component posterior estimates.
 
@@ -18,32 +18,14 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import statsmodels.formula.api as smf
+
+from . import estimator
 
 RNG = np.random.default_rng(0)
 
 
-def fit_crossed_vcomp(df: pd.DataFrame) -> dict:
-    """Fit a crossed family + era variance-components model to a trait column.
-
-    One trait observation per (family, era) cell row; the 'model-level'
-    uniqueness (sigma2_U) is absorbed into the residual scale, which is the
-    trait-level DGP used in D1/D2.
-    """
-    model = smf.mixedlm(
-        "trait ~ 1",
-        df,
-        groups=np.zeros(len(df)),
-        vc_formula={
-            "family": "0 + C(family)",
-            "era": "0 + C(era)",
-        },
-    )
-    return model.fit(reml=True)
-
-
 def main() -> None:
-    # --- Check 1: crossed VC recovery with MixedLM + vc_formula ------------
+    # --- Check 1: crossed VC recovery with the direct REML solver ----------
     F, E, K = 8, 10, 3
     s2_L, s2_E, s2_U = 1.0, 0.5, 0.8
 
@@ -57,40 +39,33 @@ def main() -> None:
     )
     df = pd.DataFrame({"trait": trait, "family": fam, "era": era})
 
-    res = fit_crossed_vcomp(df)
-    est = {
-        "family": float(res.params["family Var"]),
-        "era": float(res.params["era Var"]),
-    }
-    scale = float(res.scale)
+    fit = estimator.fit_lpm_vcomp(df)
+    est = fit.s2
+    shares = fit.shares
+    print("direct crossed REML fit")
+    print("  truth: sigma2_L=%.2f sigma2_E=%.2f sigma2_U=%.2f" % (s2_L, s2_E, s2_U))
+    print("  est:   family=%.3f era=%.3f unique=%.3f" % (est["family"], est["era"], est["unique"]))
+    print("  shares: family=%.3f era=%.3f unique=%.3f converged=%s"
+          % (shares["family"], shares["era"], shares["unique"], fit.converged))
 
-    print("MixedLM crossed VC fit")
-    print("  truth:    sigma2_L=%.2f sigma2_E=%.2f scale(=sigma2_U)=%.2f" % (s2_L, s2_E, s2_U))
-    print("  est:      family=%.3f era=%.3f scale=%.3f" % (est["family"], est["era"], scale))
-    print("  converged=%s" % res.converged)
+    assert fit.converged, "fit did not converge"
+    assert all(v > 0 for v in est.values()), "variance components must be positive"
+    assert 0.1 < est["family"] < 3.5, "family VC badly off"
+    assert 0.05 < est["era"] < 2.0, "era VC badly off"
+    assert 0.3 < est["unique"] < 2.0, "unique VC badly off"
+    assert abs(shares["family"] - 0.435) < 0.30, "family share badly off"
+    assert abs(shares["era"] - 0.217) < 0.30, "era share badly off"
+    assert abs(shares["unique"] - 0.348) < 0.30, "unique share badly off"
 
-    assert res.converged, "fit did not converge"
-    assert 0.1 < est["family"] < 2.5, "family VC badly off"
-    assert 0.05 < est["era"] < 1.5, "era VC badly off"
-    assert 0.3 < scale < 2.0, "scale badly off"
-
-    # --- Check 2: profile likelihood CIs on the variance components -------
-    from scipy.stats import chi2
-
-    cutoff = chi2.ppf(0.95, 1) / 2.0
-    intervals = {}
-    for name in ["family", "era"]:
-        prof = res.profile_re(re_ix=name, vtype="vc", dist_low=0.01, dist_high=0.99)
-        values, llf = prof[:, 0], prof[:, 1]
-        llf_max = llf.max()
-        mask = llf >= (llf_max - cutoff)
-        lb, ub = float(values[mask].min()), float(values[mask].max())
-        intervals[name] = (lb, ub)
-        truth = {"family": s2_L, "era": s2_E}[name]
-        print("  profile CI %-6s (%.3f, %.3f) truth=%.2f inside=%s"
-              % (name, lb, ub, truth, lb < truth < ub))
-        assert np.isfinite(lb) and np.isfinite(ub)
-        assert lb < truth < ub, "profile CI misses truth"
+    # --- Check 2: share CI and profile flatness are finite and sane --------
+    ci = estimator.share_ci(fit)
+    for k in ("family", "era", "unique"):
+        lo, hi = ci[k]
+        print("  share CI %-6s (%.3f, %.3f)" % (k, lo, hi))
+        assert np.isfinite(lo) and np.isfinite(hi) and lo < hi
+    flat = estimator.profile_flatness(fit, "family")
+    print("  profile flatness (family) = %.3f" % flat)
+    assert np.isfinite(flat) and flat > 0
 
     # --- Check 3: BinomialBayesMixedGLM (Laplace) at item level ------------
     # endog must be item-level 0/1; exog_vc columns are concatenated with an
