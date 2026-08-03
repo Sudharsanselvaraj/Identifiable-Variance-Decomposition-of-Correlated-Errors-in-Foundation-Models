@@ -1,6 +1,8 @@
 # Threats to Validity
 
 Expanded from the Risk Register (`proposal.md` §11). Organized by validity type.
+Consolidated assumption ledger: `docs/00_Project/ASSUMPTION_REGISTER.md`;
+silent-failure cases with detection: `docs/02_Theory/Failure_Cases.md`.
 
 ## Internal validity
 

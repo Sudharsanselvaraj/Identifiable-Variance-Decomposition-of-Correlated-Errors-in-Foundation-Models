@@ -40,7 +40,7 @@ family bias +5 pp, era +11–28 pp, unique −16 to −18 pp, unique coverage
 12–36%).
 
 The LPM path is therefore a **direct restricted-likelihood maximizer**
-(`CrossedREML` in `src/lineage_era/estimator.py`), accelerated with the
+(`CrossedREML` in `src/lineage_era/analysis/reml.py`), accelerated with the
 Woodbury identity (V = scale·I + C·diag(vc)·C′, C low-rank), with share CIs
 from a Monte-Carlo delta method on the log-variances (numerical Hessian of the
 REML objective, PSD-clipped for sparse designs). It reproduces the ANOVA

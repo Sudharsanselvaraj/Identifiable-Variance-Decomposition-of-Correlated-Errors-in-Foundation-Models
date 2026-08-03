@@ -2,12 +2,15 @@
 
 Everything: RQ → experiment → metrics → statistical test → expected outcome → gate.
 Source: `proposal.md` §7. No results live here (see `docs/06_Results/`).
+The stage-gated end-to-end protocol is `docs/00_Project/RESEARCH_PROTOCOL.md`;
+experiment-level detail for the decomposition engine is
+`docs/05_Experiments/Exp02_Phase2_Decomposition.md`.
 
 ## Phase 1 — Simulation validation of the estimator
 
 - **RQ:** RQ1 (recovery under D1/D2), RQ2 (detectable failure under mis-specification).
 - **Estimator:** direct REML maximizer on crossed variance components (family, era) —
-  `CrossedREML` in `src/lineage_era/estimator.py`. Plan's `statsmodels.MixedLM`
+  `CrossedREML` in `src/lineage_era/analysis/reml.py`. Plan's `statsmodels.MixedLM`
   crossed-vc form was found NOT to maximize the REML objective (see
   `Research_Decision_Log` 2026-08-03) and is not used; the direct solver is
   verified against ANOVA MoM. Binomial GLMM (`BinomBayesMixedGLM`) is the

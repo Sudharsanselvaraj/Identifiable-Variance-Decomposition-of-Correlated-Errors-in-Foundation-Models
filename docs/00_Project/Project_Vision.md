@@ -6,6 +6,10 @@ Understand the statistical structure of correlated failure across public languag
 models well enough to make *informed* mitigation decisions — chiefly
 diversification-as-mitigation — on the basis of a variance partition, not intuition.
 
+This repository is a **scientific instrument** (a variance-decomposition instrument
+for correlated model errors); the current paper is **Study 001** run on it
+(`docs/00_Project/RESEARCH_PROTOCOL.md`).
+
 ## Why this research exists
 
 Public LLMs fail together. The correlation is measured (Kim et al., ICML 2025: ~60%

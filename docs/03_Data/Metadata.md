@@ -1,6 +1,8 @@
 # Metadata
 
 Model-level metadata used to build the design. Source: Phase 0 verification method.
+The environment (era) definition is consolidated in
+`docs/10_Population/Environment_Definition.md`.
 
 ## Verification method (Phase 0)
 

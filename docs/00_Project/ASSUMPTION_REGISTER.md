@@ -1,0 +1,43 @@
+# Assumption Register
+
+Single source of truth for every assumption the Lineage-vs-Era program rests on.
+Each row carries its evidence, confidence, testability, risk, and status. This
+register is created by consolidating assumption statements that previously lived
+scattered across `Mathematical_Formulation.md`, `Identifiability.md`,
+`Structural_Causal_Model.md`, `Threats_to_Validity.md`, `Metadata.md`,
+`Model_Lineages.md`, and `src/lineage_era/occupancy.py` (CAVEATS). New
+assumptions must be added here first and referenced from the doc that uses them.
+
+Status vocabulary:
+- **Verified** — directly evidenced (Phase 0 audit, Phase 1 simulation, battery).
+- **Tested** — the instrument verifies it on simulated data before real data.
+- **Assumed** — stated working assumption, not yet independently verified.
+- **Decided** — a locked research decision (recorded in the Research Decision Log).
+- **Open** — needs data/evidence to move (typically the fresh eval run).
+
+| ID | Assumption | Evidence | Confidence | Testable? | Risk | Status |
+|---|---|---|---|---|---|---|
+| A1 | The family × quarter design is crossed (families span eras; multiple families per era) — the precondition for separating σ²_L, σ²_E, σ²_U | Phase 0 verified contingency table: 6 families × 14 quarters (2023Q1–2026Q2), 11/14 quarters ≥2 families, no family confined to a single era (`occupancy.check_consistency`) | High | Yes — Phase 0 audit + `analysis/identifiability.py` rank/VIF gate | If the design drifts nested (e.g., a family terminates), the partition is undefined | Verified |
+| A2 | Era = public release date, not HF `createdAt` | 4 documented divergences checked by hand (`occupancy.ERA_DIVERGENCES`); rule enforced in `analysis/metadata.py` | High | Yes — audit each added model against the divergence list | `createdAt`-based era silently misplaces 2026 models | Verified (4 known); Open (any other model) |
+| A3 | Family = verified design grouping; lineage edges = documented parent–offspring relations | 5 verified cross-generation `base_model` edges (`occupancy.VERIFIED_EDGES`); rest drawn from technical reports | Medium | Partially — edge set can grow from reports | True cross-generation lineage largely undocumented; constrains θ_M, not θ_P | Verified (design grouping); Partial (lineage edges) |
+| A4 | The connected subset (where lineage and era are separable) is the population; all claims are scoped to it | Definition in `Terminology.md` + `Research_Questions.md`; every RQ states its operating population | High | Yes — membership is computed, not assumed | Generalizing beyond the connected subset | Verified (definition) |
+| A5 | Population = open-weight models only; hosted/closed models excluded | Phase 0 selection (`occupancy.MODELS`); hosted-only (Qwen3.7/3.8-Max, Muse Spark, Magistral Medium, Codestral) excluded | High | Yes — inclusion/exclusion rule in `docs/10_Population/Inclusion_Exclusion.md` | External-validity overreach | Verified |
+| A6 | Llama open-weights lineage terminates at Llama 4 (Apr 2025) | Phase 0 log; auth-gated org inference | Medium | Partially (auth-gated) | Post-2025 era variation carried by the other 5 families only | Verified (real-world fact) |
+| A7 | DeepSeek-V4 is a new independent lineage (ground-up redesign, dropped MLA), not a V3 descendant | Phase 0 log (`occupancy.CAVEATS`) | High | Yes | Treating within-lab generation as within-lineage inflates σ²_L | Verified |
+| A8 | Cross-family teacher leakage (Phi-4 ← GPT-4o data; Gemma 2 9B ← 27B; Gemma 4 ← Gemini 3) belongs in the era channel (shared environment), inflating σ²_E | Documented provenance (`occupancy.CAVEATS`; `Structural_Causal_Model.md`) | Medium | Direction testable via `analysis/sensitivity` leaked-drop | Family independence violated to a known-but-unknown degree | Assumed (direction disclosed) |
+| A9 | Coverage of the connected subset is sufficient: ≥24/47 models AND all 6 families present | Coverage gate in `analysis/population.py` (`COVERAGE_BAR_MODELS=24`); Kim leaderboard overlap = 18/47 FAILS | High | Yes — gate is hard-coded | Thin coverage ⇒ the fresh eval pass is mandatory | Verified (gate); Kim overlap Open |
+| A10 | Linearity/additivity of effects on the liability scale | Phase 1 liability test (continuous → binary threshold); LPM-REML on continuous per-model trait chosen | High | Yes — Phase 1 D1/D2/D3 + battery S1–S3, S5 | Binary mis-specification silently biases components | Tested (Phase 1 verdict) |
+| A11 | The analysis target is a continuous per-model trait (aggregated item responses), not raw binary items | Phase 1 F4: GLMM era-component collapses 20–60% at 47-model occupancy; continuous recovery 98–100% | High | Yes — Phase 1 simulation | Raw-binary modeling is underpowered at this occupancy | Decided |
+| A12 | Random effects (α, β, u) are independent of the regressors (δ) and of each other | Stated in `Mathematical_Formulation.md`; teacher leakage is the documented violation | Low-Medium | Partially — leakage is not directly measurable | Leakage inflates σ²_E; addressed by A8, not silently absorbed | Assumed (violation disclosed) |
+| A13 | No lineage × era interaction is estimated | Interaction not identified from sparse cells (`Identifiability.md`, `Mathematical_Formulation.md`) | High | Yes — `analysis/sensitivity` lxe block quantifies the cell component | Interpreting the partition as exhaustive would overclaim | Decided (excluded by design) |
+| A14 | Per-model trait measurement has finite precision, handled by reported CIs, not ignored | Identifiability condition 4; bootstrap delta + trait-error MC mandatory (`analysis/bootstrap.py`) | High | Yes — CI coverage validated in Phase 1 | Precision is a first-class output, not a footnote | Decided |
+| A15 | A common/comparable item set underlies all per-model traits | Fresh MMLU 5-shot (loglikelihood) on all 47 models (`analysis/trait.py`); one fixed item set | High | Yes — item set is fixed by the runner | Kim's data mixes two leaderboards' MMLU subsets (non-common set) | Assumed (fresh pass); Kim data Open |
+| A16 | Per-model trait measurement errors are independent across models | Standard trait-error MC assumption (`analysis/bootstrap.py`) | Medium | Partially — via sensitivity blocks | Correlated measurement error would move shares jointly | Assumed |
+| A17 | The estimator recovers known ground truth under the actual (unbalanced, sparse) occupancy | Phase 1 D2 (bias ≤2.5pp family, era coverage 98–100% continuous) + battery S6 (0% false abort) | High | Yes — simulation-first gate | Bias/collapse under D2 ⇒ no real-data claim | Verified |
+| A18 | A nested design fails detectably (does not silently "succeed") | Phase 1 D3 (100% detection) + battery S4 (100% abort) | High | Yes — must-fail control | Silent aliasing ⇒ program stopped | Verified |
+| A19 | The `statsmodels.MixedLM` crossed-vc form is NOT used (it does not maximize the REML objective) | Direct comparison: ANOVA == brute-force REML exactly; MixedLM inflated (family 0.61 vs 0.40, era 0.48 vs 0.31) | High | Yes — reproducible | Using MixedLM silently inflates components | Verified (reportable upstream finding) |
+| A20 | The U = 0 boundary is pathological for any variance-component estimator; all battery scenarios use U > 0 | Observed s2_era=7771 at U=0 during battery calibration | High | Yes — battery S1–S3, S5 all U>0 | Boundary estimates dominate the likelihood | Verified (documented) |
+| A21 | Family-share CI coverage is capped below nominal at 6 family levels (df = 5) | Converged battery means: S2 era 0.523 vs 0.60; S5 0.218/0.279 vs 0.33; se/est mean ≈ 72 | High | Yes — battery tolerances S1 0.10 / S2 0.12 / S3 0.08 / S5 0.15 | Over-reading a wide family CI as identifiability failure | Verified (small-sample limit, documented) |
+| A22 | Kim et al. leaderboard values are a sanity cross-check, never validation | Benchmark version / prompting / few-shot differ; deltas expected | High | Yes — `analysis/sensitivity` kim_crosscheck framed as sanity check | Treating Kim deltas as validation | Decided |
+| A23 | θ_P (observational, lineage conditional on era) and θ_M (mechanistic, era held fixed) are never merged | Release date is both mediator and confounder (`Structural_Causal_Model.md`); two-estimand rule | High | Yes — θ_M scoped to co-released + staggered-fine-tune subsets only | Single-estimand collapse conflates the two roles | Decided (non-negotiable) |
+| A24 | The random-effects partition (family, era, model-unique) is the right decomposition of shared model error | This is the program's core research question (RQ0) | Medium | Yes — the entire Phase 2 instrument | The partition is degenerate (RQ3 refuted) | Open (pending real data) |

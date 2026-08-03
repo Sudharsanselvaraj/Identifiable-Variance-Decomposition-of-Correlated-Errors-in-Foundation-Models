@@ -4,7 +4,7 @@ The estimator class and the decision path. Source: `proposal.md` §7.1.
 
 ## Estimator
 
-`CrossedREML` (`src/lineage_era/estimator.py`) — direct restricted-likelihood
+`CrossedREML` (`src/lineage_era/analysis/reml.py`) — direct restricted-likelihood
 (REML) maximizer over log-variances for crossed random effects (family, era),
 Woodbury-accelerated, share CIs via Monte-Carlo delta on the log-variances.
 This is the same estimator class as TEE's G-theory decompositions (Messing,
@@ -56,7 +56,7 @@ validated estimator (`CrossedREML`); GLMM is demoted to robustness check.
 - Python 3.11 (numpy 1.26.4, scipy 1.13.1, pandas 2.2.2); no R.
 - `statsmodels` is installed but NOT used for the LPM path: its single-group +
   `vc_formula` form does not maximize the crossed REML objective (Phase 1
-  finding). LPM-REML = direct REML maximizer in `src/lineage_era/estimator.py`
+  finding). LPM-REML = direct REML maximizer in `src/lineage_era/analysis/reml.py`
   (Woodbury-accelerated, verified against ANOVA MoM). Binomial GLMM
   (`BinomBayesMixedGLM`) remains the item-level reference.
 - Deliverables: `phase1_simulation.py`, `PHASE1_REPORT.md` (bias tables, verdicts).

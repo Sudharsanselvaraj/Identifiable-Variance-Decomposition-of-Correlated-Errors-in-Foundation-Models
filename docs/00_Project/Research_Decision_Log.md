@@ -122,7 +122,7 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 
 - **Decision:** Do NOT use statsmodels `MixedLM` (single group + `vc_formula`)
   for the crossed family × era variance-component model. Replace with a direct
-  REML maximizer in `src/lineage_era/estimator.py` (Woodbury-accelerated),
+  REML maximizer in `src/lineage_era/analysis/reml.py` (Woodbury-accelerated),
   verified to agree exactly with two-way ANOVA method-of-moments on balanced
   crossed data.
 - **Reason:** MixedLM does not maximize its own REML objective for crossed
@@ -219,7 +219,7 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 
 - **Decision:** Recorded coverage outcome and the resulting procurement gate
   (pending user cost decision). Phase 2 data assembly implemented as
-  `src/lineage_era/phase2_data.py` (reconciliation map + coverage gate) and run
+  `src/lineage_era/analysis/population.py` (reconciliation map + coverage gate) and run
   against Kim et al. (arXiv:2506.07962, CC BY 4.0) MMLU accuracy files.
 - **Coverage result:** 18/47 connected-subset models (38.3%). By family:
   Llama 5, Qwen 3, DeepSeek 0, Mistral 5, Phi 3, Gemma 2. Gates: models
@@ -278,6 +278,40 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 - **Risk:** compute/budget; mitigated by the loglikelihood scoring (fast) and
   by it being the same benchmark Kim et al. used.
 - **Status:** benchmark decision ACCEPTED; run venue / HF token / cost open.
+
+---
+
+## 2026-08-03 — Reviewer restructure adopted: analysis/ package + consolidated docs
+
+- **Decision:** Adopt the 10/10 review's restructuring recommendations as a
+  documentation/engineering pass, **without** renumbering the repository's phase
+  scheme (0–3) or touching the research design:
+  1. Add `docs/00_Project/ASSUMPTION_REGISTER.md` (single source of truth for
+     assumptions; ID/Evidence/Confidence/Testable/Risk/Status) and
+     `docs/00_Project/RESEARCH_PROTOCOL.md` (stage-gated protocol; includes the
+     phase-mapping note to the reviewer's 5-phase vocabulary).
+  2. Add `docs/10_Population/` (8 files) — consolidating population/lineage/
+     environment/trait/selection/inclusion-exclusion content that was scattered
+     across Terminology, Model_Lineages, Metadata, Dataset_Inventory.
+  3. Add `docs/02_Theory/Identifiability_Assumptions.md` (A + Evidence/Violation/
+     Impact) and `docs/02_Theory/Failure_Cases.md` (Lineage=Era, unknown RLHF,
+     hidden synthetic overlap + detector mapping).
+  4. Restructure Python into an `analysis/` package (`trait, metadata,
+     population, identifiability, reml, bootstrap, plots, report`) with the old
+     `phase2_*.py` / `estimator.py` names kept as thin re-export shims, so the
+     CLI and runbook are unchanged. Verified: py_compile, smoke_test, battery
+     ALL PASS, full synthetic pipeline dry-run (report identical).
+- **Reason:** the review rated documentation/code-organization 9/10 and 8.5/10;
+  its substantive asks were a research protocol + assumption register and a
+  clearer code layout. The underlying content already existed but was scattered;
+  the pass is consolidation, not new science.
+- **Alternatives considered:** renumbering to the reviewer's 5-phase scheme
+  (rejected: ripples through code, decision log, and gates for no scientific
+  gain); `analysis/` refactor deferred until Phase 2 results (rejected: shims
+  make it safe to do now, and it is cheaper before more code lands).
+- **Risk:** low — behavioral equivalence verified (battery + synthetic pipeline
+  byte-identical outputs); shims preserve every import path.
+- **Status:** ACCEPTED, implemented.
 
 ---
 

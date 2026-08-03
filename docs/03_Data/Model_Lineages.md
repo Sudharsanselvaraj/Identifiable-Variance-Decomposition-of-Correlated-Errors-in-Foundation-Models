@@ -3,6 +3,9 @@
 Source: Phase 0 log (verbatim in `proposal.md` §14). This is the verified record of what
 we know about ancestry in the open-model population — and its limits.
 
+Consolidated lineage definition: `docs/10_Population/Lineage_Definition.md`;
+family/era vocabulary: `docs/10_Population/Population_Definition.md`.
+
 ## Verified contingency table (public release quarter, open-weight general models)
 
 | Family | 2023Q1 | Q2 | Q3 | Q4 | 2024Q1 | Q2 | Q3 | Q4 | 2025Q1 | Q2 | Q3 | Q4 | 2026Q1 | Q2 |

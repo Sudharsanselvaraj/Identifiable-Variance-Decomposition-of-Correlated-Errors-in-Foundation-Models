@@ -4,6 +4,10 @@ Controlled vocabulary for the project. Definitions here are binding; drift from 
 terms is a documentation error. Terms marked **[Phase 3]** are gated behind Phase 2
 surviving and appear in the base documents only as explicitly-labeled notes.
 
+Population-level definitions are consolidated in `docs/10_Population/`
+(Population/Lineage/Environment/Trait/Selection/Inclusion-Exclusion definitions);
+the assumption ledger is `docs/00_Project/ASSUMPTION_REGISTER.md`.
+
 ## Core settled terms
 
 | Term | Definition | Notes |
