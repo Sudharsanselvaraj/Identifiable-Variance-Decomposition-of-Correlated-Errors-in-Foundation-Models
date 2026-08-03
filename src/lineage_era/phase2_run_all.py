@@ -58,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--batch", default="auto")
     p.add_argument("--only", default=None, help="run one model")
     p.add_argument("--skip-gated", action="store_true")
+    p.add_argument("--no-samples", action="store_true",
+                   help="skip per-question JSONL capture (aggregate CSV only)")
     args = p.parse_args(argv)
 
     if args.only is not None and args.only not in EVAL_MANIFEST:
@@ -92,7 +94,8 @@ def main(argv: list[str] | None = None) -> int:
               flush=True)
         try:
             stats = run_mmlu(full_name, None, args.device, args.dtype,
-                             args.attn, None, batch)
+                             args.attn, None, batch,
+                             log_samples=not args.no_samples)
             print(f"[ok] {full_name}: acc={stats['acc']} "
                   f"acc_norm={stats['acc_norm']} ({stats['samples']} samples)",
                   flush=True)

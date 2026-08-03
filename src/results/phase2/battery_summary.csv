@@ -1,0 +1,7 @@
+scenario,pass,notes
+S1,True,share_family=0.529
+S2,True,share_era=0.556
+S3,True,share_family=0.322 share_era=0.343
+S4,True,abort rate 100%
+S5,True,share_family=0.254 share_era=0.266
+S6,True,abort rate 0%

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 import sys
 from datetime import date
@@ -32,6 +33,7 @@ from .occupancy import FAMILIES, MODELS
 
 DATASETS = Path(__file__).resolve().parents[2] / "datasets"
 RESULTS_CSV = DATASETS / "phase2_eval_results.csv"
+SAMPLES_DIR = DATASETS / "eval_samples"
 
 # full_name -> (hf repo, approximate params, access).
 # access: "public" = token-free; "gated" = HF token + license acceptance.
@@ -148,8 +150,58 @@ def _model_args(full_name: str, repo: str | None, dtype: str | None, attn: str) 
     return args
 
 
+def _samples_to_rows(full_name: str, repo: str, samples: dict) -> list[dict]:
+    """Flatten lm_eval per-task samples into one row per question.
+
+    Keeps item-level data (model_id, question, subject, gold answer, predicted
+    choice, per-choice logprobs) so the Phase 2 engine can do question-level
+    bootstrap, subject-wise decomposition, and item-level GLMM robustness
+    without re-running the GPU evals.
+    """
+    rows = []
+    for task, task_samples in samples.items():
+        subject = task.removeprefix("mmlu_").replace("_", " ")
+        for s in task_samples:
+            doc = s.get("doc", {})
+            resps = s.get("resps")
+            logprobs = []
+            if resps:
+                logprobs = [float(r[0]) if isinstance(r, (list, tuple)) else float(r)
+                            for r in resps]
+            predicted = None
+            if logprobs:
+                predicted = int(max(range(len(logprobs)), key=logprobs.__getitem__))
+            answer = doc.get("answer")
+            rows.append({
+                "full_name": full_name,
+                "hf_repo": repo,
+                "subject": doc.get("subject") or subject,
+                "question": doc.get("question", ""),
+                "choices": json.dumps(doc.get("choices", [])),
+                "answer": answer,
+                "predicted": predicted,
+                "correct": int(predicted == answer) if answer is not None else None,
+                "choice_logprobs": json.dumps(logprobs),
+            })
+    return rows
+
+
+def write_samples(full_name: str, repo: str, samples: dict) -> Path | None:
+    """Append per-question JSONL for one model under datasets/eval_samples/."""
+    rows = _samples_to_rows(full_name, repo, samples)
+    if not rows:
+        return None
+    SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+    out = SAMPLES_DIR / f"{full_name}__{repo.replace('/', '__')}.jsonl"
+    with open(out, "w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    return out
+
+
 def run_mmlu(full_name: str, limit: int | None, device: str, dtype: str | None,
-             attn: str, repo: str | None, batch: int | str) -> dict:
+             attn: str, repo: str | None, batch: int | str,
+             log_samples: bool = True) -> dict:
     from lm_eval import simple_evaluate
 
     kwargs = dict(
@@ -159,12 +211,17 @@ def run_mmlu(full_name: str, limit: int | None, device: str, dtype: str | None,
         num_fewshot=5,
         device=device,
         batch_size=batch,
-        log_samples=False,
+        log_samples=log_samples,
     )
     if limit is not None:
         kwargs["limit"] = limit
     results = simple_evaluate(**kwargs)
     res = results["results"]["mmlu"]
+    if log_samples and "samples" in results:
+        rrepo = repo if repo is not None else EVAL_MANIFEST[full_name][0]
+        out = write_samples(full_name, rrepo, results["samples"])
+        if out is not None:
+            print(f"wrote {out.stat().st_size / 1e6:.1f} MB of question samples -> {out}")
     return {
         "acc": res.get("acc,none"),
         "acc_norm": res.get("acc_norm,none"),
@@ -204,6 +261,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dtype", default=None, help="e.g. bfloat16, float16")
     p.add_argument("--attn", default="eager", help="eager | sdpa (eager avoids MPS buffer errors)")
     p.add_argument("--batch", default="auto", help="batch size; 2-8 on CPU/MPS pilots")
+    p.add_argument("--no-samples", action="store_true",
+                   help="skip per-question JSONL capture (aggregate CSV only)")
     args = p.parse_args(argv)
 
     if args.manifest:
@@ -227,7 +286,7 @@ def main(argv: list[str] | None = None) -> int:
 
     batch = int(args.batch) if args.batch.isdigit() else args.batch
     stats = run_mmlu(args.model, args.limit, args.device, args.dtype, args.attn,
-                     args.repo, batch)
+                     args.repo, batch, log_samples=not args.no_samples)
     print(f"{args.model}: acc={stats['acc']} acc_norm={stats['acc_norm']} "
           f"({stats['samples']} samples)")
     append_result(args.model, stats, args.repo)
