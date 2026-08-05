@@ -9,9 +9,9 @@ source. Checked items are done.
       and Technology, Tiruchirappalli, Tamil Nadu 621105, India.
 - [x] **Bibliography** — all entries match `docs/01_Literature/Literature_Map.md` and
       arXiv records (verified 2026-08-05). No fabricated references.
-- [x] **Figures** — `figs/fig_dag.png`, `figs/fig_design.png`, `figs/fig_g3_trace.png`
-      real; `figs/fig_similarity.png`, `figs/fig_partition.png` are labeled pending
-      placeholders. Template `fig1.png` never used.
+- [x] **Figures** — all five figure slots in `manuscript.tex` reference
+      `figs/fig_placeholder.png`; final author-submitted artwork is added later.
+      Template `fig1.png` never used.
 - [x] **Abstract / conclusion / §VI status** — honest-methods framing applied.
 - [ ] **History dates** — `\history{...}` placeholders (Date of publication / current
       version) set at submission.
@@ -21,9 +21,9 @@ source. Checked items are done.
 - [ ] **Biographies** — names filled; degree/interest text is a marked placeholder.
       Do not invent degrees or research interests.
 - [ ] **Acknowledgment** — currently a marked placeholder.
-- [ ] **Pending figures** — replace `figs/fig_similarity.png` and
-      `figs/fig_partition.png` with the real eval-pass outputs, and un-mark their
-      captions, ONLY after the pre-registered measurement pass completes.
+- [ ] **Pending figures** — replace `figs/fig_placeholder.png` (per figure slot) with
+      the final author artwork; un-mark the pending captions ONLY after the
+      pre-registered measurement pass completes for the eval-dependent figures.
 - [ ] **Pending results** — fill the §VI.D `(TBD)` entries from the eval pass; remove
       the "No empirical claim is made" status callout only when real results exist.
 - [ ] **Recompile + verify** — two pdflatex passes, 0 errors, all refs/cites resolve.
