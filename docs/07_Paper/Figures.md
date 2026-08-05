@@ -13,6 +13,16 @@ block at its own file).
 | F4 | Pairwise error-overlap panel (phi, null ladder) | `fig_placeholder.png` | Placeholder — pending eval pass |
 | F5 | σ²_L / σ²_E / σ²_U shares with CI error bars (Phase 2) | `fig_placeholder.png` | Placeholder — pending eval pass |
 
+## Staged candidates (real content, not wired in)
+
+`fig_design.png` and `fig_g3_trace.png` are staged real candidates (Phase 0
+occupancy; deterministic G3 trace) produced by
+`python3 -m lineage_era.stage_paper_figures --results-dir results/phase2`.
+`fig_partition.png` / `fig_similarity.png` are only staged after the real eval
+pass (the synthetic dry-run partition is deliberately NOT staged). The
+manuscript still references `fig_placeholder.png`; wiring these in is a file
+swap once final artwork is decided.
+
 ## Rules
 
 - No figure that contradicts a table; figures render table numbers.
