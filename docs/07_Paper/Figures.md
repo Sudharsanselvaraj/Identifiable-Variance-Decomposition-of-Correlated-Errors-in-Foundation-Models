@@ -1,17 +1,21 @@
 # Figures
 
-Every planned figure. Kept here so the paper's visual claims are pre-registered, not
-invented post-hoc.
+Kept here so the paper's visual claims are pre-registered, not invented post-hoc.
+Files live in `docs/07_Paper/figs/`; all are generated (see the figure scripts in
+`src/lineage_era/`) and referenced by `manuscript.tex`.
 
-| # | Figure | Content | Status |
+| # | File | Content | Status |
 |---|---|---|---|
-| F1 | Causal DAG | family → release date (mediator/confounder) → error trait; era → error trait; teacher leakage → era channel | Spec (as `docs/02_Theory/Structural_Causal_Model.md`) |
-| F2 | Phase 0 design heatmap | 6 families × 14 quarters occupancy (from the contingency table); highlights the crossed cells | Source table in `docs/03_Data/Model_Lineages.md` |
-| F3 | Partition bar chart | σ²_L / σ²_E / σ²_U shares with CI error bars (Phase 2) | Pending Phase 2 |
-| F4 | Era-convergence entry | Era share (or shared-error level) by quarter — a table entry, not a standalone plot | Pending Phase 2 |
-| F5 | Simulation recovery curves | Bias vs. occupancy under D1/D2; D3 aliasing detection | Pending Phase 1 |
+| F1 | `fig_dag.png` | Causal DAG: family → release date (mediator/confounder) → error trait; era → error trait; teacher leakage → era channel | Real schematic (documented SCM) |
+| F2 | `fig_design.png` | Phase 0 design heatmap: 6 families × 14 quarters occupancy (47 models) | Real (from `occupancy.design_counts`) |
+| F3 | `fig_partition.png` | σ²_L / σ²_E / σ²_U shares with CI error bars (Phase 2) | Labeled pending placeholder → `variance_shares.pdf` after eval pass |
+| F4 | `fig_g3_trace.png` | G3 gate trace: era-share bias vs population size (47/21/22), confirmation values | Real (from committed `g3_report.md` trace) |
+| F5 | `fig_similarity.png` | Pairwise error-overlap panel (phi, null ladder) | Labeled pending placeholder → error-overlap outputs after eval pass |
 
 ## Rules
 
 - No figure that contradicts a table; figures render table numbers.
 - The era-convergence trend is never promoted to a standalone headline figure.
+- Pending figures are explicitly labeled "pending the eval pass" in both the file and
+  the caption; no placeholder is ever shown as a result.
+- Audit integrity: the template's `fig1.png` (magnetization sample) is never used.

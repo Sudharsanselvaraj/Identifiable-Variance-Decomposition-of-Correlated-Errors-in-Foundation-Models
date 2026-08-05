@@ -2,7 +2,7 @@
 22 of 47 models) on a GPU host, with resume.
 
 This is the artifact the user runs where compute lives (decision 2026-08-03;
-G3 gate 2026-08-03 prescribes `datasets/coverage/minimal_population.csv`,
+G3 gate 2026-08-03 prescribes `datasets/coverage/minimum_valid_population.csv`,
 22 models, unless a bigger run is wanted). It loops the manifest in
 `phase2_eval.py`, skips models already present in
 `datasets/phase2_eval_results.csv`, and continues past per-model failures.
@@ -22,8 +22,8 @@ Options:
     --batch        lm-eval batch size, default auto
     --only NAME    run a single connected-subset model, e.g. "Phi-2"
     --subset CSV   run only the models whose full_name is in CSV (G3 gate:
-                   datasets/coverage/minimal_population.csv). Defaults to that
-                   G3 file when present, else the full 47.
+                   datasets/coverage/minimum_valid_population.csv). Defaults to
+                   that G3 file when present, else the full 47.
     --skip-gated   skip the gated models (no HF_TOKEN needed)
 """
 
@@ -45,7 +45,7 @@ from .phase2_eval import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-G3_SUBSET_CSV = REPO_ROOT / "datasets" / "coverage" / "minimal_population.csv"
+G3_SUBSET_CSV = REPO_ROOT / "datasets" / "coverage" / "minimum_valid_population.csv"
 
 RESULTS_FIELDS = [
     "date", "full_name", "hf_repo", "benchmark", "fewshot",
@@ -90,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--only", default=None, help="run one model")
     p.add_argument("--subset", default=str(G3_SUBSET_CSV),
                    help="CSV with a full_name column (G3 minimal population); "
-                        "defaults to datasets/coverage/minimal_population.csv")
+                        "defaults to datasets/coverage/minimum_valid_population.csv")
     p.add_argument("--skip-gated", action="store_true")
     p.add_argument("--no-samples", action="store_true",
                    help="skip per-question JSONL capture (aggregate CSV only)")

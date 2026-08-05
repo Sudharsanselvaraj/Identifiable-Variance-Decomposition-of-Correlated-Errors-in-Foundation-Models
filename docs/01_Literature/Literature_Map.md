@@ -118,3 +118,33 @@ Threat level
 - **Why listed:** Claims the term "convergent evolution" for a different phenomenon. We
   avoid the term entirely.
 - **Threat:** Low (term-collision only).
+
+## 9. Behavioral Entanglement — Kuai et al.
+
+- **Paper:** Kuai, Jiang, Zhu, Wang, Wu, Li, Zhang, Liu, Tu, Fan, Zhou. arXiv:2604.07650 (Texas A\&M). Apr 2026. Verified 2026-08-05.
+- **Contribution:** Statistical framework for auditing behavioral independence of LLMs
+  (entanglement indices across 6 families); reweighting verifier ensembles by the
+  estimated independence structure.
+- **Object:** Independence audit of behaviors; not a trait-level variance decomposition.
+- **Limitation:** Stops at an independence audit / reweighting; no $\sigma^2_L/\sigma^2_E$
+  partition of error traits.
+- **Future work they name:** Larger-scale entanglement measurement.
+- **Competition:** Low--medium. Same population (open-weight families), different estimand.
+- **Threat:** Medium (the "independence/entanglement" framing is close). Neutralized by
+  object difference: entanglement index vs. variance partition with a pre-analysis gate.
+- **Added to manuscript:** Related Work (differentiation table row + paragraph), verified.
+
+## 10. Co-Failure Ceiling — Chen
+
+- **Paper:** Josef Chen. arXiv:2606.27288. Jun 2026. Verified 2026-08-05.
+- **Contribution:** Across 67 frontier models and three combination schemes (routing,
+  voting, MoA), pairwise error correlation underestimates the ensemble co-failure
+  ceiling ($\beta$ = all-wrong rate) by roughly 2.25$\times$; introduces the
+  co-failure ceiling as the operative risk.
+- **Object:** Ensemble failure probability given shared errors.
+- **Limitation:** Reports the ceiling as a function of observed correlation; does not
+  decompose the correlation into lineage/era components.
+- **Competition:** Complementary — our partition estimates the lineage and era shares
+  whose sum governs the ceiling on the connected population.
+- **Threat:** Low--medium (2026 neighbor; reviewer cited a news report of it).
+- **Added to manuscript:** Discussion (RQ6), verified.

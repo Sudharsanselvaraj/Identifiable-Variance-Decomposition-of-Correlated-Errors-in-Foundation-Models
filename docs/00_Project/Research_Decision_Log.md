@@ -429,7 +429,7 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 - **Cost:** ~710 vs 2154 est. single-GPU minutes (67% cut, ~1,444 min saved);
   GPU spend is no longer "scientifically justified only at 47" — 22 suffice.
 - **Evidence:** `src/lineage_era/analysis/population_optimizer.py` (optimizer +
-  validator), `datasets/coverage/minimal_population.csv` (kept/dropped +
+  validator), `datasets/coverage/minimum_valid_population.csv` (kept/dropped +
   per-model reason), `datasets/coverage/g3_report.md` (search trace + validation
   table), `src/lineage_era/test_population_optimizer.py` (11 tests).
 - **Wiring:** `phase2_run_all.py --subset` now defaults to the G3 CSV; `eval_check
@@ -449,7 +449,7 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 
 - **Phase 2 fresh eval pass — RUN EXECUTION (in progress, Path A + G3 gate locked).**
   Scope: the G3 minimum valid population — **22 of 47 models** (MMLU 5-shot;
-  `datasets/coverage/minimal_population.csv`, see the G3 entry above). The
+  `datasets/coverage/minimum_valid_population.csv`, see the G3 entry above). The
   artifact-availability audit CONFIRMED 0/47 public per-question reuse
   (`datasets/coverage/artifact_audit.csv` + `datasets/coverage/gpu_cost_estimate.csv`).
   Runbook built: `src/lineage_era/phase2_run_all.py` (GPU orchestrator with
@@ -457,7 +457,7 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
   + manifest `src/lineage_era/phase2_eval.py`. User will execute it on a GPU host
   with an HF token (licenses accepted for the 8 gated models in the subset);
   results land in `datasets/phase2_eval_results.csv` and are validated at intake
-  with `eval_check --manifest datasets/coverage/minimal_population.csv`. Per-model
+  with `eval_check --manifest datasets/coverage/minimum_valid_population.csv`. Per-model
   caveats documented: Phi-1/1.5/2 need `max_length=2048,truncation=True`;
   sliding-window models use `sdpa`. Once the CSV is back, proceed to Step 4
   (`phase2_decomposition.py` -> `PHASE2_REPORT.md`).

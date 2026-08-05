@@ -10,7 +10,7 @@ Contract (written by ``phase2_eval.append_result`` / ``write_samples``):
 - Exactly one row per model in the expected manifest: no missing, no extras,
   no duplicates. By default the manifest is the full 47-model connected subset
   (``occupancy.model_table()``); pass ``--manifest`` (e.g. the G3
-  ``datasets/coverage/minimal_population.csv``) to validate a reduced-run
+  ``datasets/coverage/minimum_valid_population.csv``) to validate a reduced-run
   intake against that subset instead.
 - acc in (0, 1], samples integer > 0, no NaN.
 - Per-question JSONL: one file per model, one row per scored question;
@@ -22,7 +22,7 @@ and skips the error-similarity panel); every other violation is a hard fail.
 
 Usage (from src/):
     python3 -m lineage_era.phase2_eval_check [--csv ...] [--samples-dir ...]
-    python3 -m lineage_era.phase2_eval_check --manifest datasets/coverage/minimal_population.csv
+    python3 -m lineage_era.phase2_eval_check --manifest datasets/coverage/minimum_valid_population.csv
 """
 from __future__ import annotations
 
@@ -261,7 +261,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--samples-dir", default="datasets/eval_samples")
     p.add_argument("--manifest", default=None,
                    help="subset CSV with a full_name column (e.g. the G3 "
-                        "minimal_population.csv) to validate against instead "
+                        "minimum_valid_population.csv) to validate against instead "
                         "of the full 47-model connected subset")
     args = p.parse_args(argv)
 

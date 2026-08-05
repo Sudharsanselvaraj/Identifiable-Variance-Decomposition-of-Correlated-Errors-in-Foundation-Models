@@ -52,7 +52,7 @@ G3 gate (2026-08-03) cut the scope to 22 models (~67% of that cost).
 - **Benchmark:** MMLU 5-shot (loglikelihood scoring; matches Kim et al. and the
   paper's framing). `cais/mmlu` dataset (all 57 subjects) downloaded.
 - **Scope — G3 minimum valid population (22 of 47):** `datasets/coverage/
-  minimal_population.csv` (built by `src/lineage_era/analysis/
+  minimum_valid_population.csv` (built by `src/lineage_era/analysis/
   population_optimizer.py`; report `datasets/coverage/g3_report.md`). The
   structural minimum (21) is identifiable but sits exactly on the strict bar
   (knife-edge, register A25), so the first confirmed-clearing population is 22.
@@ -69,7 +69,7 @@ G3 gate (2026-08-03) cut the scope to 22 models (~67% of that cost).
   values are also at 2048, so truncation is the faithful reading). Sliding-window
   models (Qwen, Mistral) should use `sdpa` on GPU, not `eager`.
 - **Intake validation:** `python3 -m lineage_era.phase2_eval_check --manifest
-  datasets/coverage/minimal_population.csv` (validates the 22-row intake against
+  datasets/coverage/minimum_valid_population.csv` (validates the 22-row intake against
   the G3 subset instead of the full 47).
 - **Environment:** dev Mac cannot run evals at usable speed (M5 CPU, 17 GB,
   MPS allocator errors). Full run needs a GPU host; local runs are pilots only

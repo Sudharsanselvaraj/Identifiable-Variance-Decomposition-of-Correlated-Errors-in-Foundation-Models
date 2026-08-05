@@ -1,18 +1,18 @@
 family,quarter,short_name,full_name,kept,reason
-Llama,2023Q1,L1,Llama-1,True,replication: required by the strict era-recovery gate
-Phi,2023Q2,1,Phi-1,True,replication: required by the strict era-recovery gate
+Llama,2023Q1,L1,Llama-1,True,required: era-window coverage
+Phi,2023Q2,1,Phi-1,True,required: era-window coverage
 Llama,2023Q3,L2,Llama-2,False,dropped: redundant in-cell replication (identifiability unchanged)
-Mistral,2023Q3,7B,Mistral-7B,True,replication: required by the strict era-recovery gate
-Phi,2023Q3,1.5,Phi-1.5,True,replication: required by the strict era-recovery gate
-Qwen,2023Q3,7B,Qwen-7B,True,replication: required by the strict era-recovery gate
+Mistral,2023Q3,7B,Mistral-7B,True,required: structural identifiability (rank/VIF)
+Phi,2023Q3,1.5,Phi-1.5,True,required: structural identifiability (rank/VIF)
+Qwen,2023Q3,7B,Qwen-7B,True,required: structural identifiability (crossing)
 Mistral,2023Q4,Mixtral,Mixtral-8x7B,False,dropped: redundant in-cell replication (identifiability unchanged)
-Phi,2023Q4,2,Phi-2,True,replication: required by the strict era-recovery gate
+Phi,2023Q4,2,Phi-2,True,required: era-window coverage
 Gemma,2024Q1,1,Gemma-1,False,dropped: redundant in-cell replication (identifiability unchanged)
-Qwen,2024Q1,1.5,Qwen1.5,True,replication: required by the strict era-recovery gate
+Qwen,2024Q1,1.5,Qwen1.5,True,required: era-window coverage
 Gemma,2024Q2,2,Gemma-2,False,dropped: redundant in-cell replication (identifiability unchanged)
 Llama,2024Q2,L3,Llama-3,False,dropped: redundant in-cell replication (identifiability unchanged)
 Mistral,2024Q2,8x22B,Mixtral-8x22B,False,dropped: redundant in-cell replication (identifiability unchanged)
-Phi,2024Q2,3,Phi-3,True,replication: required by the strict era-recovery gate
+Phi,2024Q2,3,Phi-3,True,required: era-window coverage
 Qwen,2024Q2,2,Qwen2,False,dropped: redundant in-cell replication (identifiability unchanged)
 Llama,2024Q3,3.1,Llama-3.1,True,edge-or-chain-forced (theta_M)
 Llama,2024Q3,3.2,Llama-3.2,False,dropped: redundant in-cell replication (identifiability unchanged)
@@ -27,13 +27,13 @@ DeepSeek,2025Q1,R1,DeepSeek-R1,False,dropped: redundant in-cell replication (ide
 Gemma,2025Q1,3,Gemma-3,False,dropped: redundant in-cell replication (identifiability unchanged)
 Mistral,2025Q1,S3,Mistral-Small-3,True,edge-or-chain-forced (theta_M)
 Mistral,2025Q1,S3.1,Mistral-Small-3.1,True,edge-or-chain-forced (theta_M)
-Gemma,2025Q2,3n,Gemma-3n,True,replication: required by the strict era-recovery gate
+Gemma,2025Q2,3n,Gemma-3n,True,required: structural identifiability (crossing)
 Llama,2025Q2,L4,Llama-4,False,dropped: redundant in-cell replication (identifiability unchanged)
 Mistral,2025Q2,M3,Mistral-Medium-3,False,dropped: redundant in-cell replication (identifiability unchanged)
 Mistral,2025Q2,S3.2,Mistral-Small-3.2,True,edge-or-chain-forced (theta_M)
 Phi,2025Q2,4-r,Phi-4-reasoning-plus,True,edge-or-chain-forced (theta_M)
 Qwen,2025Q2,3,Qwen3,False,dropped: redundant in-cell replication (identifiability unchanged)
-DeepSeek,2025Q3,V3.1,DeepSeek-V3.1,True,replication: required by the strict era-recovery gate
+DeepSeek,2025Q3,V3.1,DeepSeek-V3.1,True,required: era-window coverage
 DeepSeek,2025Q4,V3.2,DeepSeek-V3.2,True,edge-or-chain-forced (theta_M)
 Mistral,2025Q4,Dev2,Devstral-2,True,edge-or-chain-forced (theta_M)
 Mistral,2025Q4,Min3,Ministral-3,False,dropped: redundant in-cell replication (identifiability unchanged)
@@ -43,6 +43,6 @@ Phi,2026Q1,4-r-v,Phi-4-reasoning-vision-15B,True,edge-or-chain-forced (theta_M)
 Qwen,2026Q1,3.5,Qwen3.5,False,dropped: redundant in-cell replication (identifiability unchanged)
 DeepSeek,2026Q2,V4,DeepSeek-V4,False,dropped: redundant in-cell replication (identifiability unchanged)
 Gemma,2026Q2,4,Gemma-4,False,dropped: redundant in-cell replication (identifiability unchanged)
-Gemma,2026Q2,4-12B,Gemma-4-12B,True,replication: required by the strict era-recovery gate
+Gemma,2026Q2,4-12B,Gemma-4-12B,True,required: era-window coverage
 Mistral,2026Q2,M3.5,Mistral-Medium-3.5,False,dropped: redundant in-cell replication (identifiability unchanged)
 Qwen,2026Q2,3.6,Qwen3.6,False,dropped: redundant in-cell replication (identifiability unchanged)

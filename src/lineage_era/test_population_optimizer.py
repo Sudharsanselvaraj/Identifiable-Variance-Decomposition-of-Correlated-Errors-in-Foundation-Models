@@ -12,6 +12,7 @@ Run from the repository root:
 from __future__ import annotations
 
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -73,7 +74,7 @@ def test_search_minimum_below_full_and_valid() -> None:
 
 def test_winner_hard_constraints_hold() -> None:
     """The committed winner: families, quarters, span, forced, crossed."""
-    csv_path = po.REPO_ROOT / "datasets" / "coverage" / "minimal_population.csv"
+    csv_path = po.REPO_ROOT / "datasets" / "coverage" / "minimum_valid_population.csv"
     df = pd.read_csv(csv_path)
     kept = df.loc[df["kept"], "full_name"].tolist()
     sub = po.subset_table(kept)
@@ -87,12 +88,81 @@ def test_winner_hard_constraints_hold() -> None:
 
 
 def test_winner_keeps_theta_m_chain() -> None:
-    csv_path = po.REPO_ROOT / "datasets" / "coverage" / "minimal_population.csv"
+    csv_path = po.REPO_ROOT / "datasets" / "coverage" / "minimum_valid_population.csv"
     df = pd.read_csv(csv_path)
     kept = set(df.loc[df["kept"], "full_name"])
     for name in po.MISTRAL_SMALL_CHAIN:
         assert name in kept
     assert "Llama-3.3" in kept and "Llama-3.1" in kept
+
+
+REASON_ALLOWED = {
+    "edge-or-chain-forced (theta_M)",
+    "dropped: redundant in-cell replication (identifiability unchanged)",
+    "required: era-window coverage",
+    "required: structural identifiability (crossing)",
+    "required: structural identifiability (rank/VIF)",
+    "required: statistical recoverability (D2 gate)",
+}
+
+
+def test_csv_reason_taxonomy_complete() -> None:
+    csv_path = po.REPO_ROOT / "datasets" / "coverage" / "minimum_valid_population.csv"
+    df = pd.read_csv(csv_path)
+    assert set(df["reason"]) <= REASON_ALLOWED
+    dropped = df.loc[~df["kept"]]
+    kept = df.loc[df["kept"]]
+    assert (dropped["reason"]
+            == "dropped: redundant in-cell replication (identifiability unchanged)").all()
+    forced_rows = kept[kept["full_name"].isin(set(po.FORCED))]
+    assert (forced_rows["reason"] == "edge-or-chain-forced (theta_M)").all(), \
+        forced_rows["reason"].tolist()
+
+
+def test_report_refined_sections_present() -> None:
+    report = (po.REPO_ROOT / "datasets" / "coverage" / "g3_report.md").read_text()
+    assert "Outcome-independent study design" in report
+    assert "| G3 input | Used? |" in report
+    assert "Trait values / accuracy" in report
+    assert "Minimum VALID population = 22" in report
+    assert "| 47 | 47 | True | True | True" in report
+    assert "| 22 | 22 | True | True | True | 2.44 | 98.0 | -0.78 | 99.0 | 2.19 | -2.36 |" in report
+    assert "knife-edge" in report
+    assert "redundant in-cell replication" in report
+
+
+def test_write_outputs_roundtrip_consistent() -> None:
+    """write_outputs on the committed winner reproduces the committed CSV
+    reasons and a report whose winner row matches the committed trace."""
+    csv_path = po.REPO_ROOT / "datasets" / "coverage" / "minimum_valid_population.csv"
+    df = pd.read_csv(csv_path)
+    kept = df.loc[df["kept"], "full_name"].tolist()
+    res = {
+        "n0": 21, "n_valid": len(kept), "subset": kept, "results": [
+            {"n": len(kept), "n_models": len(kept), "rank_ok": True,
+             "vif_ok": True, "pass": True,
+             "bias_pp_A": 2.44, "cov_pct_A": 98.0, "bias_pp_B": -0.78,
+             "cov_pct_B": 99.0, "bias_pp_A_conf": 2.19, "bias_pp_B_conf": -2.36}],
+        "baseline": {"A": {"era_bias_pp": 0.34, "era_coverage_pct": 98.7,
+                           "convergence_pct": 100.0},
+                     "B": {"era_bias_pp": -3.52, "era_coverage_pct": 96.3,
+                           "convergence_pct": 100.0},
+                     "n": 47},
+        "baseline_ok": True,
+        "baseline_confirmed": {"A": {"era_bias_pp": 1.54, "era_coverage_pct": 98.3,
+                                     "convergence_pct": 100.0},
+                               "B": {"era_bias_pp": -2.22, "era_coverage_pct": 97.5,
+                                     "convergence_pct": 100.0},
+                               "n": 47},
+    }
+    tmp = Path(tempfile.mkdtemp())
+    csv_out, report_out = po.write_outputs(res, tmp)
+    df_out = pd.read_csv(csv_out)
+    assert df_out["reason"].tolist() == df["reason"].tolist()
+    assert df_out["kept"].tolist() == df["kept"].tolist()
+    txt = report_out.read_text()
+    assert "| 47 | 47 | True | True | True" in txt
+    assert "| 22 | 22 | True | True | True | 2.44 | 98.0 | -0.78 | 99.0 | 2.19 | -2.36 |" in txt
 
 
 def test_fallback_returns_full_when_search_blocked() -> None:
@@ -117,7 +187,7 @@ def test_cost_vector_finite_nonnegative() -> None:
 
 def test_runbook_subset_plumbing() -> None:
     from lineage_era.phase2_run_all import subset_models
-    csv_path = po.REPO_ROOT / "datasets" / "coverage" / "minimal_population.csv"
+    csv_path = po.REPO_ROOT / "datasets" / "coverage" / "minimum_valid_population.csv"
     df = pd.read_csv(csv_path)
     expected = int(df["kept"].sum())
     names = subset_models(str(csv_path))

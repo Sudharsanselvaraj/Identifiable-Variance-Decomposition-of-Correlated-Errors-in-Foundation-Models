@@ -77,11 +77,11 @@ entirely on CPU/offline data.
   decompose into σ²_L / σ²_E / σ²_U with intervals, plus the mechanistic θ_M
   tables.
 - **Inputs:** eval manifest (`analysis/`), occupancy design, Phase 1-validated
-  estimator, G3 subset (`datasets/coverage/minimal_population.csv`).
+  estimator, G3 subset (`datasets/coverage/minimum_valid_population.csv`).
 - **Actions:** (2a) **G3 population gate** (`analysis/population_optimizer.py`,
   DONE → 22 of 47) then fresh eval pass on a GPU host (`phase2_run_all.py`,
   defaults to the subset); (2b) eval intake validation (`analysis/eval_check.py
-  --manifest datasets/coverage/minimal_population.csv`, abort on contract
+  --manifest datasets/coverage/minimum_valid_population.csv`, abort on contract
   violation) + trait assembly (`analysis/trait.py`); (2c) design frame
   (`analysis/metadata.py`); (2d) **identifiability gate**
   (`analysis/identifiability.py`, hard-fail = abort); (2e) θ_P partition +
@@ -96,7 +96,7 @@ entirely on CPU/offline data.
   on one 8xH200-141GB (fp8) node; per-model memory/GPU plan in
   `datasets/coverage/gpu_cost_estimate.csv`. Order of work:
   0. **G3 population gate (DONE: PASS).** `phase2_population_optimizer.py` →
-     22/47 (`datasets/coverage/minimal_population.csv`); `phase2_run_all.py`
+     22/47 (`datasets/coverage/minimum_valid_population.csv`); `phase2_run_all.py`
      defaults to this subset (`--subset` overrides back to all 47).
   1. **Pass 1 — token-free:** `python3 -m lineage_era.phase2_run_all --skip-gated`
      (14/22 public) from `src/` on the GPU host. No HF token needed.
@@ -108,7 +108,7 @@ entirely on CPU/offline data.
      V3.2 (671B class) run in fp8 on the 141GB cards — the highest-memory step,
      not a blocker.
   4. **Validate intake:** `analysis/eval_check.py --manifest
-     datasets/coverage/minimal_population.csv` (22 rows, abort on contract
+     datasets/coverage/minimum_valid_population.csv` (22 rows, abort on contract
      violation) → Step 4 decomposition.
 - **Synthetic pre-flight (no GPU):** battery S1–S6 (`phase2_simulate.py`)
   validates the gate before real numbers — currently ALL PASS; G3 adds the

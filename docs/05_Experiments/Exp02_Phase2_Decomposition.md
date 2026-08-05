@@ -49,7 +49,7 @@ contamination, and aggregation caveats in `Dataset_Inventory.md`.
 
 - `analysis/eval_check.py` validates the runbook output (CSV columns, exactly
   the expected connected-subset models — the full 47 by default or the G3
-  22-row subset with `--manifest datasets/coverage/minimal_population.csv` —
+  22-row subset with `--manifest datasets/coverage/minimum_valid_population.csv` —
   acc/samples sanity, per-question JSONL row counts, `correct` values,
   common-item-set A15) and **aborts the pipeline with a precise message on any
   violation** (exit 3). Missing per-question samples are a warning, not a fail.
