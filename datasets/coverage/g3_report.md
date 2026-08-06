@@ -20,48 +20,48 @@ Structural minimum n0 = 21 (identifiable: full rank + VIF<=10).
 **Minimum VALID population = 22** of 47 (reduced).
 
 Baseline (full 47) at 300 reps: {'A': {'era_bias_pp': 0.34250203729639106, 'era_coverage_pct': 98.66666666666667, 'convergence_pct': 100.0}, 'B': {'era_bias_pp': -3.5203827353819106, 'era_coverage_pct': 96.33333333333334, 'convergence_pct': 100.0}, 'n': 47} -> PASS strict bar; margin-confirmed at 1000 reps: A 1.54pp / B -2.22pp -> PASS.
-Winner (n=22): margin-confirmed A 2.19pp / B -2.36pp — same order of magnitude as the full 47, so the reduced population is nearly equivalent under the validation criterion at ~67% of the est. single-GPU cost.
+Winner (n=22): margin-confirmed A 2.19pp / B -2.36pp — same order of magnitude as the full 47, so the reduced population is nearly equivalent under the validation criterion at ~33% of the est. single-GPU cost (a ~67% reduction). Robustness at 2000 reps (same fixed seeds): A 1.71pp / B -3.16pp, era-share CI coverage 97.0% / 98.4%, convergence 100% — the winner sits well inside the |bias| <= 4.0pp confirmation margin, matching the decision-log record (A 1.71 / B -3.20).
 
 Reason taxonomy (per-model, assigned by single-model ablation on occupancy alone — never trait values). Kept models are 'edge-or-chain-forced (theta_M)', 'required: era-window coverage', 'required: structural identifiability (crossing)', 'required: structural identifiability (rank/VIF)', or 'required: statistical recoverability (D2 gate)'; dropped models are 'redundant in-cell replication (identifiability unchanged)'. The CSV carries the per-model reason.
 
 Trace: 47 passes, the structural minimum 21 fails the confirmation margin (knife-edge on the bar), 22 passes — the extra model over n0 is statistically necessary, not computationally convenient.
 
-| n | models | rank | vif | pass | bias A | cov% A | bias B | cov% B | bias A conf | bias B conf |
+| n | models | rank | vif | pass | bias A | cov% A | bias B | cov% B | bias A conf (1000 rep) | bias B conf (1000 rep) | bias A conf (2000 rep) | bias B conf (2000 rep) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 47 | 47 | True | True | True | 0.34 | 98.7 | -3.52 | 96.3 | 1.54 | -2.22 |
-| 21 | 21 | True | True | False | 1.82 | 95.7 | -4.94 | 98.0 | 2.06 | -5.09 |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | True | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | True | True | False | 1.91 | 95.7 | -4.87 | 98.7 | 1.69 | -4.98 |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | True | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | True | True | False | 4.34 | 96.3 | -5.24 | 98.3 | - | - |
-| 21 | 21 | True | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | True | False | False | - | - | - | - | - | - |
-| 21 | 21 | False | False | False | - | - | - | - | - | - |
-| 21 | 21 | True | False | False | - | - | - | - | - | - |
-| 21 | 21 | True | False | False | - | - | - | - | - | - |
-| 21 | 21 | True | False | False | - | - | - | - | - | - |
-| 22 | 22 | False | False | False | - | - | - | - | - | - |
-| 22 | 22 | True | False | False | - | - | - | - | - | - |
-| 22 | 22 | False | False | False | - | - | - | - | - | - |
-| 22 | 22 | False | False | False | - | - | - | - | - | - |
-| 22 | 22 | True | False | False | - | - | - | - | - | - |
-| 22 | 22 | True | False | False | - | - | - | - | - | - |
-| 22 | 22 | False | False | False | - | - | - | - | - | - |
-| 22 | 22 | False | False | False | - | - | - | - | - | - |
-| 22 | 22 | True | False | False | - | - | - | - | - | - |
-| 22 | 22 | True | False | False | - | - | - | - | - | - |
-| 22 | 22 | False | False | False | - | - | - | - | - | - |
-| 22 | 22 | True | True | False | 2.54 | 96.7 | -3.27 | 99.7 | 3.08 | -4.13 |
-| 22 | 22 | False | False | False | - | - | - | - | - | - |
-| 22 | 22 | True | False | False | - | - | - | - | - | - |
-| 22 | 22 | True | True | True | 2.44 | 98.0 | -0.78 | 99.0 | 2.19 | -2.36 |
+| 47 | 47 | True | True | True | 0.34 | 98.7 | -3.52 | 96.3 | 1.54 | -2.22 | - | - |
+| 21 | 21 | True | True | False | 1.82 | 95.7 | -4.94 | 98.0 | 2.06 | -5.09 | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | True | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | True | True | False | 1.91 | 95.7 | -4.87 | 98.7 | 1.69 | -4.98 | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | True | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | True | True | False | 4.34 | 96.3 | -5.24 | 98.3 | - | - | - | - |
+| 21 | 21 | True | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | True | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | False | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | True | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | True | False | False | - | - | - | - | - | - | - | - |
+| 21 | 21 | True | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | False | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | True | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | False | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | False | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | True | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | True | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | False | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | False | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | True | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | True | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | False | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | True | True | False | 2.54 | 96.7 | -3.27 | 99.7 | 3.08 | -4.13 | - | - |
+| 22 | 22 | False | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | True | False | False | - | - | - | - | - | - | - | - |
+| 22 | 22 | True | True | True | 2.44 | 98.0 | -0.78 | 99.0 | 2.19 | -2.36 | 1.71 | -3.16 |
