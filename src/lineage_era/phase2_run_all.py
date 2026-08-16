@@ -89,9 +89,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--attn", default="sdpa")
     p.add_argument("--batch", default="auto")
     p.add_argument("--only", default=None, help="run one model")
-    p.add_argument("--subset", default=str(G3_SUBSET_CSV),
+    p.add_argument("--subset", default=None,
                    help="CSV with a full_name column (G3 minimal population); "
-                        "defaults to datasets/coverage/minimum_valid_population.csv")
+                        "defaults to datasets/coverage/minimum_valid_population.csv if neither --only nor --subset given")
     p.add_argument("--skip-gated", action="store_true")
     p.add_argument("--no-samples", action="store_true",
                    help="skip per-question JSONL capture (aggregate CSV only)")
@@ -104,6 +104,8 @@ def main(argv: list[str] | None = None) -> int:
         p.error(f"{args.only!r} not in EVAL_MANIFEST")
     if args.only is not None and args.subset is not None:
         p.error("--only and --subset are mutually exclusive")
+    if args.subset is None and args.only is None:
+        args.subset = str(G3_SUBSET_CSV)
     if args.skip_gated and "HF_TOKEN" not in os.environ:
         print("--skip-gated: no HF_TOKEN required (gated models will be skipped)")
 
