@@ -33,6 +33,19 @@ error as a given input to a welfare argument.
   on real data, and any diversification recommendation. These become earned only after
   Phase 2, and only with the register's honesty rules applied.
 
+## Measurement fidelity (2026-08-16, pre-registered before any eval)
+
+- The Phase 2 trait comes from one fresh MMLU 5-shot pass on the fixed common item
+  set (Decision Log 2026-08-03); no leaderboard value is reused as the trait.
+- Per-model precision is recorded in `datasets/coverage/trait_definition.csv` before
+  the run: 16 models at 4-bit (NF4, `load_in_4bit`, base fp16 on the T4), three
+  70/72B models at 4-bit on the A100, Mistral-Small-4 at bf16, and DeepSeek-V3.1/V3.2
+  completed by pre-registered model-based imputation (IMPUTED, not measured).
+- Every result row carries a `fidelity` tag (`4bit`/`bf16`/`imputed`). 4-bit is a
+  disclosed, conservative deviation from bf16 for memory-bound log-likelihood (the
+  runbook's single-quantization rule); it does not change the benchmark, prompting,
+  item set, or scoring.
+
 ## Explicitly not novelty claims (do not list as contributions)
 
 - The `statsmodels` REML discrepancy (66.674 vs 65.994 objective value) is a bug report on
