@@ -47,7 +47,7 @@ SAMPLES_DIR = DATASETS / "eval_samples"
 # access: "public" = token-free; "gated" = HF token + license acceptance.
 EVAL_MANIFEST = {
     # Llama
-    "Llama-1": ("meta-llama/Llama-1", "7B", "gated"),
+    "Llama-1": ("huggyllama/llama-7b", "7B", "public"),
     "Llama-2": ("meta-llama/Llama-2-70b-hf", "70B", "gated"),
     "Llama-3": ("meta-llama/Meta-Llama-3-70B-Instruct", "70B", "gated"),
     "Llama-3.1": ("meta-llama/Meta-Llama-3.1-70B-Instruct", "70B", "gated"),
@@ -74,14 +74,14 @@ EVAL_MANIFEST = {
     "Mixtral-8x22B": ("mistralai/Mixtral-8x22B-Instruct-v0.1", "141B/39B", "public"),
     "Mistral-Large-2": ("mistralai/Mistral-Large-2407", "123B", "gated"),
     "Mistral-Small-2": ("mistralai/Mistral-Small-Instruct-2409", "24B", "public"),
-    "Mistral-Small-3": ("mistralai/Mistral-Small-3-24B-Instruct-2501", "24B", "gated"),
+    "Mistral-Small-3": ("mistralai/Mistral-Small-24B-Instruct-2501", "24B", "public"),
     "Mistral-Small-3.1": ("mistralai/Mistral-Small-3.1-24B-Instruct-2503", "24B", "public"),
     "Mistral-Medium-3": ("mistralai/Mistral-Medium-3.1-32B-Instruct-2503", "32B", "gated"),
-    "Mistral-Small-3.2": ("mistralai/Mistral-Small-3.2-24B-Instruct-2510", "24B", "gated"),
+    "Mistral-Small-3.2": ("mistralai/Mistral-Small-3.2-24B-Instruct-2506", "24B", "public"),
     "Mistral-Large-3": ("mistralai/Mistral-Large-3", "123B", "public"),
     "Ministral-3": ("mistralai/Ministral-3B-Instruct", "3B", "gated"),
-    "Devstral-2": ("mistralai/Devstral-Small-2509", "24B", "gated"),
-    "Mistral-Small-4": ("mistralai/Mistral-Small-4-32B-Instruct-2603", "32B", "gated"),
+    "Devstral-2": ("mistralai/Devstral-Small-2-24B-Instruct-2512", "24B", "public"),
+    "Mistral-Small-4": ("mistralai/Mistral-Small-4-119B-2603", "119B", "public"),
     "Mistral-Medium-3.5": ("mistralai/Mistral-Medium-3.5", "32B", "gated"),
     # Phi
     "Phi-1": ("microsoft/phi-1", "1.3B", "public"),
@@ -96,7 +96,7 @@ EVAL_MANIFEST = {
     "Gemma-1": ("google/gemma-7b", "7B", "gated"),
     "Gemma-2": ("google/gemma-2-9b", "9B", "gated"),
     "Gemma-3": ("google/gemma-3-27b-it", "27B", "gated"),
-    "Gemma-3n": ("google/gemma-3n-4b-it", "4B", "gated"),
+    "Gemma-3n": ("google/gemma-3n-E4B-it", "4B", "gated"),
     "Gemma-4": ("google/gemma-4", "~12B", "gated"),
     "Gemma-4-12B": ("google/gemma-4-12b-it", "12B", "public"),
 }
