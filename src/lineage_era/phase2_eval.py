@@ -203,8 +203,13 @@ def _samples_to_rows(full_name: str, repo: str, samples: dict) -> list[dict]:
             resps = s.get("resps")
             logprobs = []
             if resps:
-                logprobs = [float(r[0]) if isinstance(r, (list, tuple)) else float(r)
-                            for r in resps]
+                flat = resps[0] if isinstance(resps[0], (list, tuple)) else resps
+                logprobs = []
+                for x in flat:
+                    try:
+                        logprobs.append(float(x))
+                    except (TypeError, ValueError):
+                        logprobs.append(float(x[0]))
             predicted = None
             if logprobs:
                 predicted = int(max(range(len(logprobs)), key=logprobs.__getitem__))
