@@ -95,18 +95,19 @@
 \title{Lineage or Era? An Identifiability-Gated Instrument for Decomposing Correlated Errors in Public Language Models}
 
 \author{\uppercase{S. Kanaga Suba Raja}\authorrefmark{1},
-\uppercase{Sudharsan S}\authorrefmark{1}}% TODO: confirm author order and any IEEE membership designations
+\uppercase{Shree Harish V}\authorrefmark{1},
+\uppercase{Sudharsan S}\authorrefmark{1}}% TODO: confirm author order, any IEEE membership designations, and Harish's email
 
 \address[1]{Department of Computer Science and Engineering, SRM Institute of
 Science and Technology, Tiruchirappalli, Tamil Nadu 621105, India (e-mail:
-kanagass@srmist.edu.in; ss0856@srmist.edu.in)}% TODO: confirm postal codes and secondary emails
+kanagass@srmist.edu.in; ss0856@srmist.edu.in)}% TODO: confirm postal codes, secondary emails, and Shree Harish V's e-mail
 
 \tfootnote{This work was supported in part by ... .% TODO: funding/support statement
 }
 
 \markboth
-{Raja and Sudharsan: An Identifiability-Gated Instrument for Decomposing Correlated Errors in Language Models}
-{Raja and Sudharsan: An Identifiability-Gated Instrument for Decomposing Correlated Errors in Language Models}
+{Raja \emph{et al.}: An Identifiability-Gated Instrument for Decomposing Correlated Errors in Language Models}
+{Raja \emph{et al.}: An Identifiability-Gated Instrument for Decomposing Correlated Errors in Language Models}
 
 \corresp{Corresponding author: S. Kanaga Suba Raja (e-mail: kanagass@srmist.edu.in).}
 
@@ -376,6 +377,8 @@ propagates along lineage paths \cite{li2026roots}. Dataset ancestry is a channel
 into our era component (shared training data is a shared environment), and its
 finding that contamination travels along lineage is exactly the mechanism that
 motivates the era channel, not a competing estimator of model error covariance.
+Section~\ref{sec:cofailure} derives the exact mapping from the partition to the
+co-failure ceiling and the marginal value of a cross-family swap.
 
 \subsection{Instrument-Level Bias and the Algorithmic Monoculture Literature}
 Preference leakage shows that LLM-as-judge ratings are biased toward generators
@@ -724,6 +727,81 @@ software. This is why the design battery of Section~\ref{sec:methods} treats
 the nested regime as a \emph{must-fail} case: the requirement is not that the
 estimator degrade, but that it be detected doing so.
 \end{remark}
+
+\subsection{Co-Failure Ceiling and the Diversification Counterfactual}
+\label{sec:cofailure}
+The partition \eqref{eq:thetaP} is descriptive; this subsection gives it
+decision content. For a pool $S$ of $k$ models, define the \emph{co-failure
+ceiling} $\beta(S)$ as the probability that every member of $S$ is wrong on a
+fresh question---the joint all-wrong rate that Chen identifies as the operative
+risk for ensembles and routing \cite{chen2026}. Under the liability model of
+\eqref{eq:model} with the item response
+$\Pr(\text{wrong}\mid i)=\sigma(-l_{m}-\delta_{i})$ and a shared item difficulty
+$\delta_{i}\sim\mathcal{N}(0,\sigma^{2}_{\delta})$,
+\begin{equation}
+\beta(S)=\mathbb{E}\Big[\prod_{m\in S}\sigma(-l_{m}-\delta_{i})\Big],
+\label{eq:beta}
+\end{equation}
+where the expectation is over the trait effects, the item difficulty, and the
+item-level noise. Using the logistic--normal link
+$\sigma(x)\approx\Phi(x/\kappa)$ with $\kappa=1.6$, centering the trait at its
+mean $\mu_{l}$, and writing $W_{m}=l_{m}-\mu_{l}+\delta_{i}+\eta_{m}$ with
+$\eta_{m}\sim\mathcal{N}(0,\kappa^{2})$ i.i.d., the all-wrong event
+$\{l_{m}+\delta_{i}+\eta_{m}<0\text{ for all }m\}$ is
+$\{W_{m}<-\mu_{l}\text{ for all }m\}$, so
+\begin{equation}
+\beta(S)=\Phi_{k}(-\mu_{l}\mathbf{1};\mathbf{0},\Sigma),
+\qquad
+\Sigma_{mm}=\sigma^{2}_{L}+\sigma^{2}_{E}+\sigma^{2}_{U}
++\sigma^{2}_{\delta}+\kappa^{2},
+\label{eq:betaOrthant}
+\end{equation}
+with off-diagonal
+$\Sigma_{mm'}=\sigma^{2}_{L}\mathbf{1}[f(m){=}f(m')]
++\sigma^{2}_{E}\mathbf{1}[e(m){=}e(m')]+\sigma^{2}_{\delta}$:
+the covariance the partition estimates, plus the item-level and link terms
+common to any pool.
+
+\begin{proposition}[The ceiling is bounded by the between-model share]
+\label{prop:ceiling}
+$\beta(S)$ is strictly increasing in every off-diagonal entry of $\Sigma$, hence
+in $\sigma^{2}_{L}$ and in $\sigma^{2}_{E}$. Consequently
+$\sigma^{2}_{L}+\sigma^{2}_{E}$ pins the co-failure ceiling: no pool drawn from
+the partition can lower the all-wrong rate below the level implied by
+$\sigma^{2}_{L}+\sigma^{2}_{E}$, whatever its composition.
+\end{proposition}
+
+The quantity relevant to RQ6 is the marginal value of cross-family
+diversification. Swapping one member $m$ of $S$ for a model $m^{*}$ from an
+unrepresented family changes only the covariances touching the replaced member:
+\begin{equation}
+\Sigma_{m'm^{*}}-\Sigma_{m'm}
+=-\sigma^{2}_{L}
++\sigma^{2}_{E}\big(\mathbf{1}[e(m^{*}){=}e(m')]
+-\mathbf{1}[e(m){=}e(m')]\big).
+\label{eq:swap}
+\end{equation}
+
+\begin{proposition}[Swap value is governed by the lineage--era ratio]
+\label{prop:swap}
+Let $\Delta\beta=\beta(S)-\beta(S')$ for a same-size swap into an unrepresented
+family. Then $\Delta\beta\ge0$; it is non-decreasing in $\sigma^{2}_{L}$ and
+non-increasing in $\sigma^{2}_{E}$, and it grows when the replacement's era
+matches no pool member's era, because the $\sigma^{2}_{E}$ term of
+\eqref{eq:swap} then vanishes. The marginal value of diversification is thus
+governed by $\sigma^{2}_{L}/(\sigma^{2}_{L}+\sigma^{2}_{E})$, not by the unique
+share $\sigma^{2}_{U}$: model-specific noise is diversifiable within a family
+for free, while era-common error is not removed by a family swap.
+\end{proposition}
+
+Propositions~\ref{prop:ceiling} and~\ref{prop:swap} are closed forms of the
+model in \eqref{eq:model}; we verify them against the exact generative process
+in simulation (\texttt{test\_cofailure.py}): the analytic orthant
+\eqref{eq:betaOrthant} tracks the Monte-Carlo all-wrong rate of \eqref{eq:beta}
+to within $0.03$ across the lineage-dominant, era-dominant, and balanced
+scenarios, and the swap ordering of Proposition~\ref{prop:swap} holds in each.
+The empirical value of $\beta$ for the measured population is a stage-4
+deliverable and is reported only once the partition is estimated on real data.
 
 \section{Methodology: A Three-Gate Protocol for Identifiability-Preserving Measurement}
 \label{sec:methods}
