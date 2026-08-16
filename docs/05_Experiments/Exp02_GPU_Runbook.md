@@ -307,3 +307,63 @@ python3 -m lineage_era.analysis.eval_check \
   --csv ../datasets/phase2_eval_results.csv \
   --samples-dir ../datasets/eval_samples
 ```
+
+## Addendum (2026-08-16) — consolidated single-machine RunPod A100-80GB run
+
+**Chosen plan (decision log 2026-08-16, fidelity amended BEFORE any eval; the
+Phi-2 pilot failed pre-measurement and wrote no data).** All 20 measured models
+run on ONE rented A100-80GB; Colab/T4 split dropped. No methodology, item set,
+prompting, scoring, or roster change.
+
+| Tier | Models (#) | Flags (from `src/`) |
+|---|---|---|
+| bf16 (17) | all ≤32B, incl. Mistral-Small-4 | `--dtype bfloat16 --quant none --attn sdpa` |
+| 4-bit (3) | Qwen1.5-72B, Llama-3.1-70B, Llama-3.3-70B | `--dtype bfloat16 --quant 4bit --attn sdpa` |
+| imputed (no GPU) | DeepSeek-V3.1, DeepSeek-V3.2 | completed by imputation (never on a GPU) |
+
+**Pod requirements:** A100 80GB (SXM4), **GPU disk ≥ 300 GB** (4-bit loads
+download bf16 weights: ~140 GB per 70B model), Python 3.11 PyTorch template.
+Compute ≈ 604 min ≈ 10 h ≈ $16-20 at ~$1.60/h. Gated licenses under one
+`HF_TOKEN`: Llama-1, Llama-3.1, Llama-3.3, Mistral-Small-3, Mistral-Small-3.2,
+Devstral-2, Mistral-Small-4, Gemma-3n.
+
+```bash
+# setup (once)
+git clone https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models.git repo
+cd repo/src
+git config --global user.email "you@users.noreply.github.com"
+git config --global user.name "you"
+git config --global credential.helper store
+pip install -q lm-eval==0.4.12 accelerate bitsandbytes transformers==4.57.6
+export HF_TOKEN=hf_...
+export HF_HOME=/workspace/hf_cache
+
+# pilot (cheap sanity, then delete the pilot row + JSONL as in the T4 addendum)
+python3 -m lineage_era.phase2_eval --model Phi-2 --limit 100 \
+  --device cuda:0 --dtype bfloat16 --quant none --attn sdpa
+
+# production — one model per invocation; verify samples == 14042 after each,
+# git add datasets/phase2_eval_results.csv datasets/eval_samples/ && commit && push,
+# then rm -rf /workspace/hf_cache/hub
+for m in Llama-1 Phi-1 Phi-1.5 Phi-2 Phi-3 Phi-4 Qwen-7B Mistral-7B \
+         Mistral-Small-3 Mistral-Small-3.1 Mistral-Small-3.2 Devstral-2 \
+         Phi-4-reasoning-plus Gemma-3n Phi-4-reasoning-vision-15B Gemma-4-12B \
+         Mistral-Small-4; do
+  python3 -m lineage_era.phase2_run_all --only "$m" \
+    --device cuda:0 --dtype bfloat16 --attn sdpa --quant none || break
+done
+for m in Qwen1.5 Llama-3.1 Llama-3.3; do
+  python3 -m lineage_era.phase2_run_all --only "$m" \
+    --device cuda:0 --dtype bfloat16 --attn sdpa --quant 4bit || break
+done
+
+# validate the measured block (exactly 20 rows; DeepSeek not yet present)
+python3 -m lineage_era.analysis.eval_check \
+  --manifest ../datasets/coverage/a100_full_subset.csv \
+  --csv ../datasets/phase2_eval_results.csv \
+  --samples-dir ../datasets/eval_samples
+```
+
+`phase2_run_all` skips models already recorded, so a dropped pod session
+resumes by re-running the loops. Stop/terminate the pod when all 20 pass
+`eval_check` and are pushed; then run imputation + decomposition on the laptop.

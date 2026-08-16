@@ -447,6 +447,22 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
 
 ---
 
+## 2026-08-16 — Phase 2 execution consolidated on one RunPod A100-80GB
+
+- **Decision:** The measured 20 models all run on a single rented A100-80GB
+  (RunPod) instead of the earlier Colab Free/T4 + A100 split. Fidelity ledger
+  amended **before any eval** (the Phi-2 pilot failed pre-measurement and wrote
+  no data): 17 models at bf16 (`--dtype bfloat16 --quant none`), three 70/72B
+  models at 4-bit (`--quant 4bit` — they do not fit bf16 in 80GB), DeepSeek
+  V3.1/V3.2 unchanged (imputed). Recorded in
+  `datasets/coverage/trait_definition.csv` and Novelty Claims.
+- **Reason:** One machine removes the shared-CSV sync/concurrency risk of the
+  two-machine split and gives a cleaner fidelity profile (only the 70B tier
+  quantized) at ~10h / ~$16-20, within budget. No methodology, item set,
+  prompting, scoring, or roster change.
+- **Evidence:** `datasets/coverage/trait_definition.csv` (17 bf16 + 3 4bit +
+  2 imputed), `datasets/coverage/a100_full_subset.csv` (20 models).
+
 ## 2026-08-16 — DeepSeek cells completed by pre-registered model-based imputation
 
 - **Decision:** The G3 22-model population is retained, but DeepSeek-V3.1

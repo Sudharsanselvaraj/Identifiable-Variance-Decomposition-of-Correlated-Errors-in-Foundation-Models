@@ -38,9 +38,10 @@ error as a given input to a welfare argument.
 - The Phase 2 trait comes from one fresh MMLU 5-shot pass on the fixed common item
   set (Decision Log 2026-08-03); no leaderboard value is reused as the trait.
 - Per-model precision is recorded in `datasets/coverage/trait_definition.csv` before
-  the run: 16 models at 4-bit (NF4, `load_in_4bit`, base fp16 on the T4), three
-  70/72B models at 4-bit on the A100, Mistral-Small-4 at bf16, and DeepSeek-V3.1/V3.2
-  completed by pre-registered model-based imputation (IMPUTED, not measured).
+  the run (amended 2026-08-16, decision log, before any eval): **17 models at
+  bf16 and three 70/72B models at 4-bit**, all measured on one RunPod A100-80GB;
+  DeepSeek-V3.1/V3.2 completed by pre-registered model-based imputation
+  (IMPUTED, not measured).
 - Every result row carries a `fidelity` tag (`4bit`/`bf16`/`imputed`). 4-bit is a
   disclosed, conservative deviation from bf16 for memory-bound log-likelihood (the
   runbook's single-quantization rule); it does not change the benchmark, prompting,
