@@ -20,6 +20,44 @@ def _fmt(v) -> str:
     return f"{v:.3f}" if isinstance(v, float) else str(v)
 
 
+#: Real (GPU-runbook) eval input the report assumes when no source is given.
+DEFAULT_EVAL_CSV_REAL = "datasets/phase2_eval_results.csv"
+
+
+def _source_label(eval_csv: str | None, synthetic: bool) -> str:
+    if synthetic:
+        return "synthetic trait (real occupancy, scenario C)"
+    return str(eval_csv) if eval_csv else DEFAULT_EVAL_CSV_REAL
+
+
+def _is_sim_source(eval_csv: str | None, synthetic: bool) -> bool:
+    """True when the report is built from synthetic/simulated trait data."""
+    if synthetic:
+        return True
+    return bool(eval_csv) and ".sim" in Path(eval_csv).name
+
+
+def _provenance_block(eval_csv: str | None, synthetic: bool) -> list[str]:
+    """Loud banner for reports built from anything but real GPU eval output.
+
+    Without this, a shape-exact simulated dry-run is indistinguishable from a
+    real run inside the report (see the 2026-08-06 AE review: `results/phase2/`
+    was populated from `phase2_eval_results.sim.csv` with no label).
+    """
+    if not _is_sim_source(eval_csv, synthetic):
+        return []
+    return [
+        "> **SIMULATED DRY-RUN DATA — NOT REAL GPU OUTPUT.**",
+        ">",
+        f"> Input: `{_source_label(eval_csv, synthetic)}` — shape-exact synthetic "
+        "eval from `analysis/eval_simulate.py` / `dgp`, NOT GPU runs. No number in "
+        "this report may be reported, quoted, or plotted as an empirical result. "
+        "Re-run `phase2_decomposition.py` against a real "
+        f"`{DEFAULT_EVAL_CSV_REAL}` before any of these values can be used.",
+        "",
+    ]
+
+
 def error_similarity_section(out_dir: Path) -> list[str]:
     """Markdown for the secondary error-similarity panel (empty if skipped)."""
     ladder = out_dir / "null_ladder.csv"
@@ -67,6 +105,10 @@ def error_similarity_section(out_dir: Path) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out-dir", default="results/phase2")
+    p.add_argument("--eval-csv", default=None,
+                   help=f"eval CSV this run consumed (default {DEFAULT_EVAL_CSV_REAL})")
+    p.add_argument("--synthetic", action="store_true",
+                   help="mark the report as a synthetic dry-run")
     args = p.parse_args(argv)
 
     out_dir = Path(args.out_dir)
@@ -87,13 +129,20 @@ def main(argv: list[str] | None = None) -> int:
         "",
         f"Generated: {date.today().isoformat()}  |  "
         f"Design: {len(design)} models, {design['family'].nunique()} families, "
-        f"{design['era'].nunique()} quarters",
+        f"{design['era'].nunique()} quarters  |  "
+        f"Data source: `{_source_label(args.eval_csv, args.synthetic)}`",
         "",
+    ]
+    lines += _provenance_block(args.eval_csv, args.synthetic)
+    lines += [
         f"**Identifiability audit:** {verdict}",
         "",
-        "## θ_P — primary variance partition (fresh MMLU 5-shot trait)",
-        "",
-        tables,
+    ]
+    theta_p_heading = ("## θ_P — primary variance partition "
+                       "(fresh MMLU 5-shot trait)")
+    if _is_sim_source(args.eval_csv, args.synthetic):
+        theta_p_heading = "## θ_P — primary variance partition (SIMULATED trait — not real)"
+    lines += [theta_p_heading, "", tables,
         f"- Family share: {_fmt(vp.loc[L, 'share'])} "
         f"(delta CI {_fmt(bc.loc[L, 'share_lo'])}–{_fmt(bc.loc[L, 'share_hi'])}; "
         f"trait-error MC {_fmt(bc.loc[L, 'mc_lo'])}–{_fmt(bc.loc[L, 'mc_hi'])})",
@@ -110,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
         "- `chain_slopes.csv`: per-quarter slope along the verified fine-tune "
         "edges (occupancy.VERIFIED_EDGES).",
         "",
-        "## Sensitivity (results/phase2/sensitivity/)",
+        f"## Sensitivity ({out_dir.name}/sensitivity/)",
         "",
         "- `leave_one_family.csv`: share change when each family is dropped.",
         "- `leaked_drop.csv`: full design vs dropping cross-lab teacher-leak "
@@ -123,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
         "prompting, and few-shot protocols differ; deltas are expected and are "
         "not treated as validation).",
         "",
-        "## Figures (results/phase2/figures/)",
+        f"## Figures ({out_dir.name}/figures/)",
         "",
     ]
     figs = sorted(p.name for p in (out_dir / "figures").glob("*.pdf"))
@@ -173,7 +222,8 @@ def build_tables(out_dir: Path) -> str:
     return "\n".join(p for p in parts if p)
 
 
-def results_summary(out_dir: Path) -> pd.DataFrame:
+def results_summary(out_dir: Path, data_source: str | None = None,
+                    simulated: bool = False) -> pd.DataFrame:
     vp = pd.read_csv(out_dir / "variance_partition.csv").set_index("component")
     bc = pd.read_csv(out_dir / "bootstrap_ci.csv").set_index("component")
     fam = pd.read_csv(out_dir / "family_effects.csv")
@@ -194,6 +244,8 @@ def results_summary(out_dir: Path) -> pd.DataFrame:
         "family_vs_era": "family" if vp.loc["family", "share"] >= vp.loc["era", "share"] else "era",
         "condition_number": cond_txt.split("=")[1].strip().split()[0],
         "max_vif": max(audit["max_vif"]),
+        "data_source": data_source or DEFAULT_EVAL_CSV_REAL,
+        "simulated": simulated,
     }
     return pd.DataFrame([row])
 
@@ -201,12 +253,20 @@ def results_summary(out_dir: Path) -> pd.DataFrame:
 def main_tables(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out-dir", default="results/phase2")
+    p.add_argument("--eval-csv", default=None,
+                   help=f"eval CSV this run consumed (default {DEFAULT_EVAL_CSV_REAL})")
+    p.add_argument("--synthetic", action="store_true",
+                   help="mark the summary as a synthetic dry-run")
     args = p.parse_args(argv)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    results_summary(out_dir).to_csv(out_dir / "results_summary.csv", index=False)
+    results_summary(
+        out_dir,
+        data_source=_source_label(args.eval_csv, args.synthetic),
+        simulated=_is_sim_source(args.eval_csv, args.synthetic),
+    ).to_csv(out_dir / "results_summary.csv", index=False)
     (out_dir / "tables.md").write_text(build_tables(out_dir))
     print(f"-> {out_dir / 'results_summary.csv'}")
     print(f"-> {out_dir / 'tables.md'}")

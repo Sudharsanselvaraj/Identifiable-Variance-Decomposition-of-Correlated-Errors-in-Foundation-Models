@@ -1,2 +1,0 @@
-kappa = 234.1200
-threshold = 100 (warning only)

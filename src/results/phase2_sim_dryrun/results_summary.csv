@@ -1,2 +1,2 @@
-audit,n_models,n_families,n_quarters,share_family,share_era,share_unique,share_family_ci,share_era_ci,family_vs_era,condition_number,max_vif
-PASS,47,6,14,0.5567722555668733,0.129449495497642,0.3137782489354845,"[0.215, 0.826]","[0.024, 0.455]",family,234.1200,2.555038978167862
+audit,n_models,n_families,n_quarters,share_family,share_era,share_unique,share_family_ci,share_era_ci,family_vs_era,condition_number,max_vif,data_source,simulated
+PASS,47,6,14,0.5567722555668733,0.129449495497642,0.3137782489354845,"[0.215, 0.826]","[0.024, 0.455]",family,234.1200,2.555038978167862,datasets/phase2_eval_results.sim.csv,True

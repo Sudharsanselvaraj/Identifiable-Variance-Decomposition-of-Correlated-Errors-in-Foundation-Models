@@ -111,7 +111,7 @@ def main() -> None:
             *make_fixture(4, shared=False, imbalanced=True, fam_clustered_acc=True), 401),
     }
     selection = es.evaluate_criteria(ctx)
-    out_dir = REPO_ROOT / "src/results/phase2"
+    out_dir = REPO_ROOT / "src/results/phase2_sim_dryrun"
     out_dir.mkdir(parents=True, exist_ok=True)
     selection.to_csv(out_dir / "metric_selection.csv", index=False)
     print(selection.to_string(index=False))

@@ -85,9 +85,27 @@ def main(argv: list[str] | None = None) -> int:
                    help="eval CSV override (default datasets/phase2_eval_results.csv)")
     p.add_argument("--samples-dir", default=None,
                    help="per-question JSONL dir override (default datasets/eval_samples)")
+    p.add_argument("--sim-ok", action="store_true",
+                   help="allow simulated/synthetic input into the default "
+                        "results/phase2 path (loudly labeled in the report)")
     args = p.parse_args(argv)
 
     out_dir = Path(args.results_dir)
+
+    from . import phase2_trait
+    effective_eval = (Path(args.eval_csv) if args.eval_csv
+                      else phase2_trait.DEFAULT_EVAL_CSV)
+    sim_input = args.synthetic or ".sim" in effective_eval.name
+    if sim_input and not args.sim_ok and out_dir == Path("results/phase2"):
+        print(
+            "REFUSED: simulated/synthetic input into the real-results path "
+            "'results/phase2'. This is exactly how dry-run numbers leak into a "
+            "paper. For a dry run use:\n"
+            "    --results-dir results/phase2_sim_dryrun\n"
+            "or pass --sim-ok (the report will be loudly labeled SIMULATED).",
+            file=sys.stderr)
+        return 2
+
     out_dir.mkdir(parents=True, exist_ok=True)
 
     trait = run_trait(out_dir, args.synthetic, args.seed,
@@ -150,8 +168,13 @@ def main(argv: list[str] | None = None) -> int:
             print("No per-question samples; error-similarity panel skipped.",
                   file=sys.stderr)
     phase2_figures.main(["--out-dir", str(out_dir)])
-    phase2_tables.main(["--out-dir", str(out_dir)])
-    phase2_report.main(["--out-dir", str(out_dir)])
+    prov_args = ["--out-dir", str(out_dir)]
+    if args.synthetic:
+        prov_args += ["--synthetic"]
+    else:
+        prov_args += ["--eval-csv", str(effective_eval)]
+    phase2_tables.main(list(prov_args))
+    phase2_report.main(list(prov_args))
 
     print(f"\nPipeline complete -> {out_dir}")
     print(f"Report: {out_dir / 'PHASE2_REPORT.md'}")

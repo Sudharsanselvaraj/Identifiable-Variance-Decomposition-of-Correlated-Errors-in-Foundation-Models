@@ -1,10 +1,14 @@
 # Phase 2 Report: Lineage vs Era Variance Decomposition
 
-Generated: 2026-08-05  |  Design: 47 models, 6 families, 14 quarters
+Generated: 2026-08-16  |  Design: 47 models, 6 families, 14 quarters  |  Data source: `datasets/phase2_eval_results.sim.csv`
+
+> **SIMULATED DRY-RUN DATA — NOT REAL GPU OUTPUT.**
+>
+> Input: `datasets/phase2_eval_results.sim.csv` — shape-exact synthetic eval from `analysis/eval_simulate.py` / `dgp`, NOT GPU runs. No number in this report may be reported, quoted, or plotted as an empirical result. Re-run `phase2_decomposition.py` against a real `datasets/phase2_eval_results.csv` before any of these values can be used.
 
 **Identifiability audit:** Verdict: **PASS**
 
-## θ_P — primary variance partition (fresh MMLU 5-shot trait)
+## θ_P — primary variance partition (SIMULATED trait — not real)
 
 ### θ_P variance partition (variance_partition.csv)
 
@@ -62,7 +66,7 @@ Generated: 2026-08-05  |  Design: 47 models, 6 families, 14 quarters
 - `dense_cell_contrasts.csv`: family contrasts within the co-released quarters (2024Q2/Q3, 2025Q2).
 - `chain_slopes.csv`: per-quarter slope along the verified fine-tune edges (occupancy.VERIFIED_EDGES).
 
-## Sensitivity (results/phase2/sensitivity/)
+## Sensitivity (phase2_sim_dryrun/sensitivity/)
 
 - `leave_one_family.csv`: share change when each family is dropped.
 - `leaked_drop.csv`: full design vs dropping cross-lab teacher-leak models (Phi-4 reasoners, Gemma-2-9B, Gemma-4).
@@ -71,7 +75,7 @@ Generated: 2026-08-05  |  Design: 47 models, 6 families, 14 quarters
 - `trait_definition.csv`: acc vs acc_norm trait variants.
 - `kim_crosscheck.csv`: fresh acc vs Kim et al. leaderboard acc for the reconciled overlap (documented SANITY CHECK only — benchmark version, prompting, and few-shot protocols differ; deltas are expected and are not treated as validation).
 
-## Figures (results/phase2/figures/)
+## Figures (phase2_sim_dryrun/figures/)
 
 - `blup_plot.pdf`
 - `design_heatmap.pdf`
