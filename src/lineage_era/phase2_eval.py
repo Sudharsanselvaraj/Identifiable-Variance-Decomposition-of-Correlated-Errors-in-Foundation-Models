@@ -267,7 +267,7 @@ def run_mmlu(full_name: str, limit: int | None, device: str, dtype: str | None,
     return {
         "acc": res.get("acc,none"),
         "acc_norm": res.get("acc_norm,none"),
-        "samples": res.get("samples"),
+        "samples": res.get("sample_len"),
     }
 
 

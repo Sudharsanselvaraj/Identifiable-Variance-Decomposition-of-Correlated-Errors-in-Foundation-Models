@@ -58,7 +58,18 @@ def done_models() -> set[str]:
     if not RESULTS_CSV.exists():
         return set()
     with open(RESULTS_CSV) as f:
-        return {r["full_name"] for r in csv.DictReader(f) if r["full_name"]}
+        done = set()
+        for r in csv.DictReader(f):
+            name = r.get("full_name", "")
+            if not name:
+                continue
+            try:
+                n = int(r.get("samples", 0))
+            except (ValueError, TypeError):
+                n = 0
+            if n == 14042:
+                done.add(name)
+        return done
 
 
 def subset_models(csv_path: str) -> list[str]:
@@ -108,6 +119,9 @@ def main(argv: list[str] | None = None) -> int:
         args.subset = str(G3_SUBSET_CSV)
     if args.skip_gated and "HF_TOKEN" not in os.environ:
         print("--skip-gated: no HF_TOKEN required (gated models will be skipped)")
+    if not args.skip_gated and "HF_TOKEN" not in os.environ:
+        print("WARNING: HF_TOKEN not set; gated models will fail to download. "
+              "Set HF_TOKEN before running.", flush=True)
 
     targets: list[str]
     if args.only is not None:
