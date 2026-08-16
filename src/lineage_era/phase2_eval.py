@@ -47,7 +47,7 @@ SAMPLES_DIR = DATASETS / "eval_samples"
 # access: "public" = token-free; "gated" = HF token + license acceptance.
 EVAL_MANIFEST = {
     # Llama
-    "Llama-1": ("meta-llama/Llama-1", "7B", "gated"),
+    "Llama-1": ("huggyllama/llama-7b", "7B", "public"),
     "Llama-2": ("meta-llama/Llama-2-70b-hf", "70B", "gated"),
     "Llama-3": ("meta-llama/Meta-Llama-3-70B-Instruct", "70B", "gated"),
     "Llama-3.1": ("meta-llama/Meta-Llama-3.1-70B-Instruct", "70B", "gated"),
