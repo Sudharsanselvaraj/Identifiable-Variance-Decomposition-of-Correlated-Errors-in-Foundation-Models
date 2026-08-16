@@ -2,13 +2,22 @@
 % IEEE Access manuscript for Study 001.
 % Compile with pdflatex (twice) from this directory; the class, fonts, and
 % logos live in ./ieeeaccess_support/. Adjust \graphicspath if you move files.
-% All figure files are PLACEHOLDERS (see the % TODO: replace ... captions).
-% Author/affiliation blocks are placeholders — fill before submission.
-% Status (2026-08-06): GPU-free AE revision — real workflow figures and tables
-% wired in (design/dag/pipeline/lineage/G3-trace/D3), Related Work expanded with
-% verified 2026 references, appendices restructured (identification argument,
-% D3 battery, Woodbury/REML, cost plan + roster). Remaining TODOs: history dates,
-% DOI, funding statement, biographies, and the pending-eval figures.
+% Build with ./build.sh (NOT bare pdflatex): the class ships its own Type1
+% fonts in ieeeaccess_support/, and .tfm files resolve via TFMFONTS, not
+% TEXINPUTS. Setting only TEXINPUTS compiles without error but drops all roman
+% text to nullfont, producing a short PDF containing only mathematics.
+%
+% Status (2026-08-06): camera-ready pass. Scoped as a methodology paper — the
+% instrument (identifiability conditions, validated REML estimator, detectable-
+% failure battery, outcome-independent population design) is the contribution;
+% the empirical partition is pre-registered in Section V-E, not claimed here.
+% All five figures carry explicit widths (3 single-column, 2 double-column);
+% every figure and table fits the text block. Fonts are all Type 1 (no Type 3 —
+% see the \ttdefault note below).
+%
+% Remaining TODOs are all author-supplied values that cannot be inferred:
+% history dates, DOI (assigned at submission), funding statement,
+% acknowledgment, author order/membership, postal codes, and biographies.
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
@@ -18,6 +27,44 @@
 \graphicspath{{./ieeeaccess_support/}}
 
 \usepackage{bm}
+\usepackage{amsthm}
+\usepackage{float}
+
+% Formal environments. The IEEE Access class defines none, so they are set up
+% here rather than pulled from a package that may not be installed.
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+
+% Self-contained algorithm float and numbered-step environment. BasicTeX ships
+% neither algorithmic nor algorithm2e; defining both here keeps the manuscript
+% buildable on a stock TeX Live installation without extra packages.
+\floatstyle{ruled}
+\newfloat{algorithm}{tbp}{loa}
+\floatname{algorithm}{Algorithm}
+\newcounter{algstep}
+\newenvironment{algsteps}{%
+  \footnotesize
+  \setcounter{algstep}{0}%
+  % \thealgstep, not \arabic{algstep}: \arabic is fragile and breaks when the
+  % list label is re-expanded for each \item.
+  \begin{list}{\textbf{\thealgstep:}}{%
+    \usecounter{algstep}%
+    \setlength{\labelwidth}{14pt}%
+    \setlength{\labelsep}{4pt}%
+    \setlength{\leftmargin}{20pt}%
+    \setlength{\rightmargin}{0pt}%
+    \setlength{\itemsep}{1pt}%
+    \setlength{\parsep}{0pt}%
+    \setlength{\topsep}{3pt}%
+  }%
+}{\end{list}}
+% Indentation for nested pseudocode blocks.
+\newcommand{\algind}[1]{\hspace*{#1.1em}}
+\newcommand{\algkw}[1]{\textbf{#1}}
+\newcommand{\algcomment}[1]{\textit{$\triangleright$~#1}}
 \makeatletter
 \AtBeginDocument{\DeclareMathVersion{bold}
 \SetSymbolFont{operators}{bold}{T1}{times}{b}{n}
@@ -35,14 +82,17 @@
 
 % The IEEE Access class re-sets \ttdefault to Courier (pcr) at \begin{document};
 % its T1 metric (pcrr8t) is not shipped with BasicTeX, so re-override it there.
-\AtBeginDocument{\renewcommand{\ttdefault}{cmtt}}
+% Use Latin Modern Mono (lmtt), NOT cmtt: T1-encoded cmtt has no Type 1 font,
+% so TeX falls back to generating EC bitmaps and embeds them as Type 3. IEEE
+% PDF eXpress rejects Type 3 fonts outright. lmtt ships real T1 Type 1 outlines.
+\AtBeginDocument{\renewcommand{\ttdefault}{lmtt}}
 
 \begin{document}
 \history{Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000. % TODO: set dates
 }
 \doi{10.1109/ACCESS.2024.0000000}% TODO: assigned at submission
 
-\title{Lineage or Era? An Identifiability-Gated Variance Decomposition of Correlated Errors in Public Language Models}
+\title{Lineage or Era? An Identifiability-Gated Instrument for Decomposing Correlated Errors in Public Language Models}
 
 \author{\uppercase{S. Kanaga Suba Raja}\authorrefmark{1},
 \uppercase{Sudharsan S}\authorrefmark{1}}% TODO: confirm author order and any IEEE membership designations
@@ -55,13 +105,15 @@ kanagass@srmist.edu.in; ss0856@srmist.edu.in)}% TODO: confirm postal codes and s
 }
 
 \markboth
-{Raja and Sudharsan: Identifiability-Gated Variance Decomposition of Correlated Errors in Public Language Models}
-{Raja and Sudharsan: Identifiability-Gated Variance Decomposition of Correlated Errors in Public Language Models}
+{Raja and Sudharsan: An Identifiability-Gated Instrument for Decomposing Correlated Errors in Language Models}
+{Raja and Sudharsan: An Identifiability-Gated Instrument for Decomposing Correlated Errors in Language Models}
 
 \corresp{Corresponding author: S. Kanaga Suba Raja (e-mail: kanagass@srmist.edu.in).}
 
 \begin{abstract}
-Public language models make correlated errors: when one open-weight model fails a question, its contemporaries and descendants often fail it as well. Whether this shared failure structure is driven by lineage---a model replicating the blind spots of the models and data it descends from---or by era---models released together acquiring the same errors through shared training data and technique---is untested, because the two are confounded: descendants are released after their ancestors, making release year both a mediator and a confounder of the lineage path. We introduce an identifiability-gated variance-decomposition instrument, built on the documented release record rather than reconstructed family trees, that partitions correlated error into lineage, era, and model-specific components on the connected subset of the open-model population where the partition is identifiable. The design is gated in two stages. First, a simulation study validates that a crossed restricted-maximum-likelihood estimator recovers known ground truth under realistic occupancy and fails detectably when family and era are nested (aliased). Second, a pre-analysis study-population design procedure---which never observes trait values---selects the smallest population, 22 of 47 models, that remains structurally identifiable and clears a simulation-based recoverability bar. The empirical partition itself is not claimed here: it is the object of a pre-registered measurement pass that this paper scopes, gates, and cost-bounds, and whose lineage-versus-era shares will be reported against a pre-registered decision rule for whether cross-family diversification is a credible remedy for correlated failure.
+Public language models make correlated errors: when one open-weight model fails a question, its contemporaries and descendants often fail it as well. Whether this shared failure structure is driven by lineage---a model replicating the blind spots of the models and data it descends from---or by era---models released together acquiring the same errors through shared training data and technique---cannot be settled by measurement alone, because the two are confounded by construction: descendants are released after their ancestors, making release date both a mediator and a confounder of the lineage path.
+
+This paper contributes the instrument that such a measurement requires. We formulate the attribution as a crossed variance decomposition into lineage, era, and model-specific components, give sufficient conditions under which that partition is identifiable, and separate the observational estimand from a mechanistic one that holds era exactly fixed. We then validate the instrument in three gated stages, each completed before any trait value is observed. A structural audit establishes that the documented release record---not a reconstructed family tree---yields a crossed, connected 47-model design. A simulation study shows that a direct restricted-maximum-likelihood estimator recovers known ground truth to within 2.5 percentage points under balanced occupancy and 5.3 under the real one, and, critically, fails \emph{detectably} when family and era are nested: three independent detectors flag the aliasing in 100\% of repetitions with zero silent coverage. Finally, an outcome-independent design procedure, which never reads a trait value, selects the smallest population that remains structurally identifiable and clears a simulation-based recoverability bar---22 of 47 models, at roughly one-third the measurement cost of the full population. We show the structural minimum of 21 is insufficient, so the additional model is statistically necessary rather than merely convenient. The empirical shares are the object of a measurement protocol that this paper pre-registers in full; the contribution here is the gated instrument, and the demonstration that identifiability, estimator validity, and population design can be settled before measurement rather than defended after it.
 \end{abstract}
 
 \begin{keywords}
@@ -94,6 +146,19 @@ helps, because every model of a given year carries the same errors. The choice
 between these two conclusions has direct operational consequences for how
 practitioners assemble model portfolios.
 
+The consequences are concrete. Consider a review pipeline that routes each item
+to three open-weight models and escalates to a human only when they disagree.
+Its entire value rests on the assumption that the three fail independently
+enough that unanimous agreement is informative. If they do not---if a shared
+ancestor or a shared training year makes them wrong together on the same
+items---then unanimity is loudest exactly where it is least trustworthy, and
+the escalation rule silently stops firing on the cases that most need it. The
+operator cannot detect this from per-model accuracy, which may be excellent for
+all three. What matters is the structure of the shared component, and whether
+adding a fourth model from a different family reduces it. That is a question
+about variance components, not about accuracy, and it is the question this
+paper builds the instrument to answer.
+
 The difficulty is that the two explanations are not separable by inspection.
 Descendants are always released after their ancestors, so release year lies on
 the lineage-to-error path: a child model inherits both the errors of its parent
@@ -118,19 +183,58 @@ The central methodological claim of this paper is the ordering of decisions.
 Identifiability is verified before any trait is measured; the estimator is
 validated in simulation before any real data are analyzed; and the study population
 is selected by a pre-analysis design procedure that never observes trait values,
-before any empirical inference. Section \ref{sec:questions} states the research
+before any empirical inference. This ordering is not a matter of tidiness. Each
+of the three stages can fail, and each failure is one that a conventional
+analysis would absorb into its results rather than report: a nested design
+returns a plausible split of an aliased sum; an unvalidated estimator returns a
+number whose bias is unknown at the sample size in hand; a population chosen
+after seeing traits returns an effect whose selection is part of the effect.
+Running the three as gates converts each of these from an unreported assumption
+into a reported verdict.
+
+The contributions of this paper are as follows.
+\begin{enumerate}
+\item We formulate lineage-versus-era attribution as a crossed variance
+  decomposition on the documented release record, and separate an observational
+  estimand $\theta_{P}$ from a mechanistic estimand $\theta_{M}$ that holds era
+  exactly fixed---two quantities that prior work conflates or reports as one
+  (Section~\ref{sec:model}).
+\item We give sufficient conditions for the partition to be identifiable
+  (Definition~\ref{def:crossed}, Proposition~\ref{prop:rank}), and show that the
+  nested case is a distinct estimand rather than a graceful degeneration of the
+  crossed one (Remark~\ref{rem:nested}).
+\item We validate a direct REML estimator against method-of-moments and library
+  implementations, and show it recovers known ground truth to $\le2.5$pp under
+  balanced occupancy and $\le5.3$pp under the real one, with 95--100\% interval
+  coverage (Section~\ref{sec:results-phase1}).
+\item We specify a detectable-failure battery under which a mis-specified
+  nested design \emph{must} fail visibly, and show three independent detectors
+  flag the aliasing in 100\% of repetitions with zero silent coverage
+  (Appendix~\ref{app:d3}).
+\item We give an outcome-independent study-population design procedure
+  (Algorithm~\ref{alg:g3}) that selects the smallest identifiable, recoverable
+  population without reading a trait value---22 of 47 models at roughly
+  one-third the measurement cost---and show the structural minimum of 21 is
+  insufficient (Section~\ref{sec:results-g3}).
+\item We pre-register the measurement and decision protocol the instrument
+  gates, and release the population, design, optimizer, validator, and tests
+  (Section~\ref{sec:methods-protocol}).
+\end{enumerate}
+
+Section \ref{sec:questions} states the research
 questions; Section \ref{sec:related} situates the work; Section
 \ref{sec:model} defines the estimands and identifiability conditions; Section
 \ref{sec:methods} describes the three stages of the protocol (population audit,
-simulation validation, pre-analysis population design); Section \ref{sec:results}
-reports the validated results and marks the empirical outputs that are pending the
-measurement campaign; Sections \ref{sec:discussion} and \ref{sec:threats} discuss
-implications and threats to validity.
+simulation validation, pre-analysis population design) and specifies the
+pre-registered measurement protocol the instrument gates; Section
+\ref{sec:results} reports the validated behaviour of the instrument; Sections
+\ref{sec:discussion} and \ref{sec:threats} discuss implications and threats to
+validity.
 
-\section{Problem Statement and Research Questions}
+\section{Problem Formulation and Research Questions}
 \label{sec:questions}
 
-\subsection{Main question}
+\subsection{Primary Research Question}
 The main research question (RQ0) asks whether the observed error-correlation
 structure across public open-weight language models can be separated into a lineage
 component and an era component; that is, whether the partition
@@ -140,7 +244,7 @@ simulation validation under the realistic population occupancy, and (b) on real
 data, the lineage and era components are each estimated with non-degenerate
 intervals.
 
-\subsection{Sub-questions}
+\subsection{Refutable Sub-Questions and Their Falsification Conditions}
 Table~\ref{tab:rqs} lists the sub-questions, their operating population, and their
 refutation conditions. RQ3 is the primary observational estimand (lineage
 conditional on era); RQ4 is the mechanistic estimand (lineage with era held fixed),
@@ -148,25 +252,29 @@ available only on the small co-released and staggered-fine-tune subsets and repo
 separately. RQ2 is the stop-rule question: a mis-specified generative model must
 fail \emph{detectably} rather than silently, or the program stops.
 
-\begin{table}[t]
-\caption{\textbf{Research questions and refutation conditions.}}
+\begin{table*}[!t]
+\caption{\textbf{Research questions, operating data, refutation conditions, and
+execution status.} Each question is paired with the observation that would
+refute it; the status column records which stages are reported in this paper
+and which are deferred to the pre-registered measurement protocol of
+Section~\ref{sec:methods-protocol}.}
 \label{tab:rqs}
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{|p{22pt}|p{130pt}|p{70pt}|p{78pt}|}
+\begin{tabular}{|p{24pt}|p{198pt}|p{76pt}|p{108pt}|p{52pt}|}
 \hline
-RQ & Question & Operates on & Refutation \\
+RQ & Question & Operates on & Refutation condition & Status \\
 \hline
-RQ1 & Does the crossed random-effects estimator recover known ground truth under a balanced-crossed (D1) and a realistic-occupancy (D2) regime? & Simulated data & Bias or collapse under D2 \\
-RQ2 & Under a nested (mis-specified) design, does the estimator fail detectably? & Simulated data & Silent bias \\
-RQ3 & What share of error covariance is attributable to lineage conditional on era? & Connected subset & $\sigma^{2}_{L}\approx0$ \\
-RQ4 & Holding era exactly fixed, what is the structural contribution of lineage? & Co-released cohorts + fine-tune chains & Reported separately; never merged with RQ3 \\
-RQ5 & After lineage adjustment, does the era component converge across release quarters? & Connected subset & Flat trend \\
-RQ6 & Is cross-family diversification a credible mitigation for correlated failure? & Decision layer & Era dominates \\
+RQ1 & Does the crossed random-effects estimator recover known ground truth under a balanced-crossed (D1) and a realistic-occupancy (D2) regime? & Simulated data & Bias or collapse under D2 & Reported (Sec.~\ref{sec:results-phase1}) \\
+RQ2 & Under a nested (mis-specified) design, does the estimator fail detectably? & Simulated data & Silent bias & Reported (Sec.~\ref{sec:results-phase1}) \\
+RQ3 & What share of error covariance is attributable to lineage conditional on era? & Connected subset & $\sigma^{2}_{L}\approx0$ & Pre-registered \\
+RQ4 & Holding era exactly fixed, what is the structural contribution of lineage? & Co-released cohorts + fine-tune chains & Reported separately; never merged with RQ3 & Pre-registered \\
+RQ5 & After lineage adjustment, does the era component converge across release quarters? & Connected subset & Flat trend & Pre-registered \\
+RQ6 & Is cross-family diversification a credible mitigation for correlated failure? & Decision layer & Era dominates & Pre-registered \\
 \hline
 \end{tabular}
-\end{table}
+\end{table*}
 
-\subsection{The two-estimand rule}
+\subsection{The Two-Estimand Rule: Observational and Mechanistic Attribution}
 RQ3 and RQ4 answer different questions and are never merged. Release year is a
 mediator of the lineage-to-error path and a potential confounder of the
 observational family--error association, so the observational primary
@@ -176,12 +284,12 @@ where co-released family cohorts and verified cross-generation fine-tune chains
 provide the contrast. We report the two estimands as $\theta_{P}$ (observational)
 and $\theta_{M}$ (mechanistic), separately, throughout.
 
-\section{Related Work}
+\section{Related Work and Positioning}
 \label{sec:related}
 Table~\ref{tab:diff} positions this work against its closest neighbors; this
 section expands on the three nearest ones.
 
-\paragraph{Agreement and co-failure.}
+\subsection{Cross-Sectional Agreement and Ensemble Co-Failure}
 Kim \emph{et al.} measure cross-sectional agreement between language models---how
 often two models agree when both are wrong---across more than 350 open and hosted
 models on two leaderboards, finding roughly 60\% agreement among co-erring models
@@ -197,7 +305,51 @@ governing inputs are exactly the lineage and era shares we estimate: our partiti
 quantifies the two components whose sum bounds that ceiling on the connected
 population, so the two results are complementary rather than competing.
 
-\paragraph{Variance decomposition of evaluation pipelines.}
+\subsection{Variance Components and Generalizability Theory}
+The statistical machinery this paper applies is old and well understood; what
+is new is the object it is applied to. Estimating the variance attributable to
+each of several crossed grouping factors is the classical variance-components
+problem, developed for unbalanced designs by Henderson \cite{henderson1975} and
+placed on a likelihood footing by Patterson and Thompson
+\cite{patterson1971} and Harville \cite{harville1977}, whose restricted
+likelihood removes the downward bias that maximum likelihood incurs by ignoring
+the degrees of freedom spent on fixed effects. Searle, Casella, and McCulloch
+\cite{searle1992} and Rao and Kleffe \cite{rao1988} give the general theory;
+Laird and Ware \cite{laird1982} and McCulloch and Searle \cite{mcculloch2001}
+extend it to the mixed-model and generalized settings, and Pinheiro and Bates
+\cite{pinheiro2000} and Bates \emph{et al.} \cite{bates2015} supply the
+computational treatment that most applied work now relies on.
+
+Two aspects of this literature bear directly on our design. The first is
+small-sample inference. With only six families, the family variance is
+estimated from five degrees of freedom, and the asymptotic intervals that mixed
+model software reports by default are known to be optimistic in exactly this
+regime; Satterthwaite \cite{satterthwaite1946} and Kenward and Roger
+\cite{kenward1997} give the standard corrections, and Self and Liang
+\cite{self1987} and Stram and Lee \cite{stram1994} characterize the
+non-standard null distribution that arises when a variance component is tested
+at the boundary of the parameter space. This is why we report interval coverage
+from simulation at the actual design size rather than quoting nominal coverage,
+and why the six-family limit is carried as a documented bound in
+Section~\ref{sec:threats} rather than treated as resolved.
+
+The second is that decomposing measurement variance into facets is itself a
+mature research programme. Generalizability theory \cite{cronbach1972,
+brennan2001} was built precisely to ask what fraction of observed variation in
+a measurement is attributable to persons, items, raters, or occasions, and to
+use that decomposition to design a measurement procedure before running it.
+Our contribution is closer in spirit to G-theory than to the LLM evaluation
+literature: the population of models plays the role of persons, family and
+release quarter play the role of crossed facets, and the pre-analysis
+population design of Section~\ref{sec:g3} is a decision study in G-theory's
+sense. The multilevel-modelling texts \cite{snijders2012, gelman2007} make the
+same crossed-versus-nested distinction that governs
+Proposition~\ref{prop:rank}, and Demidenko \cite{demidenko2013} treats the
+identifiability conditions directly. What none of this literature supplies is
+the object: no prior work poses model lineage and release era as the crossed
+facets of a model population's error variance.
+
+\subsection{Variance Decomposition in Evaluation and Measurement Pipelines}
 The closest statistical neighbor is the total-evaluation-error (TEE) line
 \cite{messing2026,brennan2001}. Messing decomposes the uncertainty of LLM
 evaluation pipelines---judge-model choice, temperature, and prompt phrasing---into
@@ -212,7 +364,7 @@ TEE-style designs quantify. Classical generalizability theory applies to facets 
 a measurement procedure rather than to a population of models whose
 identifiability must be established first \cite{brennan2001}.
 
-\paragraph{Lineage as structure.}
+\subsection{Lineage Reconstruction and Model Provenance}
 Phylogeny-reconstruction work treats lineage as a tree to be recovered from output
 similarity: PhyloLM builds phylogenetic trees across open and closed models and
 shows that tree distance predicts benchmark performance \cite{phylolm2024}. We
@@ -225,7 +377,7 @@ into our era component (shared training data is a shared environment), and its
 finding that contamination travels along lineage is exactly the mechanism that
 motivates the era channel, not a competing estimator of model error covariance.
 
-\paragraph{Instrument-level bias and monoculture.}
+\subsection{Instrument-Level Bias and the Algorithmic Monoculture Literature}
 Preference leakage shows that LLM-as-judge ratings are biased toward generators
 that are the same model as, inherit from, or share a family with the judge
 \cite{li2026pref}. This is a downstream \emph{measurement-instrument} consequence
@@ -242,13 +394,65 @@ behavior of one model can be predicted from another across six open-weight
 families, but stops at an independence audit and verifier reweighting rather than
 a trait-level variance partition \cite{kuai2026}.
 
-\begin{table}[t]
-\caption{\textbf{Differentiation against closest related work.}}
+The economic and welfare framing of monoculture predates the language-model
+case. Kleinberg and Raghavan \cite{kleinberg2021} show that convergence by many
+decision-makers on a single algorithm can reduce aggregate decision quality
+even when that algorithm is individually the most accurate, and Bommasani
+\emph{et al.} \cite{bommasani2022} formalize outcome homogenization---the
+extent to which the same individuals experience the same outcome across
+independent deployments---and measure it for systems that share components.
+Both take correlated behaviour as the premise from which a welfare conclusion
+follows. Our question is upstream of theirs: given that correlated failure
+exists, what generates it, and which of its sources a portfolio designer can
+act on.
+
+\subsection{Ensemble Diversity and the Accuracy--Independence Trade-off}
+That ensemble benefit depends on error independence rather than on member
+accuracy is one of the oldest results in machine learning. Dietterich
+\cite{dietterich2000} sets out the conditions under which combination helps,
+Wolpert \cite{wolpert1992} and Breiman \cite{breiman2001} exploit deliberate
+decorrelation of members, and Kuncheva and Whitaker \cite{kuncheva2003}
+evaluate ten diversity measures and find their relationship to ensemble
+accuracy weaker and less consistent than the folk theory assumes---a caution
+directly relevant here, since it means a diversity statistic is not
+interchangeable with the variance structure that actually governs joint
+failure. This literature almost universally assumes members are trained
+independently by construction, which is exactly the assumption that fails for
+a portfolio of public language models: members are drawn from a population with
+shared ancestry and a shared release environment, neither of which the
+deploying organization controls. The lineage/era partition is a way of
+measuring how badly that assumption fails, and along which axis.
+
+\subsection{Positioning: What Remains Unmeasured}
+Across these five literatures the pattern is consistent. The agreement and
+co-failure work measures that models err together but reports a correlation,
+not a decomposition, and is cross-sectional by construction. The
+variance-components and generalizability literature supplies exactly the
+decomposition required, but has never been pointed at a model population, and
+so has never had to confront the fact that the two candidate facets are
+confounded by release chronology. The pipeline-variance work decomposes a
+different object---the measurement apparatus rather than the models. The
+lineage-reconstruction work recovers ancestry structure but stops before
+attributing error variance to it. The monoculture and ensemble literatures
+consume correlated error as an input to a welfare or combination argument.
+Table~\ref{tab:diff} states the gap for each.
+
+What follows from this is not merely that the partition is unmeasured. It is
+that measuring it requires settling a question none of these literatures has
+had to ask: whether the lineage and era components are separately identifiable
+on the population actually available, given that ancestry and release date move
+together. That question has a determinate answer, it can be settled before any
+measurement, and it can fail. The rest of this paper is about settling it.
+
+\begin{table*}[!t]
+\caption{\textbf{Differentiation against closest related work.} The final
+column states what each line of work leaves unmeasured; the union of those
+gaps is the object of this paper.}
 \label{tab:diff}
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{|p{92pt}|p{62pt}|p{110pt}|p{70pt}|}
+\begin{tabular}{|p{104pt}|p{78pt}|p{164pt}|p{118pt}|}
 \hline
-Work & Object & What it does & Gap \\
+Work & Object & What it does & What it leaves open \\
 \hline
 Kim \emph{et al.}, ICML 2025 & agreement rate & measures when models co-err; cross-sectional & no variance partition; no temporal structure \\
 Messing, TEE (2026) & pipeline facets & crossed random effects on judge/temperature/prompt; TEE-corrected CIs & facets are pipeline, not model population; no identifiability gate \\
@@ -260,7 +464,7 @@ Monoculture literature & deployed portfolio & welfare argument given correlated 
 This work & error traits on connected subset & identifiability-gated $\sigma^{2}_{L}/\sigma^{2}_{E}/\sigma^{2}_{U}$ partition & --- \\
 \hline
 \end{tabular}
-\end{table}
+\end{table*}
 
 No verified prior work estimates $\sigma^{2}_{L}+\sigma^{2}_{E}+\sigma^{2}_{U}$ for
 model error traits, on the provably connected subset, with the estimator's validity
@@ -268,10 +472,10 @@ established in simulation first. Every prior approach either documents correlati
 without partitioning it, decomposes the variance of a different object, or treats
 correlated error as a given input to a downstream argument.
 
-\section{Formal Model and Identifiability}
+\section{Formal Model, Estimands, and Identifiability Conditions}
 \label{sec:model}
 
-\subsection{Setup and notation}
+\subsection{Population Model and Notation}
 Let the population consist of $N$ open-weight models indexed by $i\in\{1,\dots,N\}$.
 Each model is released by a family $f(i)\in\{1,\dots,6\}$ (a verified design
 grouping, e.g., Llama, Mistral, Qwen, Phi, Gemma, DeepSeek) in a release quarter
@@ -291,14 +495,20 @@ notation.
 \begin{table}[t]
 \caption{\textbf{Notation.}}
 \label{tab:notation}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{|p{52pt}|p{210pt}|}
+\setlength{\tabcolsep}{3pt}
+\footnotesize
+\begin{tabular}{|p{44pt}|p{182pt}|}
 \hline
 Symbol & Meaning \\
 \hline
+\multicolumn{2}{|l|}{\emph{(a) Design and population}} \\
 $N$, $i$ & size of the open-model population (47); model index \\
 $f(i)$, $e(i)$ & family and release quarter (era) of model $i$ \\
 $F$, $E$ & number of families (6) and release quarters (14) \\
+$\mathbf{C}$ & $N\times(F+E)$ design matrix of family and era indicators \\
+$\mathrm{VIF}$ & variance inflation factor of the design columns \\
+\hline
+\multicolumn{2}{|l|}{\emph{(b) Model, components, and estimands}} \\
 $Y_{i}$ & continuous per-model error trait, measured on the fixed common item set \\
 $\mu$ & grand mean \\
 $\alpha_{f}$, $\beta_{e}$, $u_{i}$ & family (lineage), era, and model-specific random effects in \eqref{eq:model} \\
@@ -306,10 +516,8 @@ $\sigma^{2}_{L}$, $\sigma^{2}_{E}$, $\sigma^{2}_{U}$ & lineage, era, and model-u
 $\theta$ & variance-component vector $(\sigma^{2}_{L},\sigma^{2}_{E},\sigma^{2}_{U})$ \\
 $\theta_{P}$ & observational share estimand (lineage conditional on era grouping) \\
 $\theta_{M}$ & mechanistic share estimand (lineage with era held exactly fixed) \\
-$\mathbf{C}$ & $N\times(F+E)$ design matrix of family and era indicators \\
 $\mathbf{V}(\theta)$ & marginal covariance of $\mathbf{y}$ given \eqref{eq:cov} \\
 $\ell_{R}(\theta)$ & log-restricted-likelihood (REML objective, \eqref{eq:reml}) \\
-$\mathrm{VIF}$ & variance inflation factor of the design columns \\
 \hline
 \end{tabular}
 \end{table}
@@ -328,7 +536,7 @@ a potential confounder of the observational family--error association. Because
 the mediational path cannot be separated from the lineage channel without holding
 era fixed, a single causal attribution is impossible by construction.
 
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){figs/fig_dag.png}
+\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt)[width=0.99\columnwidth]{figs/fig_dag.png}
 { \textbf{Causal structure of the error trait.} Family membership and era both
 influence the error trait; release date is a mediator of the lineage path and a
 potential confounder of the observational family--error association, motivating
@@ -346,14 +554,16 @@ with $u_{i}$ as in \eqref{eq:model}. The marginal covariance is
 \end{equation}
 with $\theta=(\sigma^{2}_{L},\sigma^{2}_{E},\sigma^{2}_{U})$.
 
-\subsection{Estimators}
+\subsection{Restricted-Maximum-Likelihood Estimation of the Variance Components}
 We estimate $\theta$ by restricted maximum likelihood (REML), maximizing the
 log-restricted-likelihood \cite{harville1977,patterson1971}
 \begin{equation}
-\ell_{R}(\theta) = -\tfrac{1}{2}\log\det\mathbf{V}
--\tfrac{1}{2}\log\det(\mathbf{1}^{\top}\mathbf{V}^{-1}\mathbf{1})
--\tfrac{1}{2}(\mathbf{y}-\mu\mathbf{1})^{\top}\mathbf{V}^{-1}
+\begin{split}
+\ell_{R}(\theta) = {}& -\tfrac{1}{2}\log\det\mathbf{V}
+-\tfrac{1}{2}\log\det(\mathbf{1}^{\top}\mathbf{V}^{-1}\mathbf{1}) \\
+& -\tfrac{1}{2}(\mathbf{y}-\mu\mathbf{1})^{\top}\mathbf{V}^{-1}
 (\mathbf{y}-\mu\mathbf{1}),
+\end{split}
 \label{eq:reml}
 \end{equation}
 maximized directly with a numerical optimizer. Because $\mathbf{C}$ is low-rank
@@ -365,10 +575,49 @@ maximized directly with a numerical optimizer. Because $\mathbf{C}$ is low-rank
 \mathbf{C}^{\top}\Bigr)
 \label{eq:woodbury}
 \end{equation}
+is used throughout, and is stated as Algorithm~\ref{alg:reml}. It
 reduces each likelihood evaluation to linear algebra on $20\times20$ matrices,
 making repeated simulation feasible. Share confidence intervals use a Monte-Carlo
 delta method on the log-variances with a numerically differentiated Hessian,
 PSD-clipped for sparse designs.
+
+\begin{algorithm}[t]
+\caption{REML fit via Woodbury with log-variance reparameterization}
+\label{alg:reml}
+\begin{algsteps}
+\item \algkw{input} trait $\mathbf{y}\in\mathbb{R}^{N}$; design
+  $\mathbf{C}\in\mathbb{R}^{N\times(F+E)}$; tolerance $\epsilon$
+\item $\psi \leftarrow (\log\hat\sigma^{2}_{L}, \log\hat\sigma^{2}_{E},
+  \log\hat\sigma^{2}_{U})$ from a method-of-moments start
+  \algcomment{unconstrained parameterization keeps the optimizer feasible}
+\item \algkw{repeat}
+\item \algind{1} $(\sigma^{2}_{L},\sigma^{2}_{E},\sigma^{2}_{U}) \leftarrow
+  \exp(\psi)$
+\item \algind{1} $\mathbf{G} \leftarrow
+  \operatorname{diag}(\sigma^{2}_{L}\mathbf{I}_{F},
+  \sigma^{2}_{E}\mathbf{I}_{E})$
+\item \algind{1} $\mathbf{M} \leftarrow \sigma^{2}_{U}\mathbf{I} +
+  \mathbf{G}\,\mathbf{C}^{\top}\mathbf{C}$
+  \algcomment{$(F{+}E)\times(F{+}E) = 20\times20$; $\mathbf{C}^{\top}\mathbf{C}$
+  is built once}
+\item \algind{1} $\mathbf{V}^{-1} \leftarrow
+  \sigma_{U}^{-2}(\mathbf{I}-\mathbf{C}\mathbf{M}^{-1}\mathbf{C}^{\top})$
+  \algcomment{Woodbury, \eqref{eq:woodbury}}
+\item \algind{1} $\log\det\mathbf{V} \leftarrow (N-F-E)\log\sigma^{2}_{U} +
+  \log\det\mathbf{M}$ \algcomment{matrix determinant lemma}
+\item \algind{1} evaluate $\ell_{R}(\psi)$ by \eqref{eq:reml}; take a
+  quasi-Newton step in $\psi$
+\item \algkw{until} $\lVert\nabla\ell_{R}\rVert < \epsilon$
+\item $\hat\theta \leftarrow \exp(\psi)$; clip to the PSD cone
+  \algcomment{sparse designs can drive a component to the boundary}
+\item $\mathbf{H} \leftarrow$ numerically differentiated Hessian of
+  $\ell_{R}$ at $\psi$
+\item draw $\psi^{(b)} \sim \mathcal{N}(\psi, -\mathbf{H}^{-1})$,
+  $b=1,\dots,B$; map through the share transform
+\item \algkw{return} $\hat\theta$, $\hat\theta_{P}$, and the Monte-Carlo
+  share intervals
+\end{algsteps}
+\end{algorithm}
 
 We verified this direct implementation against the standard reference
 implementations. On balanced data the REML estimates reproduce two-way ANOVA
@@ -386,15 +635,15 @@ reproduced in the released artifact
 a fresh reproduction of the family-share gap on D2 (scenario A) is included in
 Table~\ref{tab:estcomp}.
 
-\begin{table}[t]
+\begin{table*}[!t]
 \caption{\textbf{Estimator comparison: the direct maximizer vs.\ the
 `statsmodels` crossed-variance path.} Balanced design: $F{=}E{=}12$, two models
 per cell (288 models), fixed simulated dataset as in the decision log
 (2026-08-03); the family-share bias column is measured on the realistic D2
 occupancy (scenario A), reproduced 2026-08-06.}
 \label{tab:estcomp}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{|p{58pt}|p{30pt}|p{30pt}|p{30pt}|p{32pt}|p{42pt}|}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{|p{132pt}|p{46pt}|p{46pt}|p{46pt}|p{62pt}|p{92pt}|}
 \hline
 Method & Fam.\ $\sigma^{2}$ & Era\ $\sigma^{2}$ & Uniq.\ $\sigma^{2}$ & REML obj.\ $(-2\ell_{R})$ & Fam.-share bias on D2 (A) \\
 \hline
@@ -402,10 +651,15 @@ Two-way ANOVA (method of moments) & 0.399 & 0.313 & 0.656 & 65.994 & --- \\
 Direct REML (this work, Woodbury) & 0.399 & 0.313 & 0.656 & 65.994 & $-5.3$pp (300 reps)\\
 `statsmodels` MixedLM ($vc\_formula$) & 0.609 & 0.476 & 0.656 & 66.674 & $-28.0$pp (40 reps)\\
 \hline
+\multicolumn{6}{p{470pt}}{The direct maximizer and the method-of-moments
+reference agree to three decimals on the balanced design and reach the same
+restricted log-likelihood; the \texttt{statsmodels} crossed-variance path stops
+$0.68$ higher in $-2\ell_{R}$, i.e.\ short of the optimum, and inflates both
+variance components.}\\
 \end{tabular}
-\end{table}
+\end{table*}
 
-\subsection{Estimands}
+\subsection{Observational and Mechanistic Estimands}
 The primary observational estimand is the share vector
 \begin{equation}
 \theta_{P} = \left(\frac{\sigma^{2}_{L}}{\sigma^{2}_{L}+\sigma^{2}_{E}+\sigma^{2}_{U}},
@@ -418,16 +672,60 @@ era exactly fixed: co-released family cohorts and the verified cross-generation
 fine-tune chains (the only documented parent--offspring edges), reported separately
 from $\theta_{P}$.
 
-\subsection{Identifiability conditions}
-The partition \eqref{eq:thetaP} is estimable only if the design is crossed. We
-require: (i) every family spans at least two release quarters and at least two
-quarters contain at least two families; (ii) the induced design matrix has full
-column rank; (iii) the variance-inflation factors of the design are bounded
-($\mathrm{VIF}\le10$). A nested design---each family confined to a single era---is
-perfectly aliased, and the identifiability gate must detect the aliasing rather
-than silently ``succeed'' (Section \ref{sec:methods}).
+\subsection{Sufficient Conditions for Identifiability of the Partition}
+The partition \eqref{eq:thetaP} is estimable only if the design is crossed in a
+sense we now make precise.
 
-\section{Methodology}
+\begin{definition}[Connected crossed design]
+\label{def:crossed}
+A design $(f,e)$ on a model population $\mathcal{M}$ is \emph{crossed} if every
+family spans at least two release quarters and at least two quarters contain at
+least two families. It is \emph{connected} if the bipartite family--era
+incidence graph---one vertex per family, one per quarter, an edge whenever some
+model occupies that cell---is connected.
+\end{definition}
+
+Connectivity is what licenses comparison across the whole population: in a
+disconnected design the components carry separate, non-comparable grand means,
+and a partition estimated across them is a partition of an artifact. Crossing
+is what separates the two variance components. The following makes the second
+claim exact; the proof is in Appendix~\ref{app:rank}.
+
+\begin{proposition}[Crossing implies identifiable rank]
+\label{prop:rank}
+Let $\mathbf{C} = [\mathbf{Z}_{F}\;\mathbf{Z}_{E}]$ be the $N\times(F+E)$
+incidence matrix of a connected crossed design in the sense of
+Definition~\ref{def:crossed}. Then $\mathbf{C}$ has rank $F+E-1$, the deficiency
+being exactly the intercept direction $\mathbf{1}$, and
+$\sigma^{2}_{L},\sigma^{2}_{E},\sigma^{2}_{U}$ are separately estimable from
+$\mathbf{V}(\theta)$.
+\end{proposition}
+
+Operationally we therefore require: (i) the design is crossed and connected;
+(ii) $\operatorname{rank}(\mathbf{C}) = F+E-1$; and (iii) the
+variance-inflation factors of the design columns are bounded
+($\mathrm{VIF}\le10$), which is a numerical stability requirement rather than an
+identifiability one---a design can satisfy (i) and (ii) and still be so nearly
+aliased that the components are not recoverable at realistic sample sizes. This
+is precisely the gap that the simulation stage of Section~\ref{sec:methods}
+exists to close.
+
+\begin{remark}[The nested case is a different estimand, not a degenerate one]
+\label{rem:nested}
+When each family is confined to a single era, $\mathbf{Z}_{F}$ lies in the
+column span of $\mathbf{Z}_{E}$ and $\sigma^{2}_{L}$ and $\sigma^{2}_{E}$ are
+perfectly aliased: no estimator can separate them, and their sum---not either
+one---is what the data identify. It is tempting to read this as the crossed
+model degenerating gracefully, but it is not. A likelihood maximizer handed a
+nested design will return a finite, plausible-looking split of that sum, chosen
+by whatever regularization or starting point the implementation happens to
+carry. The quantity reported is then well defined only relative to the
+software. This is why the design battery of Section~\ref{sec:methods} treats
+the nested regime as a \emph{must-fail} case: the requirement is not that the
+estimator degrade, but that it be detected doing so.
+\end{remark}
+
+\section{Methodology: A Three-Gate Protocol for Identifiability-Preserving Measurement}
 \label{sec:methods}
 The protocol proceeds in three stages, each with an exit gate. The ordering is the
 contribution: identifiability before results, simulation before real data, and
@@ -436,13 +734,15 @@ shows the protocol spine; stages 1--3 are complete and reported here, and stage 
 is the pre-registered measurement pass whose outcomes are reported against the
 pre-registered decision rule.
 
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){figs/fig_pipeline.png}
+\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt)[width=\textwidth]{figs/fig_pipeline.png}
 { \textbf{Protocol architecture.} Three completed stages (population audit,
 simulation validation, pre-analysis study-population design), each behind an
 identifiability or recoverability gate, followed by the measurement and
-decomposition stage (pre-registered eval pass, pending) and the decision layer.
-The G3 stage is outcome-independent: it never observes trait values.
-\label{fig:pipeline}}
+decomposition stage the instrument gates and the decision layer. Stages 1--3
+constitute the instrument and are established in this paper; stage 4 is
+specified in full by the pre-registered protocol of
+Section~\ref{sec:methods-protocol}. The G3 stage is outcome-independent: it
+never observes trait values.\label{fig:pipeline}}
 
 \subsection{Study Population Construction}
 \label{sec:phase0}
@@ -531,6 +831,56 @@ model and asking which design constraint fails---so the population file document
 \emph{why} each model is required (era-window, structural
 identifiability, or statistical recoverability).
 
+Algorithm~\ref{alg:g3} states the procedure. Its defining property is the
+assertion on line 2: the trait vector is never an input, so no branch of the
+search can depend on an outcome. This is what distinguishes the procedure from
+a power analysis run after a pilot measurement, and it is why the resulting
+population can be published before the measurement without creating a
+researcher degree of freedom.
+
+\begin{algorithm}[t]
+\caption{Outcome-independent study-population design (G3)}
+\label{alg:g3}
+\begin{algsteps}
+\item \algkw{input} model set $\mathcal{M}$ ($|\mathcal{M}|=47$); occupancy
+  $O$: family $\times$ quarter; verified lineage edges $L$; per-model cost
+  $c$; bars $\tau_{\mathrm{bias}}{=}4.0$pp, $\tau_{\mathrm{cov}}{=}90\%$,
+  margin $\delta{=}1$pp
+\item \algkw{assert} trait values $\mathbf{y}$ are not readable in this scope
+  \algcomment{outcome-independence invariant}
+\item $\mathcal{S} \leftarrow \{\,S \subseteq \mathcal{M} :
+  S \text{ satisfies the hard constraints}\,\}$, namely
+\item \algind{1} all $F$ families present in $S$
+\item \algind{1} every quarter of the era window retains $\ge1$ model
+\item \algind{1} both endpoints of every edge in $L$ retained
+\item \algind{1} the documented within-family chain retained
+\item \algkw{for} $S \in \mathcal{S}$ sorted by $\sum_{i \in S} c_i$ ascending
+  \algkw{do}
+\item \algind{1} build $\mathbf{C}_S$; \algkw{if}
+  $\operatorname{rank}(\mathbf{C}_S) < F+E-1$ \algkw{then continue}
+\item \algind{1} \algkw{if} $\max\mathrm{VIF}(\mathbf{C}_S) > 10$
+  \algkw{then continue} \algcomment{structural identifiability}
+\item \algind{1} \algkw{if} $S$ has an era with $<2$ families or a family with
+  $<2$ eras \algkw{then continue}
+\item \algind{1} $(b,\kappa) \leftarrow \textit{Screen}(S, R{=}300)$
+  \algcomment{simulated traits only}
+\item \algind{1} \algkw{if} $|b| > \tau_{\mathrm{bias}}$ \algkw{or}
+  $\kappa < \tau_{\mathrm{cov}}$ \algkw{then continue}
+\item \algind{1} $(b,\kappa) \leftarrow \textit{Confirm}(S, R{=}1000)$
+\item \algind{1} \algkw{if} $\tau_{\mathrm{bias}} - |b| < \delta$
+  \algkw{then continue} \algcomment{reject knife-edge designs}
+\item \algind{1} \algkw{if} $\textit{Robust}(S, R{=}2000)$ fails
+  \algkw{then continue}
+\item \algind{1} \algkw{for} $m \in S$ \algkw{do} \algcomment{auditable reason
+  by single-model ablation}
+\item \algind{2} $\mathrm{reason}[m] \leftarrow$ the first constraint that
+  fails on $S \setminus \{m\}$
+\item \algind{1} \algkw{return} $S$, $\mathrm{reason}$
+\item \algkw{return} $\varnothing$ \algcomment{no admissible population; the
+  gate blocks measurement}
+\end{algsteps}
+\end{algorithm}
+
 \subsection{Trait Measurement and Decomposition}
 \label{sec:phase2}
 On the selected population, the pipeline is: (i) a fresh five-shot MMLU pass
@@ -546,17 +896,78 @@ documented sanity cross-check against prior leaderboards that is explicitly not 
 validation). The era-convergence trend and the $\theta_{M}$ mechanistic tables are
 reported as table entries, separately from the primary partition.
 
+\subsection{Pre-Registered Measurement and Decision Protocol}
+\label{sec:methods-protocol}
+The instrument is only as binding as the specification it is committed to
+before the trait is observed. We therefore fix, in advance, the complete set of
+outputs the measurement pass will produce, the form each takes, and the rule
+that maps them onto the RQ6 decision. Nothing in this specification depends on
+a trait value, and none of it may be revised after the pass is run;
+Table~\ref{tab:prereg} records it in full.
+
+Three commitments in that specification deserve emphasis, because each closes a
+degree of freedom that a post-hoc analysis would otherwise retain. First, the
+chance-corrected overlap measure is \emph{locked} to $\phi$ by the
+pre-registration rule, so the reported co-failure structure cannot be selected
+from a family of agreement statistics after the overlaps are seen; the null
+ladder against which it is read---observed $\to$ matched-accuracy $\to$
+item-difficulty $\to$ independence---is fixed with it. Second, the
+identifiability gate is re-run on the \emph{measured} design rather than the
+planned one: rank, variance-inflation factors, and the three D3 detectors of
+Appendix~\ref{app:d3} are evaluated on the occupancy that the pass actually
+returns, and a hard failure aborts the analysis rather than downgrading it to a
+caveat. Third, the two estimands are reported in separate tables under all
+circumstances, so that a weak $\theta_{M}$ cannot be quietly absorbed into a
+stronger $\theta_{P}$, or the reverse.
+
+The decision rule itself is deliberately asymmetric and is stated in
+Section~\ref{sec:discussion}. Its asymmetry is the reason it must be fixed in
+advance: a symmetric rule would be robust to the order in which the shares are
+inspected, whereas this one is not.
+
+\begin{table}[t]
+\caption{\textbf{Pre-registered measurement outputs and their form.} Fixed
+before the measurement pass; not revisable after it. Every entry is a
+specification, not a result.}
+\label{tab:prereg}
+\setlength{\tabcolsep}{3pt}
+\footnotesize
+\begin{tabular}{|p{62pt}|p{164pt}|}
+\hline
+Output & Specification \\
+\hline
+Error-similarity panel & Pairwise error overlap across the selected models,
+chance-corrected with $\phi$ (locked), read against the four-rung null ladder;
+reported as heatmap, network, and embedding. Supporting, not confirmatory \\
+$\theta_{P}$ partition & REML estimates and bootstrap intervals for
+$\sigma^{2}_{L},\sigma^{2}_{E},\sigma^{2}_{U}$ on the 22-model population;
+the primary output \\
+Identifiability audit & Rank, VIF, and the three D3 detectors re-run on the
+measured occupancy; hard failure aborts \\
+Era-convergence entry & Era share by release quarter after lineage adjustment;
+reported as a table entry, never promoted to a headline figure \\
+$\theta_{M}$ tables & Family contrasts within co-released quarters and
+per-quarter slopes along the verified fine-tune edges; reported separately from
+$\theta_{P}$ \\
+Sensitivity battery & Leave-one-family, leaked-drop, subject-drop,
+trait-definition, and the leaderboard sanity cross-check (not a validation) \\
+\hline
+\end{tabular}
+\end{table}
+
 \section{Results}
 \label{sec:results}
-Results status: we report (a) the validated results that exist today---the
-population audit, the simulation validation, and the
-pre-analysis population design---and (b) the empirical outputs of the
-measurement campaign (Section \ref{sec:results-empirical}), which are pending the
-pre-registered eval pass and are explicitly marked as such. No empirical claim
-about lineage-versus-era shares is made in this version; those claims are the
-object of the pre-registered measurement pass. % TODO: replace the pending entries once the eval pass completes.
+This section reports the three gated stages of the instrument: the structural
+audit of the model population, the recovery and detectable-failure behaviour of
+the estimator in simulation, and the population selected by the
+outcome-independent design procedure. Each is a property of the instrument
+rather than of any measured trait, and each is established before any trait
+value is observed---which is precisely what makes the pre-registered
+measurement protocol of Section~\ref{sec:methods-protocol} binding rather than
+advisory. The lineage-versus-era shares themselves are the object of that
+protocol and are deliberately not estimated here.
 
-\subsection{Population Audit}
+\subsection{Structural Audit of the 47-Model Connected Subset}
 The verified population is $6$ families $\times$ $14$ quarters with $N=47$ models.
 The design is crossed (unbalanced/incomplete): 11 of 14 quarters contain at least
 two families, no family is confined to one era, and $5$ cross-generation
@@ -570,25 +981,28 @@ lineage rather than a descendant; and cross-family teacher leakage (e.g., Phi-4
 trained on GPT-4o-generated data) belongs in the era channel as shared environment.
 Fig.~\ref{fig:design} shows the occupancy matrix.
 
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){figs/fig_design.png}
+\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt)[width=0.99\columnwidth]{figs/fig_design.png}
 { \textbf{Study population construction: family $\times$ release-quarter
 occupancy of the 47-model connected subset.} 11 of 14 quarters contain at least
 two families (highlighted) and no family is confined to a single era; sparse
-cells carry the small-sample limits reported in Section \ref{sec:threats}. The
-verified cross-generation lineage edges are shown in Fig.~\ref{fig:lineage}.
+cells carry the small-sample limits reported in Section \ref{sec:threats}.
+Cell shading gives the model count; only cells holding more than one model are
+annotated, since 39 of the 47 models occupy a cell of their own. The verified
+cross-generation lineage edges are shown in Fig.~\ref{fig:lineage}.
 \label{fig:design}}
 
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){figs/fig_lineage.png}
+\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt)[width=\textwidth]{figs/fig_lineage.png}
 { \textbf{Verified lineage on the connected subset.} All 47 models on the
 family $\times$ release-quarter grid (filled markers: gated access; open
-markers: public). The five parent--offspring edges verified from the Hugging
+markers: public); models sharing a family--quarter cell are offset within the
+cell so that each is separately labelled. The five parent--offspring edges verified from the Hugging
 Face \texttt{base\_model} field and the documented Mistral-Small chain support
 the mechanistic estimand $\theta_{M}$; the primary partition $\theta_{P}$
 uses the verified family grouping instead of the sparse edge record. Dashed
 grey arrows mark the documented cross-family teacher-leakage channels, which
 belong to the era (shared-environment) channel.\label{fig:lineage}}
 
-\subsection{Simulation Validation}
+\subsection{Estimator Recovery and Detectable Failure}
 \label{sec:results-phase1}
 Table~\ref{tab:sim} summarizes the validation. Under the balanced reference (D1,
 300 repetitions) share bias is $\le2.5$pp with coverage 95--96\%. Under the real
@@ -596,43 +1010,66 @@ occupancy (D2) share bias is $\le5.3$pp with coverage 95--100\%; the family-shar
 bias of $-5.3$pp in the lineage-dominant scenario is the documented small-sample
 limit of six family levels (df$=5$) and is reported as a limit, not corrected
 away. The nested design (D3) is detected in 100\% of repetitions by all three
-independent detectors, with zero silent coverage. The liability test resolved the
+independent detectors, with zero silent coverage (Table~\ref{tab:d3}). The
+liability test resolved the
 trait path to per-model continuous traits; the family $\times$ era interaction is
 documented as non-identified rather than estimated. The verdict is GO WITH CHANGES,
 with the changes being the continuous-trait path and the disclosure of the
 family-share limit.
 
-\begin{table}[t]
-\caption{\textbf{Simulation validation (Phase 1).}}
+\begin{table*}[!t]
+\caption{\textbf{Simulation validation (Phase 1).} Each regime is run to a
+fixed repetition budget on a recorded seed and carries an explicit gate
+verdict; D3 is a must-fail regime, so its PASS records that the aliasing was
+detected, not that the partition was recovered.}
 \label{tab:sim}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{|p{52pt}|p{95pt}|p{55pt}|p{45pt}|}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{|p{86pt}|p{194pt}|p{44pt}|p{46pt}|p{70pt}|}
 \hline
-Regime & Recovery / detection & Gate & Verdict \\
+Regime & Recovery / detection & Reps & Gate & Verdict \\
 \hline
-D1 balanced-crossed & share bias $\le2.5$pp, coverage 95--96\% & PASS & GO \\
-D2 realistic occupancy & share bias $\le5.3$pp, coverage 95--100\% & PASS$^{*}$ & GO (documented) \\
-D3 nested (aliased) & detection 100\%, silent coverage 0\% & PASS & GO \\
-Liability (binary) & era underpowered at real occupancy; continuous recovers & n/a & path decided \\
-L$\times$E interaction & non-identified (SE ratio $\approx10^{4}$) & n/a & documented \\
+D1 balanced-crossed & share bias $\le2.5$pp, coverage 95--96\% & 300 & PASS & GO \\
+D2 realistic occupancy & share bias $\le5.3$pp, coverage 95--100\% & 300 & PASS$^{a}$ & GO (documented) \\
+D3 nested (aliased) & detection 100\%, silent coverage 0\% & 300 & PASS & GO \\
+Liability (binary) & era underpowered at real occupancy; continuous recovers & 300 & n/a & path decided \\
+L$\times$E interaction & non-identified (SE ratio $\approx10^{4}$) & 300 & n/a & documented \\
 \hline
-\multicolumn{4}{p{240pt}}{$^{*}$The strict bar is defined on the \emph{era}-share
+\multicolumn{5}{p{470pt}}{$^{a}$The strict bar is defined on the \emph{era}-share
 bias (mean over converged repetitions; Section \ref{sec:phase1}); the family-share
 bias of $-5.3$pp in the lineage-dominant scenario is the six-family small-sample
 limit (df$=5$) and is reported as a documented limit in Section
 \ref{sec:threats}, not waived.}\\
 \end{tabular}
+\end{table*}
+
+\begin{table}[t]
+\caption{\textbf{Detectable-failure battery under the nested (mis-specified)
+design.} Each detector is evaluated independently on 300 fresh repetitions per
+generative scenario on a fixed seed. The gate requires \emph{all three} to flag
+the aliasing in $\ge90\%$ of repetitions with no repetition showing silent
+confidence-interval coverage; a nested design that appears to succeed is a
+broken detector, not a valid estimate.}
+\label{tab:d3}
+\setlength{\tabcolsep}{3pt}
+\footnotesize
+\begin{tabular}{|p{60pt}|p{58pt}|p{34pt}|p{28pt}|p{28pt}|}
+\hline
+Detector & Statistic & Threshold & Sc.\ A & Sc.\ B \\
+\hline
+BLUP collinearity & $|\operatorname{corr}(\hat{u}_{F},\hat{u}_{E})|$ & $>0.9$ & 100\% & 100\% \\
+SE inflation & $\widehat{\mathrm{SE}} \ge |\hat{\sigma}|$ & ratio $\ge1$ & 100\% & 100\% \\
+Profile flatness & profile drop over $\pm0.4$ window & $<1.9207$ & 100\% & 100\% \\
+\hline
+\textbf{Joint detection} & any detector fires & $\ge90\%$ & \textbf{100\%} & \textbf{100\%} \\
+Silent CI coverage & undetected reps covering truth & $=0$ & 0 & 0 \\
+\hline
+\multicolumn{5}{p{225pt}}{Thresholds are defined in Appendix~\ref{app:d3};
+$1.9207$ is the $\chi^{2}_{1}$ 95\% critical value halved. Non-convergence is
+tracked as a fourth signal and did not fire independently of the three above.}\\
+\end{tabular}
 \end{table}
 
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){figs/fig_d3.png}
-{ \textbf{D3 aliasing detection under the nested (mis-specified) design.}
-Percentage of repetitions in which each independent detector flags the
-family--era aliasing, 300 repetitions per scenario on a fixed seed. A nested
-design must \emph{fail detectably}---joint detection is 100\% and zero silent CI
-coverage is observed---never silently ``succeed''. Detectors are defined formally
-in Appendix~\ref{app:d3}.\label{fig:d3}}
-
-\subsection{Pre-Analysis Population Design}
+\subsection{Selection of the Minimum Valid Population Under the G3 Gate}
 \label{sec:results-g3}
 Fig.~\ref{fig:g3} and Table~\ref{tab:g3} report the gate. The structural minimum is
 21 models (identifiable: full rank, VIF $\le10$), but the 21-model design sits
@@ -656,67 +1093,61 @@ and each dropped model the reason ``redundant in-cell replication.''
 \begin{table}[t]
 \caption{\textbf{G3 gate: minimum valid population = 22 of 47.}}
 \label{tab:g3}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{|c|c|c|c|c|c|c|}
+\setlength{\tabcolsep}{3pt}
+\footnotesize
+\begin{tabular}{|c|c|c|c|c|c|}
 \hline
-$n$ & models & bias A (pp) & bias B (pp) & cov\% (A/B) & confirm A/B & pass \\
+$n$ & bias A (pp) & bias B (pp) & cov\% (A/B) & confirm A/B & pass \\
 \hline
-47 & 47 & 0.3 & $-3.5$ & 99 / 96 & 1.5 / $-2.2$ & True \\
-21 & 21 & 1.8 & $-4.9$ & 96 / 98 & 2.1 / $-5.1$ & False \\
-22 & 22 & 2.4 & $-0.8$ & 98 / 99 & 2.2 / $-2.4$ & True \\
+47 & 0.3 & $-3.5$ & 99 / 96 & 1.5 / $-2.2$ & True \\
+21 & 1.8 & $-4.9$ & 96 / 98 & 2.1 / $-5.1$ & False \\
+22 & 2.4 & $-0.8$ & 98 / 99 & 2.2 / $-2.4$ & True \\
 \hline
 \end{tabular}
 \end{table}
 
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){figs/fig_g3_trace.png}
+\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt)[width=0.99\columnwidth]{figs/fig_g3_trace.png}
 { \textbf{Pre-analysis population-design decision trace: population size vs.\
-era-share bias (scenario B, confirmation battery) with the 2000-repetition
-robustness points.} 47 passes, the structural minimum 21 fails the margin
-confirmation (knife-edge), and 22 passes --- the extra model over the structural
-minimum is statistically necessary, not computationally convenient. The winner
-also clears the strict bar at 2000 repetitions (A $1.7$pp / B $-3.2$pp).
-\label{fig:g3}}
+era-share bias.} Markers give the confirmation battery at 1000 repetitions
+($\bigcirc$ scenario B, $\triangle$ scenario A) and the 2000-repetition
+robustness re-run ($\square$ scenario B, $\triangledown$ scenario A); filled
+markers are within the confirmation band, open markers outside it. Candidates
+at $n=21$ and $n=22$ are offset horizontally about their population size so
+their marker clusters do not overlap. 47 passes, the structural minimum 21
+fails the margin confirmation (knife-edge), and 22 passes --- the extra model
+over the structural minimum is statistically necessary, not computationally
+convenient. The winner also clears the strict bar at 2000 repetitions
+(A $1.7$pp / B $-3.2$pp).\label{fig:g3}}
 
-\subsection{Empirical outputs (pending measurement)}
-\label{sec:results-empirical}
-The following results are produced by the Phase 2 pipeline on the measured trait
-and are \emph{pending the fresh eval pass}; they are listed with the exact outputs
-that will fill them. % TODO: replace all placeholders with the eval-pass outputs.
-\begin{itemize}
-\item \emph{Error-similarity panel (supporting).} Observed pairwise error overlap
-  across models, chance-corrected with a pre-registered measure (phi is locked by
-  the pre-registration rule), with the null ladder (observed $\to$
-  matched-accuracy $\to$ item-difficulty $\to$ independence). Outputs: overlap
-  heatmap, network, and embedding (Fig.~\ref{fig:similarity}).
-\item \emph{{$\theta_{P}$} variance partition.} REML estimates and bootstrap
-  intervals for $\sigma^{2}_{L}$, $\sigma^{2}_{E}$, $\sigma^{2}_{U}$ on the
-  22-model population (Fig.~\ref{fig:partition}). \emph{(TBD)}.
-\item \emph{Identifiability audit on the measured design.} Rank, VIF, and the
-  D3-must-fail detectors re-run on the real occupancy. \emph{(TBD)}.
-\item \emph{Era-convergence entry.} Era share by release quarter after lineage
-  adjustment; reported as a table entry. \emph{(TBD)}.
-\item \emph{{$\theta_{M}$} mechanistic tables.} Family contrasts within
-  co-released quarters and per-quarter slopes along the verified fine-tune edges,
-  reported separately. \emph{(TBD)}.
-\item \emph{Sensitivity blocks.} Leave-one-family, leaked-drop, subject-drop,
-  trait-definition, and the documented leaderboard sanity check. \emph{(TBD)}.
-\end{itemize}
-
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){figs/fig_placeholder.png}
-{ \textbf{Observed pairwise error overlap between models, chance-corrected
-(pre-registered phi measure) with the null ladder.} \emph{Pending the fresh eval
-pass.\label{fig:similarity}}}
-% Placeholder; replace with the real overlap panel after the eval pass.
-
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){figs/fig_placeholder.png}
-{ \textbf{{$\theta_{P}$} variance partition: lineage, era, and model-unique shares
-with bootstrap intervals on the G3 minimum valid population (22 of 47), drawn
-within the 47-model connected subset.} \emph{Pending the
-fresh eval pass.\label{fig:partition}}}
 % Placeholder; replace with the real share figure (variance_shares.pdf) after the eval pass.
 
-\section{Discussion and Intervention Implications}
+\section{Discussion: Operational Implications for Model Portfolio Design}
 \label{sec:discussion}
+
+\subsection{Why the Partition, and Not the Correlation, Is the Decision
+Quantity}
+The quantity practitioners can already measure is the pairwise error
+correlation between two models, and the quantity they actually need is the
+probability that an entire portfolio fails the same item. These are not the
+same, and the gap between them is not small. Chen reports that pairwise
+correlation substantially \emph{underestimates} the co-failure ceiling---the
+probability that every member of an ensemble is wrong together---by roughly a
+factor of two across 67 frontier models and three combination schemes
+\cite{chen2026}. The reason is structural: pairwise correlation is an average
+over model pairs and is insensitive to whether the shared component is carried
+by one group of models or spread across all of them. A portfolio with a modest
+average correlation concentrated within a single family behaves very
+differently from one with the same average spread uniformly, and only the
+second is helped by adding members.
+
+A variance partition distinguishes these cases directly, because it says
+\emph{which} grouping carries the shared component. That is why the decision
+rule below is stated on $\sigma^{2}_{L}$ and $\sigma^{2}_{E}$ rather than on an
+agreement rate: the shares, not the correlation, are what determine whether
+adding a model from a new family buys independence or merely buys another draw
+from the same environment.
+
+\subsection{The Two Regimes and What Each Implies}
 The partition $\theta_{P}$ distinguishes two actionable regimes. If the lineage
 share dominates, cross-family diversification is a credible mitigation: models with
 independent ancestries add error variance that is not shared, so an ensemble is
@@ -733,6 +1164,35 @@ ceiling of an ensemble, so the operative risk is the joint all-wrong rate
 \cite{chen2026}; our partition estimates exactly the lineage and era shares whose
 sum governs that ceiling on the connected population.
 
+\subsection{What a Practitioner Does Differently Under Each Outcome}
+The two regimes prescribe different procurement behaviour, and the difference
+is large enough to be worth stating concretely. Under a lineage-dominant
+outcome, the actionable variable is \emph{ancestry spread}: an operator
+assembling a three-model panel should spend its budget on models from
+independent families even at some cost in individual accuracy, because the
+marginal member contributes error variance that is genuinely unshared. Adding a
+fourth model from a family already represented buys comparatively little. The
+audit that follows is a lineage audit: for each candidate, what is it descended
+from, and is that ancestor already in the portfolio?
+
+Under an era-dominant outcome the same procurement rule is close to useless,
+because ancestry is not what the models share. The actionable variable becomes
+\emph{release-date spread}, which is a far less comfortable lever: it means
+deliberately retaining older models, whose individual accuracy is worse, in
+order to buy independence, and it means that a portfolio refreshed all at once
+to the current generation is more correlated than the one it replaced---exactly
+the opposite of the usual upgrade intuition. It also means the mitigation has a
+ceiling that diversification cannot raise, and that residual correlated failure
+must be handled downstream, by human escalation or by out-of-model checks,
+rather than by portfolio composition.
+
+The practical value of resolving the question is therefore asymmetric. A
+lineage-dominant answer tells an operator to do something they can do. An
+era-dominant answer tells them that the intervention they are most likely to
+reach for does not work, which is less satisfying but considerably more useful
+than not knowing.
+
+\subsection{Structural Safeguards}
 Two structural safeguards keep the discussion honest. First, the mechanistic
 estimand $\theta_{M}$ is reported separately and never merged into $\theta_{P}$;
 only the small co-released cohorts and staggered fine-tune chains can hold era
@@ -741,8 +1201,39 @@ are scoped to the connected subset of the open-model population as defined in
 Section \ref{sec:phase0}; the partition is undefined by construction on nested
 subpopulations, which is a property of the design, not a data gap.
 
-\section{Threats to Validity and Limitations}
+\subsection{Limits of the Recommendation}
+Three limits bound how far any of this can be carried. The population is drawn
+from open-weight models with documented release records, so conclusions do not
+transfer to closed models, whose training dates and ancestry are not
+observable, and whose behaviour may differ systematically precisely because
+their development is unconstrained by public release conventions. The trait is
+measured on a single fixed benchmark item set; the shares are shares of
+\emph{that} trait's variance, and a benchmark weighted differently towards
+reasoning or recall could reasonably yield a different split. And the family
+grouping, though verified against organization metadata rather than inferred
+from behaviour, is a coarse proxy for ancestry: it treats a family as a unit
+when in reality a family may contain a redesign that shares little with its
+predecessors---the DeepSeek V4 case documented in Appendix~\ref{app:phase0} is
+exactly this, and is handled by treating it as a new lineage. Each of these is
+a reason to read the eventual shares as scoped estimates rather than universal
+constants, and each is revisited in Section~\ref{sec:threats}.
+
+\section{Threats to Validity, Scope Restrictions, and Limitations}
 \label{sec:threats}
+The threats below fall into three groups, and the distinction matters because
+the three call for different responses. The first group are limits the design
+\emph{detects}: the simulation battery and identifiability audit are
+constructed so that these announce themselves, and their magnitudes are
+reported quantities rather than assumptions. The second are limits the design
+\emph{bounds but cannot remove}: they bias the estimates in a known direction
+by a quantity we can characterize, and the honest response is to disclose the
+direction and carry the bound. The third are \emph{scope restrictions}: they
+are not defects to be mitigated at all, but statements about the population to
+which any conclusion applies. Presenting all three as a single undifferentiated
+list of caveats, as is common, obscures the fact that only the second group
+represents genuine uncertainty about the numbers.
+
+\subsection{Limits the Design Detects and Reports}
 \begin{itemize}
 \item \emph{Six-family small-sample limit.} The real design has six family levels
   (df$=5$), which caps family-share CI coverage below nominal regardless of CI
@@ -750,46 +1241,70 @@ subpopulations, which is a property of the design, not a data gap.
   lineage-dominant scenario (F2 in the simulation report). Family shares are
   reported with this limit disclosed; the same limit argues for acquiring more
   lineage families or reporting family shares as lower bounds.
-\item \emph{Lineage metadata sparsity.} True cross-generation lineage is largely
-  undocumented in model cards; only five cross-generation edges are verified.
-  This constrains the mechanistic estimand, not the primary partition, which uses
-  the verified family grouping.
-\item \emph{Teacher leakage.} Cross-family teacher-student relationships (e.g.,
-  Phi-4 from GPT-4o data, Gemma from Gemini) violate the independence assumption to
-  a known-but-unknown degree and are disclosed as belonging to the era channel.
+\item \emph{Power and boundary shares.} With $F=6$ families and 14 quarters, the
+  era trend (RQ5) has limited support and share estimates near the boundary carry
+  inflated CIs; these are reported with the underpower caveat rather than re-aimed.
 \item \emph{Underpowered binary era.} Item-level binary outcomes cannot resolve
   the era variance at this occupancy; the continuous per-model trait path is the
   documented resolution, and any binary-era claim must carry the underpower caveat.
+\end{itemize}
+
+\subsection{Limits the Design Bounds but Cannot Remove}
+These are the threats that carry real uncertainty into the estimates. Each has
+a known sign, which is what makes it reportable rather than merely worrying.
+\begin{itemize}
+\item \emph{Lineage metadata sparsity.} True cross-generation lineage is largely
+  undocumented in model cards; only five cross-generation edges are verified.
+  This constrains the mechanistic estimand, not the primary partition, which uses
+  the verified family grouping. The asymmetry is worth stating plainly: the
+  primary partition is robust to this gap because family membership is
+  documented organizationally, whereas $\theta_{M}$ rests on the edge record and
+  is therefore the weaker of the two estimands by a margin that will not close
+  until \texttt{base\_model} provenance is more consistently published.
+\item \emph{Teacher leakage.} Cross-family teacher-student relationships (e.g.,
+  Phi-4 from GPT-4o data, Gemma from Gemini) violate the independence assumption to
+  a known-but-unknown degree and are disclosed as belonging to the era channel.
 \item \emph{Independent trait-error.} Per-model trait measurement errors are
   assumed independent across models; correlated measurement error would move shares
   jointly, and is probed by the trait-definition and leaked-drop sensitivity blocks.
 \item \emph{Common item set.} A fresh five-shot pass on one fixed item set is the
   basis for all traits; prior work mixing leaderboard subsets is explicitly not used
   as validation.
-\item \emph{Open-weight sampling frame.} The population is restricted to open-weight
-  models with documented release records; hosted and closed models are excluded by
-  design, so conclusions scope to the connected subset of the open-weight universe
-  and do not generalize to closed systems.
 \item \emph{Benchmark contamination and saturation.} Traits come from a widely cited
   five-shot benchmark; if pretraining included the items, trait variance is
   compressed toward zero and era/lineage shares are biased downward. The
   leaderboard sanity cross-check is explicitly not validation and is so labeled.
-\item \emph{Power and boundary shares.} With $F=6$ families and 14 quarters, the
-  era trend (RQ5) has limited support and share estimates near the boundary carry
-  inflated CIs; these are reported with the underpower caveat rather than re-aimed.
 \item \emph{Temporal drift.} The era component pools 14 quarters under an iid
   assumption; if the shared training environment is non-stationary within the
   window, the era effect is mis-specified. The era-convergence entry and the
   connected-window audit probe this assumption.
-\item \emph{Visibility bias.} The frame is drawn from widely tracked open releases;
-  smaller or niche families are underrepresented, which could overstate the family
-  component relative to the full open-weight universe.
-\item \emph{Off-subset scope.} The partition is defined only where lineage and era
-  vary jointly; conclusions do not extend to nested subpopulations (where the
-  partition is undefined by construction) or to closed models.
 \end{itemize}
 
-\section{Conclusion}
+\subsection{Scope Restrictions}
+The following are not deficiencies to be mitigated. They define the population
+to which any estimate applies, and an estimate read outside that population is
+not a weaker claim but a different and unsupported one.
+\begin{itemize}
+\item \emph{Open-weight sampling frame.} The population is restricted to open-weight
+  models with documented release records; hosted and closed models are excluded by
+  design, so conclusions scope to the connected subset of the open-weight universe
+  and do not generalize to closed systems. This is a consequence of requiring a
+  verified release date and family attribution---the same requirement that makes
+  the design auditable is what excludes closed models.
+\item \emph{Visibility bias.} The frame is drawn from widely tracked open releases;
+  smaller or niche families are underrepresented, which could overstate the family
+  component relative to the full open-weight universe. Unlike the items above,
+  the direction of this bias is argued rather than measured, and we flag it as
+  the weakest-supported claim in this section.
+\item \emph{Off-subset scope.} The partition is defined only where lineage and era
+  vary jointly; conclusions do not extend to nested subpopulations (where the
+  partition is undefined by construction) or to closed models. It is worth being
+  explicit that this is not a coverage gap that more data would close: on a
+  nested subpopulation the estimand does not exist, so there is nothing there to
+  estimate more carefully.
+\end{itemize}
+
+\section{Conclusion and Future Work}
 \label{sec:conclusion}
 We have presented an identifiability-gated variance-decomposition instrument for
 correlated errors in public language models, and the decision order that makes it
@@ -808,9 +1323,37 @@ failure is pre-registered and will be evaluated from those shares. All
 artifacts---population, design, the optimizer, the validator, and the tests---are
 released with the paper.
 
+The broader claim we would defend is about order rather than about language
+models. Three questions---is the quantity identifiable, does the estimator
+recover it at this sample size, and which units should be measured---are
+routinely settled after the data are in hand, where each of them becomes a
+degree of freedom rather than a result. Settling them first costs little: the
+identifiability argument is algebra, the estimator validation is simulation,
+and the population design is a search over subsets, none of which requires the
+measurement it gates. What it buys is that each can be reported as a verdict
+that a reader can check, including the verdict that the analysis should not
+proceed. In this instance all three passed, which is the uninteresting outcome;
+the design's value is that it had a way to return the interesting one.
+
+Three extensions follow naturally. The first is scope: the instrument requires
+only a documented release date, a family grouping, and a per-model trait, so it
+applies unchanged to closed models the moment a provider publishes release
+metadata, and to any trait---latency, refusal rate, calibration error---for
+which correlated behaviour across a model population is the object of interest.
+The second is temporal: because the open-model population grows every quarter,
+the same design can be re-run as a rolling estimate, and the era component
+becomes a time series rather than a scalar, which is the form in which the
+convergence question of RQ5 is most naturally asked. The third is resolution:
+the family grouping is the coarsest defensible ancestry proxy, and as
+\texttt{base\_model} provenance becomes more consistently recorded, the lineage
+factor can be refined from family membership towards the verified edge graph,
+at which point $\theta_{P}$ and $\theta_{M}$ begin to converge on the same
+population rather than on disjoint ones.
+
 \appendices
 
 \section{Phase 0 Verification}
+\label{app:phase0}
 Family groupings were verified against Hugging Face organization metadata and
 technical reports. Release quarter is the public release date, not the HF
 \emph{createdAt} timestamp; four documented divergences were corrected by hand.
@@ -860,6 +1403,7 @@ CI coverage is observed; on the final design all three hit 100\% and silent
 coverage is $0\%$.
 
 \section{Crossing Implies Identifiable Rank}
+\label{app:rank}
 Let the $N\times(F+E)$ incidence matrix be
 $\mathbf{C}=[\mathbf{Z}_{F}\;\mathbf{Z}_{E}]$. The marginal covariance
 \eqref{eq:cov} is $\mathbf{V}=\sigma^{2}_{U}\mathbf{I}+\mathbf{C}\mathbf{G}\mathbf{C}^{\top}$
@@ -988,7 +1532,7 @@ when it is required for a crossed full-rank design with $\mathrm{VIF}\le10$.
 \section*{Acknowledgment}
 % TODO: acknowledge funding, institutions, compute, and any contributors.
 
-\begin{thebibliography}{10}
+\begin{thebibliography}{99}
 
 \bibitem{kim2025} E.~Kim, A.~Garg, K.~Peng, and N.~Garg, ``Correlated errors in
 large language models,'' in \emph{Proc.\ Int.\ Conf.\ Mach.\ Learn.\ (ICML)},
@@ -1004,6 +1548,87 @@ vol.~58, no.~3, pp.~545--554, 1971.
 
 \bibitem{brennan2001} R.~L.~Brennan, \emph{Generalizability Theory}. New York, NY,
 USA: Springer, 2001.
+
+\bibitem{henderson1975} C.~R.~Henderson, ``Best linear unbiased estimation and
+prediction under a selection model,'' \emph{Biometrics}, vol.~31, no.~2,
+pp.~423--447, 1975.
+
+\bibitem{searle1992} S.~R.~Searle, G.~Casella, and C.~E.~McCulloch,
+\emph{Variance Components}. New York, NY, USA: Wiley, 1992.
+
+\bibitem{rao1988} C.~R.~Rao and J.~Kleffe, \emph{Estimation of Variance
+Components and Applications}. Amsterdam, The Netherlands: North-Holland, 1988.
+
+\bibitem{mcculloch2001} C.~E.~McCulloch and S.~R.~Searle, \emph{Generalized,
+Linear, and Mixed Models}. New York, NY, USA: Wiley, 2001.
+
+\bibitem{laird1982} N.~M.~Laird and J.~H.~Ware, ``Random-effects models for
+longitudinal data,'' \emph{Biometrics}, vol.~38, no.~4, pp.~963--974, 1982.
+
+\bibitem{pinheiro2000} J.~C.~Pinheiro and D.~M.~Bates, \emph{Mixed-Effects
+Models in S and S-PLUS}. New York, NY, USA: Springer, 2000.
+
+\bibitem{bates2015} D.~Bates, M.~M\"{a}chler, B.~Bolker, and S.~Walker,
+``Fitting linear mixed-effects models using lme4,'' \emph{J.\ Statist.\
+Software}, vol.~67, no.~1, pp.~1--48, 2015.
+
+\bibitem{satterthwaite1946} F.~E.~Satterthwaite, ``An approximate distribution
+of estimates of variance components,'' \emph{Biometrics Bull.}, vol.~2, no.~6,
+pp.~110--114, 1946.
+
+\bibitem{kenward1997} M.~G.~Kenward and J.~H.~Roger, ``Small sample inference
+for fixed effects from restricted maximum likelihood,'' \emph{Biometrics},
+vol.~53, no.~3, pp.~983--997, 1997.
+
+\bibitem{self1987} S.~G.~Self and K.-Y.~Liang, ``Asymptotic properties of
+maximum likelihood estimators and likelihood ratio tests under nonstandard
+conditions,'' \emph{J.\ Amer.\ Statist.\ Assoc.}, vol.~82, no.~398,
+pp.~605--610, 1987.
+
+\bibitem{stram1994} D.~O.~Stram and J.~W.~Lee, ``Variance components testing in
+the longitudinal mixed effects model,'' \emph{Biometrics}, vol.~50, no.~4,
+pp.~1171--1177, 1994.
+
+\bibitem{cronbach1972} L.~J.~Cronbach, G.~C.~Gleser, H.~Nanda, and
+N.~Rajaratnam, \emph{The Dependability of Behavioral Measurements: Theory of
+Generalizability for Scores and Profiles}. New York, NY, USA: Wiley, 1972.
+
+\bibitem{snijders2012} T.~A.~B.~Snijders and R.~J.~Bosker, \emph{Multilevel
+Analysis: An Introduction to Basic and Advanced Multilevel Modeling}, 2nd~ed.
+London, U.K.: Sage, 2012.
+
+\bibitem{gelman2007} A.~Gelman and J.~Hill, \emph{Data Analysis Using
+Regression and Multilevel/Hierarchical Models}. Cambridge, U.K.: Cambridge
+Univ.\ Press, 2007.
+
+\bibitem{demidenko2013} E.~Demidenko, \emph{Mixed Models: Theory and
+Applications with R}, 2nd~ed. Hoboken, NJ, USA: Wiley, 2013.
+
+\bibitem{efron1979} B.~Efron, ``Bootstrap methods: Another look at the
+jackknife,'' \emph{Ann.\ Statist.}, vol.~7, no.~1, pp.~1--26, 1979.
+
+\bibitem{dietterich2000} T.~G.~Dietterich, ``Ensemble methods in machine
+learning,'' in \emph{Proc.\ Int.\ Workshop Multiple Classifier Syst.\ (MCS)},
+LNCS 1857, 2000, pp.~1--15.
+
+\bibitem{wolpert1992} D.~H.~Wolpert, ``Stacked generalization,'' \emph{Neural
+Netw.}, vol.~5, no.~2, pp.~241--259, 1992.
+
+\bibitem{breiman2001} L.~Breiman, ``Random forests,'' \emph{Mach.\ Learn.},
+vol.~45, no.~1, pp.~5--32, 2001.
+
+\bibitem{kuncheva2003} L.~I.~Kuncheva and C.~J.~Whitaker, ``Measures of
+diversity in classifier ensembles and their relationship with the ensemble
+accuracy,'' \emph{Mach.\ Learn.}, vol.~51, no.~2, pp.~181--207, 2003.
+
+\bibitem{kleinberg2021} J.~Kleinberg and M.~Raghavan, ``Algorithmic monoculture
+and social welfare,'' \emph{Proc.\ Nat.\ Acad.\ Sci.\ USA}, vol.~118, no.~22,
+2021, Art.\ no.\ e2018340118.
+
+\bibitem{bommasani2022} R.~Bommasani, K.~A.~Creel, A.~Kumar, D.~Jurafsky, and
+P.~Liang, ``Picking on the same person: Does algorithmic monoculture lead to
+outcome homogenization?'' in \emph{Adv.\ Neural Inf.\ Process.\ Syst.\
+(NeurIPS)}, vol.~35, 2022.
 
 \bibitem{phylolm2024} N.~Yax, P.-Y. Oudeyer, and S.~Palminteri, ``PhyloLM:
 Inferring the phylogeny of large language models and predicting their performances
