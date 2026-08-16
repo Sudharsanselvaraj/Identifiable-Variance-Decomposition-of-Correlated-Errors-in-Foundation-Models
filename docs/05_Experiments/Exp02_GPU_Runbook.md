@@ -146,8 +146,12 @@ Practical notes for an ephemeral rented instance:
 
 - Run one pass, `git add datasets/phase2_eval_results.csv datasets/eval_samples/`
   and push after each session — the instance may be reclaimed at any time.
-- `pip install lm-eval accelerate bitsandbytes` (bitsandbytes is required for
-  `--quant 4bit`; 4-bit loading uses `load_in_4bit=True` through lm-eval).
+- `pip install lm-eval==0.4.12 accelerate bitsandbytes transformers==4.57.6`
+  (bitsandbytes is required for `--quant 4bit`; 4-bit loading uses
+  `load_in_4bit=True` through lm-eval. Pin `transformers==4.57.6`: newer 5.x
+  releases removed the legacy `load_in_4bit` kwarg that lm-eval 0.4.12 passes
+  to `from_pretrained`, which fails with
+  `TypeError: ... __init__() got an unexpected keyword argument 'load_in_4bit'`).
 - Sanity pilot first: `python3 -m lineage_era.phase2_eval --model Phi-1 --limit 100 --device cuda:0 --quant none`.
 - If the DeepSeek tier is mandatory at bf16/fp8, that family needs a
   multi-GPU H200 rental (as in the original Step 0–5 plan) — do not fold a
@@ -284,7 +288,9 @@ model's machine, precision, fidelity tag, and gated status **before** the run
 before re-running.
 
 **Colab procedure:** clone the repo, install `lm-eval==0.4.12 accelerate
-bitsandbytes`, set `HF_TOKEN` (5 gated: Llama-1, Mistral-Small-3/3.2,
+bitsandbytes transformers==4.57.6` (the transformers pin is required —
+see the practical notes above; Colab ships 5.x which breaks lm-eval 0.4.12's
+`load_in_4bit`), set `HF_TOKEN` (5 gated: Llama-1, Mistral-Small-3/3.2,
 Devstral-2, Gemma-3n), point `HF_HOME` at `/content/hf_cache`. Pilot with
 `phase2_eval --model Phi-2 --limit 100 ... --quant 4bit` and remove the pilot
 row + its JSONL before production. Then run `phase2_run_all --only <name>`
