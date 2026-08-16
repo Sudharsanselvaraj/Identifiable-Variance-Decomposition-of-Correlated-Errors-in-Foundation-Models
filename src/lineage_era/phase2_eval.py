@@ -12,6 +12,14 @@ Runner usage (from src/):
     python3 -m lineage_era.phase2_eval --model Phi-2 --limit 100   # pilot
     python3 -m lineage_era.phase2_eval --model Phi-2       # full MMLU 5-shot
     python3 -m lineage_era.phase2_eval --model Llama-3.3 --device cuda:0
+    python3 -m lineage_era.phase2_eval --model Llama-3.3 --quant 4bit --resume   # resume-safe
+    python3 -m lineage_era.phase2_eval --all --quant 4bit --resume --device cuda:0  # whole roster
+
+Each result row carries a fidelity column (bf16/fp16/4bit/8bit/default) so the
+trait pipeline knows which models ran at reduced precision. --resume skips any
+model already recorded in the results CSV; --all runs the whole manifest,
+skipping gated models without an accepted HF_TOKEN and continuing past
+individual failures (for long one-shot rented sessions).
 
 Gated models (access="gated") require a Hugging Face token with the model
 license accepted: set HF_TOKEN in the environment. The 70B+/MoE models
@@ -138,7 +146,8 @@ def print_manifest() -> None:
     print(f"\n{n_public}/47 token-free; 47/47 manifest complete.")
 
 
-def _model_args(full_name: str, repo: str | None, dtype: str | None, attn: str) -> str:
+def _model_args(full_name: str, repo: str | None, dtype: str | None, attn: str,
+                quant: str = "none") -> str:
     if repo is None:
         repo = EVAL_MANIFEST[full_name][0]
     args = f"pretrained={repo},trust_remote_code=True,attn_implementation={attn}"
@@ -147,7 +156,35 @@ def _model_args(full_name: str, repo: str | None, dtype: str | None, attn: str) 
         args += f",{extra}"
     if dtype:
         args += f",dtype={dtype}"
+    if quant == "4bit":
+        args += ",load_in_4bit=True"
+    elif quant == "8bit":
+        args += ",load_in_8bit=True"
     return args
+
+
+def fidelity_label(dtype: str | None, quant: str) -> str:
+    """Fidelity tag stored on each eval row for downstream provenance."""
+    if quant == "4bit":
+        return "4bit"
+    if quant == "8bit":
+        return "8bit"
+    if dtype == "bfloat16":
+        return "bf16"
+    if dtype == "float16":
+        return "fp16"
+    return "default"
+
+
+def already_done(full_name: str, repo: str) -> bool:
+    """True when (full_name, repo) already has a row in the results CSV."""
+    if not RESULTS_CSV.exists():
+        return False
+    with open(RESULTS_CSV) as f:
+        for row in csv.DictReader(f):
+            if row.get("full_name") == full_name and row.get("hf_repo", "") == repo:
+                return True
+    return False
 
 
 def _samples_to_rows(full_name: str, repo: str, samples: dict) -> list[dict]:
@@ -200,13 +237,13 @@ def write_samples(full_name: str, repo: str, samples: dict) -> Path | None:
 
 
 def run_mmlu(full_name: str, limit: int | None, device: str, dtype: str | None,
-             attn: str, repo: str | None, batch: int | str,
+             attn: str, repo: str | None, batch: int | str, quant: str = "none",
              log_samples: bool = True) -> dict:
     from lm_eval import simple_evaluate
 
     kwargs = dict(
         model="hf",
-        model_args=_model_args(full_name, repo, dtype, attn),
+        model_args=_model_args(full_name, repo, dtype, attn, quant),
         tasks=["mmlu"],
         num_fewshot=5,
         device=device,
@@ -229,7 +266,8 @@ def run_mmlu(full_name: str, limit: int | None, device: str, dtype: str | None,
     }
 
 
-def append_result(full_name: str, stats: dict, repo: str | None = None) -> None:
+def append_result(full_name: str, stats: dict, repo: str | None = None,
+                  fidelity: str = "default") -> None:
     if repo is None:
         repo = EVAL_MANIFEST[full_name][0]
     row = {
@@ -241,26 +279,43 @@ def append_result(full_name: str, stats: dict, repo: str | None = None) -> None:
         "acc": stats["acc"],
         "acc_norm": stats["acc_norm"],
         "samples": stats["samples"],
+        "fidelity": fidelity,
     }
+    if RESULTS_CSV.exists():
+        with open(RESULTS_CSV) as f:
+            header = next(csv.reader(f), [])
+        if "fidelity" not in header:
+            raise SystemExit(
+                f"{RESULTS_CSV} exists without a 'fidelity' column; move/delete it "
+                "and re-run (no real eval rows exist yet)."
+            )
     new = not RESULTS_CSV.exists()
     with open(RESULTS_CSV, "a", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(row))
         if new:
             w.writeheader()
         w.writerow(row)
-    print(f"appended {full_name} -> {RESULTS_CSV}")
+    print(f"appended {full_name} (fidelity={fidelity}) -> {RESULTS_CSV}")
 
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--manifest", action="store_true", help="print the 47-model manifest")
+    p.add_argument("--all", action="store_true",
+                   help="run the whole manifest (resume-safe, keeps going on failures)")
     p.add_argument("--model", help="connected-subset full_name, e.g. Phi-2")
     p.add_argument("--repo", default=None, help="override HF repo (pilot non-members)")
     p.add_argument("--limit", type=int, default=None, help="eval subset (pilot only)")
     p.add_argument("--device", default="mps", help="mps | cpu | cuda:0")
     p.add_argument("--dtype", default=None, help="e.g. bfloat16, float16")
+    p.add_argument("--quant", default="none", choices=["none", "8bit", "4bit"],
+                   help="load_in_8bit/load_in_4bit (needs bitsandbytes)")
     p.add_argument("--attn", default="eager", help="eager | sdpa (eager avoids MPS buffer errors)")
     p.add_argument("--batch", default="auto", help="batch size; 2-8 on CPU/MPS pilots")
+    p.add_argument("--resume", action="store_true",
+                   help="skip models already recorded in the results CSV")
+    p.add_argument("--force", action="store_true",
+                   help="ignore --resume and re-run even if already recorded")
     p.add_argument("--no-samples", action="store_true",
                    help="skip per-question JSONL capture (aggregate CSV only)")
     args = p.parse_args(argv)
@@ -268,8 +323,45 @@ def main(argv: list[str] | None = None) -> int:
     if args.manifest:
         print_manifest()
         return 0
+
+    def run_one(full_name: str, repo: str | None = None) -> None:
+        rrepo = repo if repo is not None else EVAL_MANIFEST[full_name][0]
+        if args.resume and not args.force and already_done(full_name, rrepo):
+            print(f"skip {full_name} (already recorded)")
+            return
+        stats = run_mmlu(full_name, args.limit, args.device, args.dtype,
+                         args.attn, repo, batch, args.quant,
+                         log_samples=not args.no_samples)
+        print(f"{full_name}: acc={stats['acc']} acc_norm={stats['acc_norm']} "
+              f"({stats['samples']} samples)")
+        append_result(full_name, stats, repo,
+                      fidelity=fidelity_label(args.dtype, args.quant))
+
+    batch = int(args.batch) if args.batch.isdigit() else args.batch
+
+    if args.all:
+        if args.limit is not None:
+            p.error("--limit is a single-model pilot; not valid with --all")
+        done = failed = skipped = 0
+        for full_name, (repo, _size, access) in EVAL_MANIFEST.items():
+            if args.resume and not args.force and already_done(full_name, repo):
+                skipped += 1
+                continue
+            if access == "gated" and "HF_TOKEN" not in os.environ:
+                print(f"skip {full_name} (gated; no HF_TOKEN)", file=sys.stderr)
+                skipped += 1
+                continue
+            try:
+                run_one(full_name)
+                done += 1
+            except Exception as e:  # noqa: BLE001 -- keep the batch going
+                failed += 1
+                print(f"FAILED {full_name}: {e}", file=sys.stderr)
+        print(f"\n--all done: {done} evaluated, {skipped} skipped, {failed} failed.")
+        return 0 if failed == 0 else 1
+
     if args.model is None:
-        p.error("--model is required (or use --manifest)")
+        p.error("--model is required (or use --manifest / --all)")
     if args.model not in EVAL_MANIFEST and args.repo is None:
         p.error(f"{args.model!r} not in EVAL_MANIFEST (pass --repo for a pilot)")
     if args.repo is not None and args.limit is None:
@@ -284,12 +376,7 @@ def main(argv: list[str] | None = None) -> int:
             and EVAL_MANIFEST[args.model][2] == "gated":
         p.error(f"{args.model} is gated; set HF_TOKEN (license accepted).")
 
-    batch = int(args.batch) if args.batch.isdigit() else args.batch
-    stats = run_mmlu(args.model, args.limit, args.device, args.dtype, args.attn,
-                     args.repo, batch, log_samples=not args.no_samples)
-    print(f"{args.model}: acc={stats['acc']} acc_norm={stats['acc_norm']} "
-          f"({stats['samples']} samples)")
-    append_result(args.model, stats, args.repo)
+    run_one(args.model, args.repo)
     return 0
 
 

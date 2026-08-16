@@ -41,6 +41,7 @@ from .phase2_eval import (
     EVAL_MANIFEST,
     RESULTS_CSV,
     append_result,
+    fidelity_label,
     run_mmlu,
 )
 
@@ -49,7 +50,7 @@ G3_SUBSET_CSV = REPO_ROOT / "datasets" / "coverage" / "minimum_valid_population.
 
 RESULTS_FIELDS = [
     "date", "full_name", "hf_repo", "benchmark", "fewshot",
-    "acc", "acc_norm", "samples",
+    "acc", "acc_norm", "samples", "fidelity",
 ]
 
 
@@ -94,6 +95,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--skip-gated", action="store_true")
     p.add_argument("--no-samples", action="store_true",
                    help="skip per-question JSONL capture (aggregate CSV only)")
+    p.add_argument("--quant", default="none", choices=["none", "8bit", "4bit"],
+                   help="load_in_8bit/load_in_4bit (needs bitsandbytes); each "
+                        "result row is tagged fidelity=8bit/4bit")
     args = p.parse_args(argv)
 
     if args.only is not None and args.only not in EVAL_MANIFEST:
@@ -140,12 +144,13 @@ def main(argv: list[str] | None = None) -> int:
               flush=True)
         try:
             stats = run_mmlu(full_name, None, args.device, args.dtype,
-                             args.attn, None, batch,
+                             args.attn, None, batch, quant=args.quant,
                              log_samples=not args.no_samples)
             print(f"[ok] {full_name}: acc={stats['acc']} "
                   f"acc_norm={stats['acc_norm']} ({stats['samples']} samples)",
                   flush=True)
-            append_result(full_name, stats)
+            append_result(full_name, stats,
+                          fidelity=fidelity_label(args.dtype, args.quant))
             ok += 1
         except Exception as e:  # noqa: BLE001 - keep the run going
             print(f"[fail] {full_name}: {type(e).__name__}: {e}", flush=True)

@@ -1,0 +1,23 @@
+full_name,family,quarter,params,hf_repo,machine,precision,fidelity,gated,note
+Llama-1,Llama,2023Q1,7B,meta-llama/Llama-1,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,yes,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Phi-1,Phi,2023Q2,1.3B,microsoft/phi-1,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Mistral-7B,Mistral,2023Q3,7B,mistralai/Mistral-7B-Instruct-v0.3,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Phi-1.5,Phi,2023Q3,1.3B,microsoft/phi-1_5,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Qwen-7B,Qwen,2023Q3,7B,Qwen/Qwen-7B,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Phi-2,Phi,2023Q4,2.7B,microsoft/phi-2,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Qwen1.5,Qwen,2024Q1,72B,Qwen/Qwen1.5-72B-Chat,a100_80gb,"4bit (NF4, load_in_4bit)",4bit,no,runbook: 70B/72B --quant 4bit
+Phi-3,Phi,2024Q2,14B,microsoft/Phi-3-medium-4k-instruct,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Llama-3.1,Llama,2024Q3,70B,meta-llama/Meta-Llama-3.1-70B-Instruct,a100_80gb,"4bit (NF4, load_in_4bit)",4bit,yes,runbook: 70B/72B --quant 4bit
+Llama-3.3,Llama,2024Q4,70B,meta-llama/Llama-3.3-70B-Instruct,a100_80gb,"4bit (NF4, load_in_4bit)",4bit,yes,runbook: 70B/72B --quant 4bit
+Phi-4,Phi,2024Q4,3.8B,microsoft/Phi-4-mini-instruct,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Mistral-Small-3,Mistral,2025Q1,24B,mistralai/Mistral-Small-3-24B-Instruct-2501,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,yes,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Mistral-Small-3.1,Mistral,2025Q1,24B,mistralai/Mistral-Small-3.1-24B-Instruct-2503,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Gemma-3n,Gemma,2025Q2,4B,google/gemma-3n-4b-it,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,yes,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Mistral-Small-3.2,Mistral,2025Q2,24B,mistralai/Mistral-Small-3.2-24B-Instruct-2510,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,yes,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Phi-4-reasoning-plus,Phi,2025Q2,11B,microsoft/Phi-4-reasoning-plus,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+DeepSeek-V3.1,DeepSeek,2025Q3,671B/37B,deepseek-ai/DeepSeek-V3.1,-,imputed (no GPU),imputed,no,pre-registered model-based imputation; not measured (decision log 2026-08-16)
+DeepSeek-V3.2,DeepSeek,2025Q4,685B/37B,deepseek-ai/DeepSeek-V3.2,-,imputed (no GPU),imputed,no,pre-registered model-based imputation; not measured (decision log 2026-08-16)
+Devstral-2,Mistral,2025Q4,24B,mistralai/Devstral-Small-2509,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,yes,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Mistral-Small-4,Mistral,2026Q1,32B,mistralai/Mistral-Small-4-32B-Instruct-2603,a100_80gb,bf16,bf16,yes,runbook: 32B bf16 --quant none
+Phi-4-reasoning-vision-15B,Phi,2026Q1,15B,microsoft/Phi-4-reasoning-vision-15B,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
+Gemma-4-12B,Gemma,2026Q2,12B,google/gemma-4-12b-it,colab_free_t4,"4bit (NF4, load_in_4bit; base fp16)",4bit,no,runbook: T4 pass --dtype float16 --quant 4bit --attn sdpa
