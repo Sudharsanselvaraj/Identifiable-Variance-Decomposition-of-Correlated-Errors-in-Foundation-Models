@@ -1,0 +1,2 @@
+date,full_name,hf_repo,benchmark,fewshot,acc,acc_norm,samples,fidelity
+2026-08-16,Phi-1,microsoft/phi-1,mmlu,5,0.24825523429710866,,14042,bf16
