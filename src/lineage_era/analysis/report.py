@@ -179,6 +179,16 @@ def main(argv: list[str] | None = None) -> int:
     lines += [f"- `{f}`" for f in figs] + [""]
     lines += error_similarity_section(out_dir)
 
+    from . import cofailure
+    try:
+        trait = pd.read_csv(out_dir / "trait_table.csv")
+        vp_flat = pd.DataFrame({"component": vp.index,
+                                "variance": vp["variance"].values})
+        lines += cofailure.report_block(trait, vp_flat)
+    except (FileNotFoundError, KeyError) as exc:
+        lines += ["## Decision layer: co-failure ceiling and the "
+                  "diversification counterfactual", "", f"- skipped: {exc}", ""]
+
     lines += ["## Caveats carried from Phase 0 (occupancy.CAVEATS)", ""]
     from ..occupancy import CAVEATS
     lines += [f"- {c}" for c in CAVEATS] + [""]

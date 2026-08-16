@@ -23,6 +23,24 @@ error as a given input to a welfare argument.
 - **Hidden assumptions:** Models are exchangeable units; leaderboard items are
   representative; no contamination term.
 
+## Kuai et al. (2026)
+
+- **Limitation:** Composite information-theoretic entanglement indices (Difficulty-Weighted
+  Behavioral Entanglement Index, Cumulative Information Gain) measure how predictable one
+  model's behavior is from another's across six open-weight families; no orthogonal
+  variance decomposition, no lineage-vs-era separation, no identifiability gate over the
+  model population.
+- **Future work (theirs):** Independence audits and verifier-ensemble reweighting at
+  larger scale.
+- **Open assumptions:** That family-level predictive dependence is the relevant structure;
+  an entanglement index cannot separate shared lineage (σ²_L) from shared environment
+  (σ²_E) — the two channels our partition estimates.
+- **Hidden assumptions:** Models are exchangeable units; entanglement is measured as
+  predictive dependence, not causal structure; the independence audit implicitly treats
+  the observable design as identified.
+- **Added (2026-08-16):** closest statistical neighbor, closer than Kim; row in the
+  manuscript differentiation table + Related Work paragraph; novelty ledger C5.
+
 ## PhyloLM (ICLR 2025)
 
 - **Limitation:** Reconstructs ancestry from output similarity; cannot distinguish shared

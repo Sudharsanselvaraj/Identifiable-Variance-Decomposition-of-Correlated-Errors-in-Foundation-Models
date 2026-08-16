@@ -92,6 +92,19 @@ Supporting observational layer for the decomposition; never part of the θ_P gat
 - Louvain communities: 6 on the top-k network (97 edges); adjusted Rand index vs family 0.029 vs era -0.009 — family-aligned (descriptive only).
 - Full outputs: `error_similarity.csv`, `similarity_matrix.csv`, `null_ladder.csv`, `family_era_overlap.csv`, `edge_stability.csv`, `community_comparison.csv`; figures `error_heatmap`, `error_dendrogram`, `error_network`, `error_embedding_pca`, `error_embedding_tsne`.
 
+## Decision layer: co-failure ceiling and the diversification counterfactual
+
+Pool: 4 Mistral models (Mistral-7B, Mixtral-8x7B, Mixtral-8x22B, Mistral-Large-2) | trait mean μ=0.141 (logit scale).
+
+| | value |
+|---|---|
+| β(S) current pool (all-wrong ceiling) | 0.0994 |
+| β(S′) after swapping Mistral-7B → Llama (2026Q2) | 0.0806 |
+| Δβ diversification value | 0.0188 |
+| σ²_L share / σ²_E share | 0.557 / 0.129 |
+
+Cross-family diversification value is governed by σ²_L/(σ²_L+σ²_E) = 0.811: a swap removes σ²_L from the pairwise latent covariance but carries σ²_E when the replacement shares the pool's era.
+
 ## Caveats carried from Phase 0 (occupancy.CAVEATS)
 
 - Llama open-weights lineage terminates at Llama 4 (Apr 2025). Post-2025 era variation is carried by Qwen/Mistral/DeepSeek/Gemma/Phi only — this is a real-world lineage-attrition fact, not an identification failure.
