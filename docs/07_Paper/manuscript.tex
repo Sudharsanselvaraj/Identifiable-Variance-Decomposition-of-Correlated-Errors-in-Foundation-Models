@@ -971,8 +971,52 @@ abort); (v) the $\theta_{P}$ partition with REML \eqref{eq:reml}; (vi) bootstrap
 confidence intervals combined with a trait-error Monte Carlo; and (vii) sensitivity
 blocks (leave-one-family, leaked-drop, subject-drop, trait-definition, and a
 documented sanity cross-check against prior leaderboards that is explicitly not a
-validation). The era-convergence trend and the $\theta_{M}$ mechanistic tables are
+validation). Two population cells (DeepSeek-V3.1, DeepSeek-V3.2, the only
+671B/685B-class models) exceed the available compute budget and cannot be
+evaluated; their trait cells are completed by pre-registered multiple imputation
+(Section~\ref{sec:imputation}) from the variance-components model fitted on the
+measured design, and every such cell is labeled IMPUTED (not measured). The
+primary partition and its confidence intervals are therefore reported on the
+completed population, together with a with/without sensitivity (the same
+decomposition on the 20 measured models only, and on each imputation draw).
+The era-convergence trend and the $\theta_{M}$ mechanistic tables are
 reported as table entries, separately from the primary partition.
+
+\subsection{Pre-Registered Imputation of the DeepSeek Cells}
+\label{sec:imputation}
+DeepSeek-V3.1 and DeepSeek-V3.2 (2025Q3/2025Q4, 671B/685B) are the only
+selected models that require a multi-GPU node, which is outside the available
+compute budget. They are the \emph{largest and most recent} cells in the
+population, so the decision about how to handle them was made before any trait
+was observed: three pre-measurement re-gate variants confirmed that no
+DeepSeek-free population clears the identifiability gate (excluding V3.1/V3.2
+forces V3/V4 back in via structural crossing; excluding all four DeepSeek
+models forces the full remaining 43-model pool, itself containing
+671B-class models). The cells are therefore completed by multiple imputation
+under a protocol fixed in advance:
+\begin{itemize}
+\item The predictive model is the variance-components model
+  \eqref{eq:reml}---trait $\sim \mu + \mathrm{family} + \mathrm{era} +
+  \mathrm{unique}$---fitted on the 20 measured models.
+\item Per draw, one shared DeepSeek-family effect is drawn from
+  $\mathcal{N}(0,\sigma^{2}_{L})$; independent era effects for the
+  prior-dominated 2025Q3/2025Q4 cells are drawn from
+  $\mathcal{N}(0,\sigma^{2}_{E})$, and model effects from
+  $\mathcal{N}(0,\sigma^{2}_{U})$; the trait is the sum, clipped to $[0.03,0.97]$.
+\item Item-level responses for the imputed models are generated on the measured
+  common item set with a calibrated logistic item model that reproduces the
+  imputed accuracy and the observed item difficulties, but encodes no
+  fabricated model--model error correlation beyond the trait.
+\item The primary completed dataset uses the first draw; $M$ draws are kept for
+  the sensitivity, and the report tabulates the per-draw, pooled, and
+  measured-only (20-model) variance partitions.
+\end{itemize}
+Every table and figure cell for the two DeepSeek models is labeled
+``IMPUTED (pre-registered model-based imputation), not measured,'' and the
+study is stated as measured on 20 models and completed by imputation on 2.
+Era-share results for 2025Q3/2025Q4 rest on imputed values and are presented
+with the with/without sensitivity; if the multi-GPU node later becomes
+affordable the cells are re-measured and the imputed rows dropped.
 
 \subsection{Pre-Registered Measurement and Decision Protocol}
 \label{sec:methods-protocol}
@@ -1020,6 +1064,9 @@ reported as heatmap, network, and embedding. Supporting, not confirmatory \\
 $\theta_{P}$ partition & REML estimates and bootstrap intervals for
 $\sigma^{2}_{L},\sigma^{2}_{E},\sigma^{2}_{U}$ on the 22-model population;
 the primary output \\
+Imputation cells & DeepSeek-V3.1, DeepSeek-V3.2: multiple imputation from
+Section~\ref{sec:imputation}; every cell labeled IMPUTED (not measured);
+with/without sensitivity reported \\
 Identifiability audit & Rank, VIF, and the three D3 detectors re-run on the
 measured occupancy; hard failure aborts \\
 Era-convergence entry & Era share by release quarter after lineage adjustment;
@@ -1513,15 +1560,19 @@ released code under the recorded seeds.
 
 \section{Computation and Cost Plan}
 All Phase 0 and Phase 1 analyses run on CPU and are fully reproducible. The
-Phase 2 eval pass runs on one 8$\times$H200-141GB node in fp8; per-model
-memory and GPU-time plans are released with the artifacts. Table~\ref{tab:cost}
-is the cost plan for the selected 22-model population: 710 estimated
-single-GPU minutes against 2{,}154 for the full 47-model roster---about one-third
-of the full-run cost (a 67\% reduction). Eight of the 22 are gated and require
-license acceptance.
+Phase 2 eval pass runs on single consumer/rented GPUs at 4-bit for the 70B+
+tier (memory-bound log-likelihood); the two 671B/685B-class cells
+(DeepSeek-V3.1, DeepSeek-V3.2) do not fit any single card in the available
+budget and are completed by pre-registered imputation (Section~\ref{sec:imputation})
+at zero GPU cost, as disclosed throughout. Table~\ref{tab:cost}
+is the cost plan for the selected 22-model population: 604 estimated
+single-GPU minutes of measured runs against 2{,}154 for the full 47-model
+roster---about 28\% of the full-run cost (a 72\% reduction). Eight of the 20
+measured models are gated and require license acceptance.
 \begin{table}[t]
 \caption{Phase 2 GPU cost plan and access for the 22-model population
-(cost column: estimated single-GPU minutes).}
+(cost column: estimated single-GPU minutes; the two imputed cells carry no
+GPU cost).}
 \label{tab:cost}
 \centering
 \renewcommand{\arraystretch}{1.15}
@@ -1547,17 +1598,22 @@ Mistral & Mistral-Small-3.1 & 2025Q1 & 24B & public & 34 \\
 Phi & Phi-4-reasoning-plus & 2025Q2 & 11B & public & 16 \\
 Mistral & Mistral-Small-3.2 & 2025Q2 & 24B & gated & 34 \\
 Gemma & Gemma-3n & 2025Q2 & 4B & gated & 6 \\
-DeepSeek & DeepSeek-V3.1 & 2025Q3 & 671B/37B & public & 53 \\
+DeepSeek & DeepSeek-V3.1 & 2025Q3 & 671B/37B & public & -- \\
 Mistral & Devstral-2 & 2025Q4 & 24B & gated & 34 \\
-DeepSeek & DeepSeek-V3.2 & 2025Q4 & 685B/37B & public & 53 \\
+DeepSeek & DeepSeek-V3.2 & 2025Q4 & 685B/37B & public & -- \\
 Phi & Phi-4-reasoning-vision-15B & 2026Q1 & 15B & public & 21 \\
 Mistral & Mistral-Small-4 & 2026Q1 & 32B & gated & 45 \\
 Gemma & Gemma-4-12B & 2026Q2 & 12B & public & 17 \\
 \hline
-\multicolumn{5}{@{}l}{22-model total} & 710 \\
+\multicolumn{5}{@{}l}{22-model total} & 604 \\
 \multicolumn{5}{@{}l}{47-model full roster} & 2{,}154 \\
 \hline
 \end{tabular}
+\begin{flushleft}\scriptsize
+$^*$DeepSeek-V3.1/V3.2 are not measured: trait cells completed by
+pre-registered multiple imputation (Section~\ref{sec:imputation}), labeled
+IMPUTED (not measured) in every table and figure.
+\end{flushleft}
 \end{table}
 
 \section{Minimum Valid Population Roster}

@@ -108,6 +108,7 @@ def assemble_trait(eval_df: pd.DataFrame, table: pd.DataFrame | None = None,
     if table is not None:
         trait = table.merge(trait, on="full_name", how="left")
         trait["era"] = trait["quarter"]
+        trait = trait[trait["trait"].notna()]
     return trait
 
 

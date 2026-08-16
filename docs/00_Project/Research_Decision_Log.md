@@ -445,6 +445,53 @@ document preserves *why* the research evolved, not just *what* it became. Oldest
   and `eval_check --manifest` catches shape problems.
 - **Status:** ACCEPTED, implemented, validated (11/11 tests, ruff clean).
 
+---
+
+## 2026-08-16 — DeepSeek cells completed by pre-registered model-based imputation
+
+- **Decision:** The G3 22-model population is retained, but DeepSeek-V3.1
+  (2025Q3) and DeepSeek-V3.2 (2025Q4) — 671B/685B MoE, ~340 GB at 4-bit — are
+  NOT evaluated. Their trait cells are completed by MULTIPLE IMPUTATION from
+  the variance-components model fitted on the 20 measured models
+  (`trait ~ mu + family + era + unique`, the exact structure the Phase 2
+  estimator decomposes). The eval CSV rows carry `fidelity="imputed"`; every
+  DeepSeek cell must be labeled "IMPUTED (pre-registered model-based
+  imputation), not measured"; the study is stated as measured on 20 models and
+  completed by imputation on 2.
+- **Reason:** The DeepSeek pair requires a multi-GPU node (8xH200 class) that
+  is outside the available compute budget. Three pre-measurement re-gate
+  variants were run first and all failed to produce a DeepSeek-free design:
+  (1) exclude V3.1/V3.2 only → the gate forces DeepSeek-V3 and DeepSeek-V4
+  back in (`required: structural identifiability (crossing)` /
+  `era-window coverage`); (2) exclude all four V3/V3.1/V3.2/V4 → minimum valid
+  population is the full remaining 43, which itself forces DeepSeek-R1 (671B),
+  Llama-4 (400B), Mixtral-8x22B, Mistral-Large-2 back in via crossing — so no
+  gate-valid population avoids a 671B-class MoE. Budget is therefore a genuine
+  availability constraint on exactly the DeepSeek cells, and the imputation is
+  pre-measurement (nothing was dropped because of its measured value).
+- **Evidence:** `datasets/coverage/g3_report.deepseek_strict14.md` (INFEASIBLE),
+  `g3_report.deepseek_excluded.md` (22/43, V3+V4 forced),
+  `g3_report.deepseek_free.md` (43/43, R1+Llama-4 forced),
+  `src/lineage_era/analysis/impute.py` +
+  `src/lineage_era/test_impute.py` (5 tests). Item-level responses for the
+  imputed models are generated on the shared measured item set (register A15)
+  with a calibrated logistic item model that reproduces the imputed accuracy
+  and observed item difficulties WITHOUT encoding fabricated model-model error
+  correlation beyond the trait.
+- **Alternatives considered:** rent the multi-GPU node for a real DeepSeek eval
+  (rejected: outside budget); reduce the DeepSeek item count and keep measured
+  data (still needs the node); exclude DeepSeek and run the 43-model pool
+  (rejected: 43 forces R1/Llama-4 — same multi-GPU cost class, more models);
+  drop DeepSeek and redesign the gate/claims (rejected: would invalidate the
+  pre-registered population).
+- **Risk:** the two largest, most recent models in the population are not
+  measured; era-share results for 2025Q3/2025Q4 rest on imputed values, and
+  DeepSeek-adjacent co-failure/error-similarity rows are synthetic. Mitigation:
+  binding disclosure (above), a fixed-seed reproducible protocol, and the
+  report's with/without sensitivity (20-model measured-only partition vs
+  per-draw + pooled 22-model partitions).
+- **Status:** ACCEPTED, implemented, validated (48/48 tests, ruff clean).
+
 ## Pending / open
 
 - **Phase 2 fresh eval pass — RUN EXECUTION (in progress, Path A + G3 gate locked).**
