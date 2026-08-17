@@ -37,6 +37,27 @@ import sys
 from datetime import date
 from pathlib import Path
 
+# Monkey-patch QWenTokenizer to set eos_token_id from eod_id for lm_eval compat.
+# Qwen-7B's custom tokenizer exposes eod_id but not eos_token_id, causing
+# lm_eval to crash on decode(None).
+def _patch_qwen_tokenizer():
+    try:
+        from transformers.models.qwen.tokenization_qwen import QWenTokenizer
+        _orig = QWenTokenizer.__init__
+        def _fixed_init(self, *a, **kw):
+            _orig(self, *a, **kw)
+            if getattr(self, "eos_token_id", None) is None and hasattr(self, "eod_id"):
+                self.eos_token_id = self.eod_id
+            if getattr(self, "pad_token_id", None) is None and hasattr(self, "eod_id"):
+                self.pad_token_id = self.eod_id
+            if getattr(self, "bos_token_id", None) is None and hasattr(self, "eod_id"):
+                self.bos_token_id = self.eod_id
+        QWenTokenizer.__init__ = _fixed_init
+    except (ImportError, AttributeError):
+        pass
+
+_patch_qwen_tokenizer()
+
 from .occupancy import FAMILIES, MODELS
 
 DATASETS = Path(__file__).resolve().parents[2] / "datasets"
