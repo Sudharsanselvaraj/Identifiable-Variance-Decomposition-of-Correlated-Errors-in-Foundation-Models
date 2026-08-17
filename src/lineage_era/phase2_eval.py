@@ -116,7 +116,15 @@ EXTRA_MODEL_ARGS = {
 }
 
 # Models whose HF repo has custom modeling code requiring trust_remote_code
-NEED_TRUST_REMOTE_CODE: set[str] = {"Qwen-7B"}
+NEED_TRUST_REMOTE_CODE: set[str] = {
+    "Qwen-7B",
+    "Mistral-Small-3.1",
+    "Mistral-Small-3.2",
+    "Devstral-2",
+    "Gemma-3n",
+    "Mistral-Small-4",
+    "Gemma-4-12B",
+}
 
 
 def manifest_table() -> list[dict]:
