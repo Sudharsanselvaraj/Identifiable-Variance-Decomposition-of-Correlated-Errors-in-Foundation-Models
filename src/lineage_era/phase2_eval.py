@@ -115,6 +115,9 @@ EXTRA_MODEL_ARGS = {
     "Phi-2": "max_length=2048,truncation=True",
 }
 
+# Models whose HF repo has custom modeling code requiring trust_remote_code
+NEED_TRUST_REMOTE_CODE: set[str] = set()
+
 
 def manifest_table() -> list[dict]:
     rows = []
@@ -150,7 +153,8 @@ def _model_args(full_name: str, repo: str | None, dtype: str | None, attn: str,
                 quant: str = "none") -> str:
     if repo is None:
         repo = EVAL_MANIFEST[full_name][0]
-    args = f"pretrained={repo},trust_remote_code=True,attn_implementation={attn}"
+    trust = "True" if full_name in NEED_TRUST_REMOTE_CODE else "False"
+    args = f"pretrained={repo},trust_remote_code={trust},attn_implementation={attn}"
     extra = EXTRA_MODEL_ARGS.get(full_name)
     if extra:
         args += f",{extra}"
