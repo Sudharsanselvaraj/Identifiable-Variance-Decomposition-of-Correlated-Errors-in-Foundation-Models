@@ -8,3 +8,4 @@ date,full_name,hf_repo,benchmark,fewshot,acc,acc_norm,samples,fidelity
 2026-08-17,Mistral-7B,mistralai/Mistral-7B-Instruct-v0.3,mmlu,5,0.6186440677966102,,14042,bf16
 2026-08-17,Mistral-Small-3,mistralai/Mistral-Small-24B-Instruct-2501,mmlu,5,0.8068651189289275,,14042,bf16
 2026-08-17,Phi-4-reasoning-plus,microsoft/Phi-4-reasoning-plus,mmlu,5,0.77823671841618,,14042,bf16
+2026-08-17,Devstral-2,mistralai/Devstral-Small-2-24B-Instruct-2512,mmlu,5,0.2514599059962968,,14042,bf16
