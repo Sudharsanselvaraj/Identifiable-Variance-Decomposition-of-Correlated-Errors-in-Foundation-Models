@@ -145,6 +145,7 @@ NEED_TRUST_REMOTE_CODE: set[str] = {
     "Gemma-3n",
     "Mistral-Small-4",
     "Gemma-4-12B",
+    "Phi-4-reasoning-vision-15B",
 }
 
 
