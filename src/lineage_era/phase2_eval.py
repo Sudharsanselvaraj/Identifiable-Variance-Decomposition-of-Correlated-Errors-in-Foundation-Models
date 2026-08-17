@@ -58,6 +58,30 @@ def _patch_qwen_tokenizer():
 
 _patch_qwen_tokenizer()
 
+
+# Monkey-patch Ministral3ForCausalLM to strip quant kwargs that leak through
+# lm_eval model_kwargs into custom model __init__ (load_in_4bit etc).
+def _patch_ministral3_quant():
+    try:
+        from transformers.models.ministral3.modeling_ministral3 import (
+            Ministral3ForCausalLM,
+        )
+
+        _orig_init = Ministral3ForCausalLM.__init__
+
+        def _safe_init(self, config, **kwargs):
+            for k in list(kwargs):
+                if k.startswith("load_in_") or k == "bnb_4bit_compute_dtype":
+                    kwargs.pop(k)
+            _orig_init(self, config, **kwargs)
+
+        Ministral3ForCausalLM.__init__ = _safe_init
+    except (ImportError, AttributeError):
+        pass
+
+
+_patch_ministral3_quant()
+
 from .occupancy import FAMILIES, MODELS
 
 DATASETS = Path(__file__).resolve().parents[2] / "datasets"
