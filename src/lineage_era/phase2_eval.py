@@ -59,6 +59,15 @@ def _patch_qwen_tokenizer():
 _patch_qwen_tokenizer()
 
 
+
+# Register Mistral3ForConditionalGeneration with AutoModelForCausalLM
+# (missing from transformers 5.15.0 auto-mapping)
+try:
+    from transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING_NAMES
+    MODEL_FOR_CAUSAL_LM_MAPPING_NAMES["mistral3"] = "Mistral3ForConditionalGeneration"
+except Exception:
+    pass
+
 # Monkey-patch Ministral3ForCausalLM to strip quant kwargs that leak through
 # lm_eval model_kwargs into custom model __init__ (load_in_4bit etc).
 def _patch_ministral3_quant():
