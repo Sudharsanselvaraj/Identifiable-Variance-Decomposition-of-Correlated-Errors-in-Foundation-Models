@@ -1,0 +1,77 @@
+{
+  "n_models": 16,
+  "n_families": 5,
+  "n_eras": 11,
+  "identifiability": {
+    "original_crossed": {
+      "rank": 14,
+      "rank_needed": 15,
+      "pass": false
+    },
+    "family_only": {
+      "converged": true,
+      "share_family": 0.054299438318568954,
+      "ci": [
+        1.3706028365952923e-05,
+        0.9959826497306613
+      ]
+    }
+  },
+  "family_only_fit": {
+    "s2": {
+      "family": 0.0027431345152735135,
+      "unique": 0.04777551908809967
+    },
+    "shares": {
+      "family": 0.054299438318568954,
+      "unique": 0.945700561681431
+    },
+    "llf": 13.635840333441099
+  },
+  "era_only_fit": {
+    "s2": {
+      "era": 2.061153622438558e-09,
+      "unique": 0.04989851647024088
+    },
+    "shares": {
+      "era": 4.130691016691704e-08,
+      "unique": 0.9999999586930898
+    },
+    "llf": 13.596935527572583
+  },
+  "crossed_fit": {
+    "s2": {
+      "family": 0.002743141402995866,
+      "era": 2.061153622438558e-09,
+      "unique": 0.04777550049979564
+    },
+    "shares": {
+      "family": 0.054299585019614356,
+      "era": 4.079986042201749e-08,
+      "unique": 0.9457003741805252
+    },
+    "llf": 13.63584033343589
+  },
+  "bootstrap": {
+    "mean": 0.22819598937827434,
+    "ci_95": [
+      3.4415430339050823e-08,
+      0.7755938185776711
+    ]
+  },
+  "validation_checks": {
+    "Family-only: all variances finite": true,
+    "Family-only: shares sum to 1": true,
+    "Family-only: shares in [0,1]": true,
+    "Family-only: REML converged": true,
+    "Era-only: all variances finite": true,
+    "Era-only: shares sum to 1": true,
+    "Era-only: REML converged": true,
+    "Crossed: all variances finite": true,
+    "Crossed: shares sum to 1": true,
+    "Bootstrap CI valid": true,
+    "Trait values all finite": true,
+    "Trait values in [0,1]": true
+  },
+  "jsonl_status": "CORRUPTED - all predict 0, simulated data"
+}
