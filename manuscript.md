@@ -4,7 +4,7 @@
 
 ## Abstract
 
-Decomposing foundation-model performance variation into lineage, temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions — crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation — and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. Applying the framework to 16 real foundation models across 5 families and 11 release quarters, we show that a realistic model roster can fail all three numerical requirements: the design matrix is rank-deficient (rank 14 of 18 required), with condition number $4.7 \times 10^{16}$ and infinite family variance inflation. The failure is structural — caused by a missing family (DeepSeek), singleton families (Llama, Qwen), and sparse family×era occupancy — not computational. Running the variance decomposition without the gate produces uninterpretable estimates with confidence intervals covering the full $[0, 100\%]$ range. We further characterize population designs that satisfy the identifiability requirements, finding that one sufficient configuration requires 30 models across 6 families and 8 eras with balanced occupancy (rank 13/13, $\kappa = 93$, VIF $= 2.1$). The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
+Decomposing foundation-model performance variation into lineage, temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions — crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation — and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. Applying the framework to 16 real foundation models across 5 families and 11 occupied release quarters within the 2023Q1–2026Q2 observation window, we show that a realistic model roster can fail the three pre-specified gate diagnostics: full-rank estimability, numerical conditioning, and variance inflation. The design matrix is rank-deficient (rank 14 of 18 columns required), with condition number $4.7 \times 10^{16}$ and infinite family variance inflation. The failure is structural — caused by a missing family (DeepSeek), singleton families (Llama, Qwen), and sparse family×era occupancy — not computational. When we fit the variance-component model despite gate failure, the resulting estimates are highly unstable and non-identifiable, with confidence intervals covering the full $[0, 100\%]$ range. We further characterize population designs that satisfy the identifiability requirements, finding that one sufficient configuration requires 30 models across 6 families and 8 eras with balanced occupancy (rank 13/13, $\kappa = 93$, VIF $= 2.1$). The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
 
 ---
 
@@ -12,7 +12,7 @@ Decomposing foundation-model performance variation into lineage, temporal, and m
 
 ### 1.1 The phenomenon
 
-Foundation models make correlated errors. When one open-weight model fails a question, its contemporaries and descendants often fail too. Kim et al. (ICML 2025) document this across more than 350 open and hosted models: when a pair of models both err, they agree on the wrong answer roughly 60% of the time on one benchmark, and the agreement persists across distinct architectures and providers. This correlation has practical consequences: ensembles assume independent error, and deployment pipelines inherit blind spots from related models (Li et al., ICLR 2026).
+Prior work has demonstrated correlated errors across language models. When one open-weight model fails a question, its contemporaries and descendants often fail too. Kim et al. (ICML 2025) document this across more than 350 open and hosted models: when a pair of models both err, they agree on the wrong answer roughly 60% of the time on one benchmark, and the agreement persists across distinct architectures and providers. This correlation has practical consequences: ensembles assume independent error, and deployment pipelines inherit blind spots from related models (Li et al., ICLR 2026).
 
 Two explanations compete for this shared failure structure:
 
@@ -29,13 +29,19 @@ Prior work on correlated errors in language models has characterized correlated 
 
 ### 1.3 What this paper does
 
+This paper addresses three layers of analysis, of which the first two are within scope and the third is not:
+
+- **Layer 1 — Real empirical measurements:** 16 models evaluated on 14,042 MMLU items, producing reliable accuracy estimates (CSV-level). These measurements are real and are reported in Table 1.
+- **Layer 2 — Model-population identifiability:** We test whether the family×era design of the 16-model population supports a crossed random-effects variance decomposition. It does not: the design fails rank, conditioning, and VIF gates.
+- **Layer 3 — Per-question correlated-error analysis:** This layer requires per-question prediction data. The JSONL evaluation artifacts contain simulated (constant) predictions and cannot support error-similarity analysis. This layer is deferred to future work.
+
 We make four contributions:
 
 **Contribution 1: Formal identifiability conditions.** We specify the rank, conditioning, and crossing requirements that a family×era design must satisfy before variance components can be estimated.
 
 **Contribution 2: A pre-measurement gating procedure.** We develop a computational test that checks rank, condition number, variance inflation, and design crossing before any model is evaluated.
 
-**Contribution 3: Empirical demonstration on 16 real models.** We apply the gate to 16 real foundation models. The gate fails on all three numerical criteria. We show that running the decomposition without the gate produces uninterpretable estimates, and diagnose the structural deficits responsible.
+**Contribution 3: Empirical demonstration on 16 real models.** We apply the gate to 16 real foundation models. The gate fails on all three diagnostics. We show that fitting the variance-component model despite gate failure produces highly unstable, non-identifiable estimates, and diagnose the structural deficits responsible.
 
 **Contribution 4: Population-design characterization.** We systematically sweep alternative family×era designs and identify one sufficient configuration (30 models, 6 families, 8 eras), finding that full column rank alone is insufficient — numerical conditioning is an additional necessary gate.
 
@@ -53,7 +59,7 @@ All citations verified against the arXiv record or proceedings.
 | **Tracing the Roots** (ACL 2026) | Dataset lineage graphs and contamination propagation | Model error variance | Dataset ancestry, not model trait decomposition |
 | **Subjectivity of Monoculture** (2026) | Monoculture estimates are null-model-dependent | Variance decomposition | Informs decomposition choice but does not estimate the partition |
 
-No existing work tests identifiability before estimating variance components in model populations. Every prior estimate of lineage/era attribution assumes the design supports the decomposition without verifying it.
+We found limited prior work explicitly testing identifiability before estimating lineage/era variance components in model populations. Every prior estimate of lineage/era attribution we reviewed assumes the design supports the decomposition without verifying it.
 
 ---
 
@@ -114,7 +120,7 @@ We apply the gate to 16 real foundation models (Section 5) and, if it fails, rep
 
 ### 5.1 Study population
 
-We evaluate 16 foundation models from 5 families, spanning 11 release quarters (2023Q1–2026Q2). All evaluations use MMLU 5-shot with 14,042 items per model. Results are in Table 1.
+We evaluate 16 foundation models from 5 families spanning 11 occupied release quarters within the 2023Q1–2026Q2 observation window. All evaluations use MMLU 5-shot with 14,042 items per model. Results are in Table 1.
 
 **Table 1.** Model accuracy on MMLU (5-shot, 14,042 items).
 
@@ -161,11 +167,7 @@ The design matrix has $p = 1 + (F-1) + (E-1) = 1 + 4 + 13 = 18$ columns (using a
 | Condition number $\kappa$ | $4.72 \times 10^{16}$ | $\leq 100$ | **FAIL** |
 | Max VIF | $\infty$ | $\leq 10$ | **FAIL** |
 
-The design matrix is rank-deficient by 4. The rank deficit traces to three structural causes:
-
-1. **Missing DeepSeek family** (0 measured models) → one family column is zero
-2. **Singleton families** (Llama: 1 model, Qwen: 1 model) → these cannot separate family from era
-3. **Three unoccupied eras** → three era columns are zero
+The design matrix is rank-deficient by 4. Three structural features — a missing family (DeepSeek, with 0 measured models), singleton families (Llama and Qwen, each with only 1 model, making family and era effects aliased within those groups), and three unoccupied eras (2024Q1, 2024Q3, 2025Q3) — jointly induce four linearly dependent directions in the design matrix.
 
 Full rank is a necessary but not sufficient condition. Even synthetic designs that achieve full rank can fail the condition number gate (Section 5.4).
 
@@ -215,7 +217,7 @@ The central finding of this paper is not a variance partition — it is the demo
 
 ### 6.2 Why the failure is structural
 
-The rank deficiency is not caused by noisy measurements or small sample size. It is caused by the structure of the model population: one family has no measured members, two families have only one member each, and the family×era occupancy matrix is sparse (82% of cells are empty). More measurements within the same population would not fix this. The deficiency is structural, not a data limitation.
+The rank deficiency is not caused by noisy measurements or small sample size. It is caused by the structure of the model population: one family has no measured members, two families have only one member each, and the family×era occupancy matrix is sparse (82% of cells are empty). Repeating measurements of the same 16 model identities would not resolve the model-level design deficiency; additional model identities with appropriate family–era crossing are required.
 
 ### 6.3 Practical implications
 
@@ -226,7 +228,7 @@ The rank deficiency is not caused by noisy measurements or small sample size. It
 ### 6.4 Limitations
 
 1. **Per-question data is unavailable.** The JSONL evaluation artifacts contain simulated predictions (all models predict answer 0). The error-similarity decomposition specified in the original plan cannot be performed. The framework specifies how this should be done once validated data is available.
-2. **The 16-model population is small.** With only 16 models, even a correctly specified design would have limited statistical power. The power analysis (Section 5.4) suggests 30+ models are needed for stable estimation.
+2. **The 16-model population is small.** With only 16 models, even a correctly specified design would have limited statistical power. The population-design analysis (Section 5.4) suggests 30+ models are needed for stable estimation.
 3. **The $\kappa_{\max} = 100$ threshold is conventional.** Different applications may require tighter or looser bounds. The framework is agnostic to the specific threshold choice; the important point is that some threshold is applied.
 4. **The population-design analysis identifies one sufficient configuration, not the global minimum.** Other sufficient designs may exist with fewer models under different family/era structures.
 
@@ -234,7 +236,7 @@ The rank deficiency is not caused by noisy measurements or small sample size. It
 
 ## 7. Conclusion
 
-We introduce an identifiability-gated framework for decomposing foundation-model performance into lineage, temporal, and model-specific components. Applying the framework to 16 real models shows that conventional variance decomposition can be severely underidentified when the model population is sparsely crossed. The gate detects this failure before any estimates are reported, preventing misleading inferences. We characterize one sufficient population design (30 models, 6 families, 8 eras) and find that numerical conditioning, not just rank, is a binding requirement. The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
+We introduce an identifiability-gated framework for decomposing foundation-model performance into lineage, temporal, and model-specific components. Applying the framework to 16 real models shows that conventional variance decomposition can be severely underidentified when the model population is sparsely crossed. The gate detects this failure before any estimates are reported, preventing misleading inferences. We characterize one sufficient population design (30 models, 6 families, 8 eras) and find that full rank alone is insufficient: numerical conditioning provides an additional necessary gate for stable estimation. The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
 
 ---
 
