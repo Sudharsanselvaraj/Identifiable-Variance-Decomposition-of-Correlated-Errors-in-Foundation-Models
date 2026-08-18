@@ -14,3 +14,4 @@ date,full_name,hf_repo,benchmark,fewshot,acc,acc_norm,samples,fidelity
 2026-08-17,Phi-4-reasoning-plus,microsoft/Phi-4-reasoning-plus,mmlu,5,0.77823671841618,,14042,bf16
 2026-08-18,Qwen-7B,Qwen/Qwen-7B,mmlu,5,0.22945449366187154,,14042,bf16
 2026-08-18,Mistral-Small-3.1,mistralai/Mistral-Small-3.1-24B-Instruct-2503,mmlu,5,0.23401224896738357,,14042,bf16
+2026-08-18,Mistral-Small-3.2,mistralai/Mistral-Small-3.2-24B-Instruct-2506,mmlu,5,0.23144851160803304,,14042,bf16
