@@ -8,7 +8,7 @@ Department of Computer Science and Engineering, SRM Institute of Science and Tec
 
 ## Abstract
 
-Decomposing foundation-model performance variation into lineage, temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions—crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation—and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. A simulation study validates a direct restricted-maximum-likelihood estimator, showing it recovers known ground truth to within 2.5 percentage points under balanced occupancy and 5.3 under realistic sparse occupancy, and fails detectably when family and era are nested: three independent detectors flag aliasing in 100% of repetitions with zero silent coverage. We then apply the gate to an empirical population of 16 real foundation models spanning 5 families and 11 occupied release quarters. The design fails all three pre-specified gate diagnostics: full-rank estimability (rank 14 of 18 columns required), numerical conditioning (condition number $4.7 \times 10^{16}$), and variance inflation (infinite VIF). The failure is structural—caused by a missing family, singleton families, and sparse family-era occupancy—not computational. When we fit the variance-component model despite gate failure, the resulting estimates are highly unstable and non-identifiable, with confidence intervals covering the full $[0\%, 100\%]$ range. We further characterize alternative population designs through a systematic design-space analysis, identifying one sufficient configuration (30 models, 6 families, 8 eras, rank 13/13, $\kappa = 93$, VIF $= 2.1$). The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
+Decomposing foundation-model performance variation into lineage, temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions—crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation—and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. A simulation study validates a direct restricted-maximum-likelihood estimator, showing it recovers known ground truth to within 2.5 percentage points under balanced occupancy and 5.3 under realistic sparse occupancy, and fails detectably when family and era are nested: three independent detectors flag aliasing in 100% of repetitions with zero silent coverage. We then apply the gate to an empirical population of 16 real foundation models spanning 5 families and 11 occupied release quarters. The design fails all three pre-specified gate diagnostics: full-rank estimability (rank 14 of 15 columns required), numerical conditioning (condition number $4.7 \times 10^{16}$), and variance inflation (infinite VIF). The failure is structural—caused by a missing family, singleton families, and sparse family-era occupancy—not computational. When we fit the variance-component model despite gate failure, the resulting estimates are highly unstable and non-identifiable, with confidence intervals covering the full $[0\%, 100\%]$ range. We further characterize alternative population designs through a systematic design-space analysis, identifying one sufficient configuration (30 models, 6 families, 8 eras, rank 13/13, $\kappa = 93$, VIF $= 2.1$). The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
 
 ---
 
@@ -164,7 +164,7 @@ A design is connected if the bipartite family-era incidence graph—one vertex p
 
 For the variance components to be separately estimable, the design matrix must have full column rank: $\text{rank}(X) = p$. Rank deficiency means the effects are aliased and the decomposition is not identifiable.
 
-**Proposition 1.** Let $C = [Z_F \mid Z_E]$ be the $N \times (F + E)$ incidence matrix of a connected crossed design. Then $C$ has rank $F + E - 1$, the deficiency being exactly the intercept direction $\mathbf{1}$, and the variance components $\sigma^2_L$, $\sigma^2_E$, $\sigma^2_U$ are separately identifiable from the marginal covariance $V(\theta)$.
+**Proposition 1.** Let $C = [Z_F \mid Z_E]$ be the $N \times (F + E)$ incidence matrix of a connected crossed design. Then $C$ has rank $F + E - 1$, the deficiency being exactly the intercept direction $\mathbf{1}$. Full column rank of the incidence design is a necessary structural criterion. Separate identification of the variance components $\sigma^2_L$, $\sigma^2_E$, $\sigma^2_U$ from the marginal covariance $V(\theta) = \sigma^2_L Z_F Z_F^\top + \sigma^2_E Z_E Z_E^\top + \sigma^2_U I$ additionally requires that the covariance basis matrices $\{I, Z_F Z_F^\top, Z_E Z_E^\top\}$ be linearly independent in the space of $N \times N$ symmetric matrices, which holds when the design is connected and crossed.
 
 ### 4.5 Numerical Conditioning
 
@@ -261,7 +261,7 @@ Three simulation regimes test the estimator under controlled conditions:
 
 **D1: Balanced crossed reference.** 30 families $\times$ 14 eras $\times$ 2 models per cell (840 models). The large family count isolates estimator calibration from the small-sample limit of the real design. True components: $\sigma^2_L = 0.5$, $\sigma^2_E = 0.2$, $\sigma^2_U = 0.3$ (lineage-dominant scenario A); $\sigma^2_L = 0.2$, $\sigma^2_E = 0.5$, $\sigma^2_U = 0.3$ (era-dominant scenario B); $\sigma^2_L = 0.33$, $\sigma^2_E = 0.33$, $\sigma^2_U = 0.34$ (balanced scenario C).
 
-**D2: Realistic occupancy.** The occupancy matrix copied from the 47-model study population (6 families $\times$ 14 quarters, sparse cells). Same true components as D1. Bias or collapse here is a gate failure.
+**D2: Realistic occupancy.** The occupancy matrix copied from the 47-model candidate population (6 families × 14 calendar quarters, sparse cells; only 11 quarters are occupied in the observed 16-model population). Same true components as D1. Bias or collapse here is a gate failure.
 
 **D3: Nested (must fail).** Each family confined to a single era, so $\sigma^2_L$ and $\sigma^2_E$ are perfectly aliased. Three independent detectors must flag the aliasing.
 
@@ -343,9 +343,17 @@ Fifteen models were evaluated at BF16 precision. One model (Mistral-Small-4, 119
 
 ### 7.5 Hardware
 
-All evaluations were run on rented consumer GPUs. The 70B+ tier models used 4-bit quantization for memory efficiency. All other models ran at BF16.
+Evaluations were performed on rented cloud GPUs, including an NVIDIA A100-SXM4 80GB configuration. Of the 16 measured models, 15 were evaluated at BF16 precision and 1 (Mistral-Small-4, 119B) was evaluated at 4-bit quantization for memory efficiency.
 
-### 7.6 Aggregate Accuracy
+### 7.6 Evaluation Validity Caveat
+
+Several models produce accuracy values near the chance level for a 4-choice benchmark (25%): Devstral-2 (25.1%), Phi-1 (24.8%), Mistral-Small-4 (24.3%), Mistral-Small-3.1 (23.4%), Mistral-Small-3.2 (23.1%), and Qwen-7B (22.9%). The most conspicuous discontinuity is within the Mistral-Small family: Mistral-Small-3 (Jan 2025) scores 80.7%, while Mistral-Small-3.1 (Mar 2025) and Mistral-Small-3.2 (Jun 2025)—the same 24B architecture, two and five months later—score 23.4% and 23.1% respectively. A 57-percentage-point degradation within a single model family over two months is not plausible as a real capability change.
+
+The most likely explanation is a chat-template or prompt-format mismatch: newer Mistral instruct models may require different prompt construction than the lm-evaluation-harness default used for earlier models, causing the evaluation to produce explanations rather than answer-choice letters, which then fail the answer-extraction scoring. The CSV values record artifact completeness (14,042 samples per model), not necessarily evaluation validity.
+
+**This caveat does not affect the paper's core contribution.** The identifiability gate depends only on the design matrix structure (which families and eras are represented), not on the trait values themselves. The gate result—rank 14 of 15, $\kappa = 4.7 \times 10^{16}$, VIF $= \infty$—is invariant to the accuracy values. However, any future study that intends to interpret the variance-component estimates must first validate the accuracy measurements against independent reference scores. The variance decomposition is conditional on the validity of the input trait.
+
+### 7.7 Aggregate Accuracy
 
 **Table 5. Model accuracy on MMLU (5-shot, 14,042 items).**
 
@@ -368,16 +376,16 @@ All evaluations were run on rented consumer GPUs. The 70B+ tier models used 4-bi
 | Mistral-Small-3.2 | Mistral | 2025Q2 | 0.2314 | BF16 |
 | Qwen-7B | Qwen | 2023Q3 | 0.2295 | BF16 |
 
-### 7.7 Data Integrity Validation
+### 7.8 Data Integrity Validation
 
 The per-question JSONL prediction files were validated for all 16 models. All 16 files contain identical constant predictions: every model predicts answer 0 for every question. This confirms the JSONL files contain simulated rather than actual evaluation output. The CSV-level aggregate accuracy values in Table 5 are reliable and were used for all analyses. The error-similarity analysis specified in the original plan cannot be performed on this dataset and is deferred to future work once validated per-question outputs are available.
 
-### 7.8 What Is and Is Not Measured
+### 7.9 What Is and Is Not Measured
 
 The following populations exist in the project but are NOT measured empirical results:
 
 - **47-model candidate population:** The full structural population from the Phase 0 audit. Not measured.
-- **22-model selected population:** The minimum valid population identified by the G3 outcome-independent design procedure. Not fully measured (16 of 22 were evaluated; DeepSeek-V3.1/V3.2 could not be evaluated due to compute constraints).
+- **22-model selected population:** The minimum valid population within the 47-model candidate frame identified by the G3 outcome-independent design procedure. Not fully measured (16 of 22 were evaluated; DeepSeek-V3.1/V3.2 could not be evaluated due to compute constraints).
 - **DeepSeek models:** DeepSeek-V3.1 (671B) and DeepSeek-V3.2 (685B) were NOT empirically measured. They must not be described as measured results.
 
 ---
@@ -400,25 +408,24 @@ Three quarters are unoccupied (2024Q1, 2024Q3, 2025Q3). Eight of 11 occupied qua
 
 ### 8.2 Gate Diagnostics
 
-The design matrix has $p = 1 + (F-1) + (E-1) = 1 + 4 + 13 = 18$ columns, using all 14 calendar quarters as era levels (including the 3 unoccupied quarters, which contribute zero columns). Gate diagnostic results are summarized in Figure 3.
+The observed 16-model population spans 11 occupied release quarters within a 14-quarter observation window (2024Q1, 2024Q3, and 2025Q3 are unoccupied). After removing unoccupied factor levels, the fitted design matrix has $p = 1 + (F-1) + (E-1) = 1 + 4 + 10 = 15$ columns. Gate diagnostic results are summarized in Figure 3.
 
 **Table 7. Identifiability gate diagnostics for the 16-model population.**
 
 | Gate | Check | Value | Threshold | Status |
 |---|---|---|---|---|
-| G1 | Rank | 14 | $= 18$ | **FAIL** |
+| G1 | Rank | 14 | $= 15$ | **FAIL** |
 | G2 | Condition number $\kappa$ | $4.72 \times 10^{16}$ | $\leq 100$ | **FAIL** |
 | G3 | Max VIF | $\infty$ | $\leq 10$ | **FAIL** |
 
 ### 8.3 Failure Diagnosis
 
-The design matrix is rank-deficient by 4. Three structural features jointly induce the rank deficiency:
+The design matrix is rank-deficient by 1. Two structural features jointly induce the rank deficiency:
 
 1. **Missing family:** DeepSeek has 0 measured models, contributing one zero column to the family block.
 2. **Singleton families:** Llama (1 model) and Qwen (1 model) each occupy a single quarter, making their family effects aliased with the corresponding era effects within those quarters.
-3. **Empty quarters:** Three quarters (2024Q1, 2024Q3, 2025Q3) have no measured models, contributing zero columns to the era block.
 
-These features jointly induce four linearly dependent directions in the design matrix. Full rank is a necessary but not sufficient condition: even designs that achieve full rank can fail the condition number gate (Section 9).
+These features jointly induce one linearly dependent direction in the fitted design matrix. Full rank is a necessary but not sufficient condition: even designs that achieve full rank can fail the condition number gate (Section 9).
 
 ---
 
@@ -476,7 +483,7 @@ This is one sufficient configuration, not the universal minimum. Other sufficien
 
 ### 10.4 G3 Outcome-Independent Selection
 
-The G3 procedure (Algorithm 1) selects the minimum valid population from the 47-model candidate set. The structural minimum is 21 models (identifiable: full rank, VIF $\leq$ 10), but the 21-model design sits exactly on the recovery bar in simulation (era-share bias $\approx -5.0$pp with SE $0.6$–$0.8$pp—a knife-edge). The minimum valid population is **22 of 47 models**, which clears the bar at 300 repetitions (era bias A $+2.4$pp / B $-0.8$pp), passes the 1000-repetition margin confirmation (A $+2.2$pp / B $-2.4$pp), and is robust at 2000 repetitions (A $+1.7$pp / B $-3.2$pp). The extra model over the structural minimum is statistically necessary, not computationally convenient.
+The G3 procedure (Algorithm 1) selects the minimum valid population from the 47-model candidate set. The structural minimum is 21 models (identifiable: full rank, VIF $\leq$ 10), but the 21-model design sits exactly on the recovery bar in simulation (era-share bias $\approx -5.0$pp with SE $0.6$–$0.8$pp—a knife-edge). The minimum valid population within this candidate frame is **22 of 47 models**, which clears the bar at 300 repetitions (era bias A $+2.4$pp / B $-0.8$pp), passes the 1000-repetition margin confirmation (A $+2.2$pp / B $-2.4$pp), and is robust at 2000 repetitions (A $+1.7$pp / B $-3.2$pp). The extra model over the structural minimum is statistically necessary, not computationally convenient.
 
 ---
 
@@ -530,7 +537,7 @@ The negative result—that the 16-model population fails the identifiability gat
 ### 12.7 What Additional Empirical Data Would Be Needed
 
 To perform the intended lineage-era variance decomposition, a future study would need:
-- A population of at least 22 models (per the G3 analysis) with full family-era crossing
+- A population satisfying comparable structural and recoverability criteria to the 22-model G3 selection (full family-era crossing, adequate family count, sufficient density)
 - All 6 families represented with at least 2 models each
 - At least 8 occupied release quarters with at least 2 families per quarter
 - Validated per-question prediction data (not the corrupted JSONL artifacts available here)
@@ -563,6 +570,8 @@ To perform the intended lineage-era variance decomposition, a future study would
 11. **Release-quarter grouping.** Release date is discretized to quarters, which simplifies temporal structure.
 
 12. **Possible benchmark contamination.** If pretraining included MMLU items, trait variance is compressed toward zero and era/lineage shares are biased downward.
+
+13. **Unverified evaluation validity for several models.** Six models produce accuracy near the 4-choice chance level (23–25%), and the Mistral-Small family shows a 57-percentage-point discontinuity between versions (Section 7.6). The CSV values record artifact completeness, not necessarily evaluation validity. The identifiability gate result is invariant to the trait values, but any future variance-component interpretation requires independent validation of the accuracy measurements.
 
 ---
 
@@ -598,9 +607,9 @@ We introduce an identifiability-gated framework for decomposing foundation-model
 
 The simulation study establishes that the direct REML estimator recovers known ground truth to within 2.5pp under balanced occupancy and 5.3pp under realistic sparse occupancy, and that three independent detectors flag nested aliasing in 100% of repetitions with zero silent coverage.
 
-The empirical application to 16 real foundation models demonstrates that a realistic model population can fail the identifiability gate: the design is rank-deficient (rank 14 of 18), numerically unstable ($\kappa = 4.7 \times 10^{16}$), and has infinite variance inflation. The failure is structural, caused by missing families, singleton families, and sparse occupancy. The intended lineage-era variance decomposition is therefore not identifiable on this population and is not interpreted.
+The empirical application to 16 real foundation models demonstrates that a realistic model population can fail the identifiability gate: the design is rank-deficient (rank 14 of 15), numerically unstable ($\kappa = 4.7 \times 10^{16}$), and has infinite variance inflation. The failure is structural, caused by missing families, singleton families, and sparse occupancy. The intended lineage-era variance decomposition is therefore not identifiable on this population and is not interpreted.
 
-The population-design analysis identifies one sufficient configuration (30 models, 6 families, 8 eras) and characterizes the tradeoff between population size, family count, era count, and numerical conditioning. A minimum valid population of 22 models is identified by an outcome-independent design procedure that never reads trait values.
+The population-design analysis identifies one sufficient configuration (30 models, 6 families, 8 eras) and characterizes the tradeoff between population size, family count, era count, and numerical conditioning. Within the evaluated 47-model candidate frame and the pre-specified G3 criteria, the procedure selected a 22-model population as the minimum valid candidate subset. Future studies would need a population satisfying comparable structural and recoverability criteria; 22 is not a universal lower bound.
 
 The main result is that the intended lineage-era attribution is not identifiable in the actual empirical population and that the proposed gate detects this before inference. The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
 
