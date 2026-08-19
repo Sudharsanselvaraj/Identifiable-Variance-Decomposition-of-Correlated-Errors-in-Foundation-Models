@@ -1,0 +1,23 @@
+---
+title: "Identifiability-Gated Variance Decomposition of Foundation-Model Performance: A Design and Empirical Feasibility Study"
+author:
+  - name: Sudharsan Selvaraj
+    affiliation: "Independent Researcher"
+documentclass: IEEEtran
+classoption: conference
+geometry: margin=1in
+fontsize: 10pt
+header-includes:
+  - \usepackage{amsmath,amssymb}
+  - \usepackage{booktabs}
+  - \usepackage{graphicx}
+  - \usepackage{hyperref}
+  - \hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+  - \setlength{\parskip}{0pt}
+  - \setlength{\parindent}{1em}
+  - \renewenvironment{longtable}{\begin{table}}{\end{table}}
+  - \renewcommand{\endfirsthead}{}
+  - \renewcommand{\endhead}{}
+  - \renewcommand{\endfoot}{}
+  - \renewcommand{\endlastfoot}{}
+---
