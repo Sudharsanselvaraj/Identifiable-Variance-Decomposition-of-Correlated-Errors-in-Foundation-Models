@@ -56,8 +56,7 @@
 \AtBeginDocument{\renewcommand{\ttdefault}{lmtt}}
 
 \begin{document}
-\history{Date of submission August 2026.}
-\doi{10.1109/ACCESS.2026.XXXXXXX}
+\history{}
 
 \title{Identifiability-Gated Variance Decomposition of Foundation-Model Performance: A Design and Empirical Feasibility Study}
 
@@ -86,7 +85,7 @@ Tiruchirappalli 620101, India}
 \corresp{Corresponding author: S. Kanaga Suba Raja (e-mail: kanagass@srmist.edu.in).}
 
 \begin{abstract}
-Decomposing foundation-model performance variation into lineage, temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions---crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation---and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. A simulation study validates a direct restricted-maximum-likelihood estimator, showing it recovers known ground truth to within 2.5 percentage points under balanced occupancy and 5.3 under realistic sparse occupancy, and fails detectably when family and era are nested: three independent detectors flag aliasing in 100\% of repetitions with zero silent coverage. We then apply the gate to an empirical population of 16 real foundation models spanning 5 families and 11 occupied release quarters. The design fails all three pre-specified gate diagnostics: full-rank estimability (rank 14 of 15 columns required), numerical conditioning (condition number $4.7 \times 10^{16}$), and variance inflation (infinite VIF). The failure is structural---caused by missing families, singleton families, and sparse family-era occupancy---not computational. When we fit the variance-component model despite gate failure, the resulting estimates are highly unstable and non-identifiable, with confidence intervals covering the full $[0\%, 100\%]$ range. We further characterize alternative population designs through a systematic design-space analysis, identifying one sufficient configuration (30 models, 6 families, 8 eras, rank 13/13, $\kappa = 93$, VIF $= 2.1$). The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
+Decomposing foundation-model performance variation into lineage, temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions---crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation---and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. A simulation study validates a direct restricted-maximum-likelihood estimator, showing it recovers known ground truth to within 2.5 percentage points under balanced occupancy and 5.3 under realistic sparse occupancy, and fails detectably when family and era are nested: three independent detectors flag aliasing in 100\% of repetitions with zero silent coverage. We then apply the gate to an empirical population of 16 real foundation models spanning 5 families and 11 occupied release quarters. The design fails all three pre-specified gate diagnostics: full-rank estimability (rank 14 of 15 columns required), numerical conditioning (condition number $4.7 \times 10^{16}$), and variance inflation (infinite VIF). The failure is structural---caused by singleton families and sparse family-era occupancy---not computational. When we fit the variance-component model despite gate failure, the resulting estimates are highly unstable and non-identifiable, with confidence intervals covering the full $[0\%, 100\%]$ range. We further characterize alternative population designs through a systematic design-space analysis, identifying one sufficient configuration (30 models, 6 families, 8 eras, rank 13/13, $\kappa = 93$, VIF $= 2.1$). The same design-gating principle can be applied to other crossed random-effects analyses of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
 \end{abstract}
 
 \begin{keywords}
@@ -102,7 +101,7 @@ Foundation models, Large language models, Variance decomposition, Identifiabilit
 
 \PARstart{W}{hen} a group of public open-weight language models is given a hard question, they often fail together---missing the same fact, making the same mistake, reaching the same wrong answer. Kim~\textit{et al.}~\cite{kim2025} document this across more than 350 open and hosted models: when a pair of models both err, they agree on the wrong answer roughly 60\% of the time, and the agreement persists across distinct architectures and providers. This correlation has practical consequences: ensembles assume independent error, and deployment pipelines inherit blind spots from related models~\cite{li2026roots}. Chen~\cite{chen2026} shows that pairwise error correlation substantially underestimates the co-failure ceiling---the probability that every member of an ensemble fails a question---by roughly a factor of two across 67 frontier models.
 
-The consequence for practitioners is concrete. A review pipeline that routes each item to three open-weight models and escalates to a human only when they disagree rests on the assumption that the three fail independently enough that unanimous agreement is informative. If a shared ancestor or a shared training year makes them wrong together on the same items, then unanimity is loudest exactly where it is least trustworthy. The operator cannot detect this from per-model accuracy, which may be excellent for all three.
+The consequence is that a review pipeline that routes each item to three open-weight models and escalates to a human only when they disagree rests on the assumption that the three fail independently enough that unanimous agreement is informative. If a shared ancestor or a shared training year makes them wrong together on the same items, then unanimity is loudest where it is least trustworthy. The operator cannot detect this from per-model accuracy, which may be excellent for all three.
 
 \subsection{Lineage Versus Era}
 Two explanations compete for the shared failure structure:
@@ -110,20 +109,20 @@ Two explanations compete for the shared failure structure:
 \item \textbf{Lineage:} A model trained on another model's outputs, or on data generated by it, tends to replicate that model's blind spots. Deploying models with independent ancestries reduces the probability that the ensemble fails a question the same way.
 \item \textbf{Era:} Models released at the same time are trained on largely the same scrapes of the web, the same benchmark-cleansed corpora, and the same dominant techniques, so they may pick up the same errors independently of any shared ancestry.
 \end{itemize}
-The obstacle to separating them is that lineage and era are confounded: descendants are always released after their ancestors, so release year is simultaneously a mediator and a confounder on the lineage-to-error path. A model released in 2024 shares errors with its siblings by ancestry and with unrelated contemporaries by shared training environment. Observing correlation does not allocate it.
+The obstacle to separating them is that lineage and era are temporally entangled: descendants are always released after their ancestors, so release year is simultaneously correlated with lineage and with the training environment. A model released in 2024 shares errors with its siblings by ancestry and with unrelated contemporaries by shared training environment. Observing correlation does not allocate it.
 
 \subsection{The Methodological Problem}
-Whether shared failure is mostly inherited or mostly contemporaneous is not an academic question. If shared mistakes trace mostly to lineage, then diversification across model families is a credible mitigation. If they trace mostly to era, then no amount of new ancestry helps, because every model of a given year carries the same errors. The choice between these two conclusions has direct operational consequences for how practitioners assemble model portfolios.
+Whether shared failure is mostly inherited or mostly contemporaneous is not an academic question. If shared mistakes trace mostly to lineage, then diversification across model families is a credible mitigation. If they trace mostly to era, then no amount of new ancestry helps, because every model of a given year carries the same errors. The choice between these two conclusions affects how practitioners assemble model portfolios.
 
-The difficulty is that the two explanations are not separable by inspection. Release year lies on the lineage-to-error path: a child model inherits both the errors of its parent and the training environment of its own release date. Release year is therefore a \emph{mediator} of the lineage path and a \emph{potential confounder} of the observational family--error association. Any single-number answer that tries to assign shared error ``to lineage'' or ``to era'' conflates the two roles of release year.
+The difficulty is that the two explanations are not separable by inspection. Release year lies on the lineage-to-error path: a child model inherits both the errors of its parent and the training environment of its own release date. Lineage and release era are therefore statistically confounded in the observed model population. Any single-number answer that tries to assign shared error ``to lineage'' or ``to era'' conflates the two sources.
 
 \subsection{Why Population Design Matters}
 Variance decomposition is standard in genetics, education, and psychology, but the estimability of variance components depends critically on the design. A nested design---each family confined to one era---makes lineage and era collinear: $\sigma^2_{\text{lineage}}$ and $\sigma^2_{\text{era}}$ cannot be separated from observational data. This is a property of the design, not a data gap: more data within a nested design does not help.
 
-For a crossed random-effects decomposition to be identifiable, the model population must satisfy several structural requirements. The family-era incidence must be crossed (each family appears in multiple eras, and each era contains multiple families). The design matrix must have full column rank. The numerical conditioning must be sufficient for stable estimation. And the variance inflation factors must be bounded. These requirements can be checked before any model is evaluated, and failure to satisfy them means the intended decomposition is not reportable regardless of what the estimator produces.
+For a crossed random-effects decomposition to be identifiable, the model population must satisfy several structural requirements: the family-era incidence must be crossed (each family appears in multiple eras, and each era contains multiple families), the design matrix must have full column rank, the numerical conditioning must be sufficient for stable estimation, and the variance inflation factors must be bounded. These requirements can be checked before any model is evaluated.
 
 \subsection{Research Gap}
-Prior work has extensively studied correlated model behavior and model lineage, but we find limited explicit treatment of pre-measurement identifiability for lineage-era variance attribution. Kim~\textit{et al.}~\cite{kim2025} document correlation without partitioning it. PhyloLM~\cite{phylolm2024} reconstructs ancestry from output similarity without decomposing error variance. Total Evaluation Error (TEE)~\cite{messing2026} decomposes pipeline measurement facets, not model trait variance. The monoculture literature~\cite{kleinberg2021,bommasani2022,jo2026} treats correlated error as a given input to welfare arguments rather than as an object to be decomposed. None of these works tests whether the model population's design supports the intended decomposition before estimating it.
+Prior work has extensively studied correlated model behavior and model lineage, but we find limited explicit treatment of pre-measurement identifiability for lineage-era variance attribution. Kim~\textit{et al.}~\cite{kim2025} document correlation without partitioning it. PhyloLM~\cite{phylolm2024} reconstructs ancestry from output similarity without decomposing error variance. Total Evaluation Error (TEE)~\cite{messing2026} decomposes pipeline measurement facets, not model trait variance. The monoculture literature~\cite{kleinberg2021,bommasani2022,jo2026} treats correlated error as a given input to welfare arguments rather than as an object to be decomposed. Kuai~\textit{et al.}~\cite{kuai2026} measure behavioral entanglement across six families but stop at an independence audit rather than a trait-level variance partition. We did not find prior work that explicitly combines outcome-independent population selection, pre-measurement identifiability gating, and crossed lineage--era variance attribution in foundation-model populations.
 
 \subsection{Research Questions}
 \textbf{RQ1:} Under what family-era population structures is lineage-era variance decomposition identifiable?
@@ -146,7 +145,7 @@ Prior work has extensively studied correlated model behavior and model lineage, 
 \label{sec:related}
 
 \subsection{Correlated Errors in LLMs}
-Kim~\textit{et al.}~\cite{kim2025} measure cross-sectional agreement between language models---how often two models agree when both are wrong---across more than 350 models on two leaderboards, finding roughly 60\% agreement among co-erring models. They are explicitly cross-sectional and leave causal and temporal attribution open. Chen~\cite{chen2026} shows that pairwise error correlation substantially underestimates the co-failure ceiling of an ensemble across 67 frontier models and three combination schemes. The operative risk is the joint all-wrong rate, whose governing inputs are exactly the lineage and era shares we estimate.
+Kim~\textit{et al.}~\cite{kim2025} measure cross-sectional agreement between language models---how often two models agree when both are wrong---across more than 350 models on two leaderboards, finding roughly 60\% agreement among co-erring models. They are explicitly cross-sectional and leave causal and temporal attribution open. Chen~\cite{chen2026} shows that pairwise error correlation substantially underestimates the co-failure ceiling of an ensemble across 67 frontier models and three combination schemes. The joint all-wrong rate is one downstream quantity that could depend on the sources of shared model behavior; separating lineage and era contributions would therefore require a valid estimand and an identifiable model population.
 
 \subsection{Model Lineage and Ancestry}
 PhyloLM~\cite{phylolm2024} builds phylogenetic trees from output similarity across open and closed models and shows that tree distance predicts benchmark performance. Tracing the Roots~\cite{li2026roots} reconstructs the evolution of datasets in post-training---83 seed datasets giving rise to 430 datasets and 971 inheritance edges---and shows that benchmark contamination propagates along lineage paths. Kuai~\textit{et al.}~\cite{kuai2026} measure behavioral entanglement across six open-weight families but stop at an independence audit rather than a trait-level variance partition.
@@ -164,28 +163,29 @@ That ensemble benefit depends on error independence rather than on member accura
 TABLE~\ref{tab:diff} summarizes the gap. The agreement and co-failure work measures that models err together but reports a correlation, not a decomposition. The variance-components and generalizability literature supplies the decomposition but has never been pointed at a model population. The pipeline-variance work decomposes a different object. The lineage-reconstruction work recovers ancestry structure but stops before attributing error variance to it.
 
 \begin{table*}[!t]
-\caption{\textbf{TABLE~I: Related Work Comparison.}}
+\caption{\textbf{TABLE~I: Related Work Comparison.} We compare across six dimensions to position the present contribution. Prior work addresses subsets of the problem---correlated error, lineage reconstruction, pipeline variance, or behavioral entanglement---but does not combine outcome-independent population selection with pre-measurement identifiability gating for crossed variance-component attribution.}
 \label{tab:diff}
 \centering
-\begin{tabular}{|l|c|c|c|c|c|}
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|l|l|}
 \hline
-\textbf{Work} & \textbf{Correlated Error} & \textbf{Lineage} & \textbf{Era} & \textbf{Variance Decomp.} & \textbf{Ident. Gate} \\
+\textbf{Work} & \textbf{Model Pop.} & \textbf{Dependence Analyzed} & \textbf{Lineage} & \textbf{Temporal} & \textbf{Stat. Attrib.} & \textbf{Pre-Analysis Gate} \\
 \hline
-Kim~\textit{et al.} (ICML 2025) & Agreement rate & --- & --- & --- & --- \\
+Kim~\textit{et al.} (ICML 2025) & 350+ models & Agreement rate & --- & --- & Correlation only & --- \\
 \hline
-PhyloLM (ICLR 2025) & --- & Phylogeny & --- & --- & --- \\
+Chen (2026) & 67 models & Co-failure ceiling & --- & --- & Pairwise corr. & --- \\
 \hline
-Messing, TEE (2026) & --- & --- & --- & Pipeline facets & --- \\
+PhyloLM (ICLR 2025) & Open + closed & Output similarity & Phylogeny & --- & Tree distance & --- \\
 \hline
-Tracing the Roots (ACL 2026) & --- & Dataset lineage & --- & --- & --- \\
+Tracing Roots (ACL 2026) & Post-training & Dataset propagation & Dataset lineage & --- & Propagation count & --- \\
 \hline
-Preference Leakage (ICLR 2026) & --- & --- & --- & --- & --- \\
+Kuai~\textit{et al.} (2026) & 18 models, 6 families & Behavioral entanglement & --- & --- & Independence audit & --- \\
 \hline
-Kuai~\textit{et al.} (2026) & Entanglement & --- & --- & --- & --- \\
+Jo~\textit{et al.} (2026) & Monoculture & Population dependence & --- & --- & Welfare argument & --- \\
 \hline
-Monoculture (Jo~\textit{et al.}, 2026) & Given input & --- & --- & --- & --- \\
+Messing, TEE (2026) & Pipeline facets & Judge/temp. variance & --- & --- & Crossed REML & --- \\
 \hline
-\textbf{This work} & \textbf{Context} & \textbf{Variance comp.} & \textbf{Variance comp.} & \textbf{Crossed REML} & \textbf{Yes} \\
+\textbf{This work} & \textbf{16 models} & \textbf{Lineage + era} & \textbf{Fam.\ variance} & \textbf{Quarter var.} & \textbf{Crossed REML} & \textbf{Yes (rank/$\kappa$/VIF)} \\
 \hline
 \end{tabular}
 \end{table*}
@@ -220,25 +220,21 @@ The primary observational estimand is the share vector:
 \theta_P = \left( \frac{\sigma^2_L}{\sigma^2_T}, \frac{\sigma^2_E}{\sigma^2_T}, \frac{\sigma^2_U}{\sigma^2_T} \right)
 \label{eq:thetaP}
 \end{equation}
-where $\sigma^2_T = \sigma^2_L + \sigma^2_E + \sigma^2_U$ is the total variance. This is the lineage share conditional on era grouping---the proportion of performance variance attributable to family membership, holding era as an observed covariate.
-
-\subsection{Mechanistic Share Estimand}
-The mechanistic estimand $\theta_M$ is the lineage share within designs that hold era exactly fixed: co-released family cohorts and verified cross-generation fine-tune chains. It is reported separately from $\theta_P$ and never merged with it, because release year is a mediator of the lineage-to-error path and a potential confounder of the observational association.
+where $\sigma^2_T = \sigma^2_L + \sigma^2_E + \sigma^2_U$ is the total variance. This is the lineage share conditional on era grouping---the proportion of performance variance attributable to family membership, holding era as an observed covariate. A causal or mechanistic lineage estimand would require controlled or naturally co-released cohorts and is outside the scope of the present feasibility study.
 
 \subsection{What Is and Is Not Identified}
-If the design is rank-deficient, the variance components are aliased: multiple combinations of $(\sigma^2_L, \sigma^2_E, \sigma^2_U)$ produce the same likelihood. The REML estimator will converge (Nelder-Mead always finds a finite optimum), but the resulting estimates are not uniquely determined by the data. Reporting them as if they were is misleading. The observational estimand $\theta_P$ is identified only when the design is crossed and connected with full column rank. The mechanistic estimand $\theta_M$ requires additionally that era variation be held fixed by design, which is possible only on the subset of the population where co-released cohorts or verified fine-tune chains provide the contrast.
+If the design is rank-deficient, the variance components are aliased: multiple combinations of $(\sigma^2_L, \sigma^2_E, \sigma^2_U)$ produce the same likelihood. The REML estimator will converge (Nelder-Mead always finds a finite optimum), but the resulting estimates are not uniquely determined by the data. Reporting them as if they were is misleading. The observational estimand $\theta_P$ is identified only when the design is crossed and connected with full column rank, with sufficient numerical conditioning and bounded variance inflation.
 
 \begin{table}[!t]
-\caption{\textbf{TABLE~II: Estimands and Identification Strategy.}}
+\caption{\textbf{TABLE~II: Estimand and Identification Strategy.}}
 \label{tab:estimands}
 \centering
-\begin{tabular}{|p{55pt}|p{180pt}|p{155pt}|}
+\footnotesize
+\begin{tabular}{|p{40pt}|p{70pt}|p{60pt}|p{75pt}|}
 \hline
-\textbf{Estimand} & \textbf{Definition} & \textbf{Identification Strategy} \\
+\textbf{Estimand} & \textbf{Target Quantity} & \textbf{Unit} & \textbf{Identification Condition} \\
 \hline
-$\theta_P$ (observational) & Lineage share conditional on era grouping: $\sigma^2_L / \sigma^2_T$ & Crossed family-era design with full rank, connected incidence graph \\
-\hline
-$\theta_M$ (mechanistic) & Lineage share with era held exactly fixed & Co-released family cohorts and verified cross-generation fine-tune chains; reported separately \\
+$\theta_P$ & $\sigma^2_L / \sigma^2_T$ & Model & Crossed family-era design, full rank, connected incidence, $\kappa \leq 100$, VIF $\leq 10$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -260,11 +256,11 @@ For the variance components to be separately estimable, the design matrix must h
 
 \begin{proposition}[Crossing implies identifiable rank]
 \label{prop:rank}
-Let $C = [Z_F \mid Z_E]$ be the $N \times (F + E)$ incidence matrix of a connected crossed design. Then $C$ has rank $F + E - 1$, the deficiency being exactly the intercept direction $\mathbf{1}$. Full column rank of the incidence design is a necessary structural criterion. Separate identification of the variance components $\sigma^2_L$, $\sigma^2_E$, $\sigma^2_U$ from the marginal covariance $V(\theta) = \sigma^2_L Z_F Z_F^\top + \sigma^2_E Z_E Z_E^\top + \sigma^2_U I$ additionally requires that the covariance basis matrices $\{I, Z_F Z_F^\top, Z_E Z_E^\top\}$ be linearly independent in the space of $N \times N$ symmetric matrices, which holds when the design is connected and crossed.
+Let $C = [Z_F \mid Z_E]$ be the $N \times (F + E)$ incidence matrix of a connected crossed design. Then $C$ has rank $F + E - 1$, the deficiency being exactly the intercept direction $\mathbf{1}$. Full column rank of the incidence design is a necessary structural criterion. Separate identification of the variance components $\sigma^2_L$, $\sigma^2_E$, $\sigma^2_U$ from the marginal covariance $V(\theta) = \sigma^2_L Z_F Z_F^\top + \sigma^2_E Z_E Z_E^\top + \sigma^2_U I$ additionally requires that the covariance basis matrices $\{I, Z_F Z_F^\top, Z_E Z_E^\top\}$ be linearly independent in the space of $N \times N$ symmetric matrices. We use connectedness and crossing as sufficient structural criteria for the incidence design, and independently test covariance-basis independence numerically.
 \end{proposition}
 
 \subsection{Numerical Conditioning}
-Even when the design is rank-deficient, the condition number $\kappa(X^\top X)$ quantifies numerical stability. A large condition number means the design is nearly aliased: small perturbations in the data produce large changes in the estimates. We pre-specify $\kappa_{\max} = 100$ as the threshold for acceptable conditioning (Belsley's classification: $\kappa > 100$ indicates severe multicollinearity). This threshold is a design choice validated through simulation, not a universal mathematical constant.
+Even when the design is rank-complete, the condition number quantifies numerical stability. We compute $\kappa(X^\top X)$, the ratio of the largest to smallest eigenvalue of the Gram matrix $X^\top X$. This is the square of Belsley's condition index (which is based on the square-root eigenvalue ratio of $X$ itself). We pre-specify $\kappa_{\max} = 100$ as the threshold for acceptable conditioning. Belsley classifies condition indices above 10 as indicating moderate multicollinearity and above 30 as severe; our threshold corresponds to a condition index of $\sqrt{100} = 10$ on the $X$ scale. This threshold is a design choice validated through simulation, not a universal mathematical constant.
 
 \subsection{Variance Inflation}
 The variance inflation factor (VIF) for column $j$ is $\text{VIF}_j = 1/(1 - R^2_j)$, where $R^2_j$ is the coefficient of determination from regressing column $j$ on all other columns. We require $\max(\text{VIF}) \leq 10$. High VIF indicates that a particular effect is nearly confounded with other effects in the design.
@@ -292,7 +288,7 @@ Failure of any gate condition means the decomposition is not reportable. The thr
 \label{sec:methods}
 
 \subsection{Protocol Architecture}
-The protocol proceeds in stages, each with an exit gate. The ordering is the contribution: identifiability before results, simulation before real data, and study-population design before empirical inference.
+The protocol proceeds in stages, each with an exit gate. The key design principle is identifiability before results, simulation before real data, and study-population design before empirical inference.
 
 \textbf{Stage 1: Structural population audit.} Assemble the candidate model population from documented release metadata. Verify the family-era incidence is crossed and connected. Check the structural gate conditions (G1--G3).
 
@@ -304,7 +300,7 @@ The protocol proceeds in stages, each with an exit gate. The ordering is the con
 
 \textbf{Stage 5: Re-run identifiability gate on measured design.} Apply G1--G3 to the occupancy that the measurement pass actually returns, not the planned one. Hard failure aborts the analysis.
 
-\textbf{Stage 6: Inference only if gate passes.} Estimate $\theta_P$ and $\theta_M$, compute confidence intervals, and run sensitivity analyses. If the gate fails, report the failure diagnosis without interpreting variance shares.
+\textbf{Stage 6: Inference only if gate passes.} Estimate $\theta_P$, compute confidence intervals, and run sensitivity analyses. If the gate fails, report the failure diagnosis without interpreting variance shares.
 
 \subsection{Outcome-Independence Invariant}
 The population-selection stage (Stage 3) must never read model accuracy or trait values, prediction outputs, error vectors, or evaluation metrics. It may use only family metadata, era (release quarter) metadata, lineage metadata (verified parent-offspring edges), cost estimates, and hard structural constraints (all families present, all quarters retained, edge endpoints retained). This property ensures that the resulting population can be published before measurement without creating a researcher degree of freedom.
@@ -316,7 +312,7 @@ Algorithm~\ref{alg:g3} states the outcome-independent population design procedur
 \caption{Outcome-independent study-population design}
 \label{alg:g3}
 \begin{algsteps}
-\item \algkw{Input:} model set $\mathcal{M}$ ($|\mathcal{M}| = N$); occupancy $O$ (family $\times$ quarter); verified lineage edges $L$; per-model cost $c$; thresholds $\tau_{\text{bias}} = 4.0$pp, $\tau_{\text{cov}} = 90\%$, margin $\delta = 1$pp
+\item \algkw{Input:} model set $\mathcal{M}$ ($|\mathcal{M}| = N$); occupancy $O$ (family $\times$ quarter); verified lineage edges $L$; per-model cost $c$; thresholds $\tau_{\text{bias}} = 5.0$pp (era-share bias, search) / $4.0$pp (confirmation), $\tau_{\text{cov}} = 90\%$, margin $\delta = 1$pp
 \item \algkw{Assert:} trait values $\mathbf{y}$ are not readable in this scope
 \item $\mathcal{S} \leftarrow \{S \subseteq \mathcal{M} : S \text{ satisfies hard constraints}\}$
 \item \algind{1} All $F$ families present in $S$
@@ -327,7 +323,7 @@ Algorithm~\ref{alg:g3} states the outcome-independent population design procedur
 \item \algind{1} Build $C_S$; if $\operatorname{rank}(C_S) < F + E - 1$ then continue
 \item \algind{1} If $\max(\text{VIF}(C_S)) > 10$ then continue
 \item \algind{1} If $S$ has an era with $< 2$ families or a family with $< 2$ eras then continue
-\item \algind{1} $\text{Screen}(S, R=300)$: if $|b| > \tau_{\text{bias}}$ or $\kappa < \tau_{\text{cov}}$ then continue
+\item \algind{1} $\text{Screen}(S, R=300)$: if $|b_{\text{era}}| > \tau_{\text{bias}}$ or $\text{cov}_{\text{era}} < \tau_{\text{cov}}$ then continue
 \item \algind{1} $\text{Confirm}(S, R=1000)$: if $\tau_{\text{bias}} - |b| < \delta$ then continue
 \item \algind{1} $\text{Robust}(S, R=2000)$: if fails then continue
 \item \algind{1} For each $m \in S$: $\text{reason}[m] \leftarrow$ first constraint that fails on $S \setminus \{m\}$
@@ -335,6 +331,8 @@ Algorithm~\ref{alg:g3} states the outcome-independent population design procedur
 \item \algkw{return} $\varnothing$ (no admissible population; gate blocks measurement)
 \end{algsteps}
 \end{algorithm}
+
+The G3 acceptance criterion applies to era-share bias, not family-share bias. This is because era share is the limiting component under the pre-specified design: family-share bias of $-5.3$pp in the realistic D2 scenario A is the documented six-family small-sample limit ($df = 5$) and is reported as a bound, not used as the acceptance criterion. The two-stage procedure uses a 5pp bar at search precision (300 repetitions) and tightens to a 4pp bar at confirmation precision (1000 repetitions) with a 1pp margin.
 
 \section{Simulation Validation}
 \label{sec:sim}
@@ -400,7 +398,7 @@ C (balanced) & $-0.30$ & 94\% & $-3.46$ & 100\% & 100\% \\
 \end{figure}
 
 \subsection{D3: Nested Design Detection}
-TABLE~\ref{tab:d3} shows that all three detectors flag the aliasing in 100\% of repetitions with zero silent coverage. A nested design that appears to succeed is a broken detector, not a valid estimate. The threshold $1.9207$ is the $\chi^2_1$ 95\% critical value halved.
+TABLE~\ref{tab:d3} shows that all three detectors flag the aliasing in 100\% of repetitions with zero silent coverage. A detector that accepts the nested design would constitute a false-negative identification test. The threshold $1.9207$ is the $\chi^2_1$ 95\% critical value halved.
 
 \begin{table}[!t]
 \caption{\textbf{TABLE~IV (continued): D3 Detectable-Failure Battery} (300 repetitions, nested mis-specification).}
@@ -457,11 +455,9 @@ Fifteen models were evaluated at BF16 precision. One model (Mistral-Small-4, 119
 Evaluations were performed on rented cloud GPUs, including NVIDIA A100-SXM4 80GB configurations. Of the 16 measured models, 15 were evaluated at BF16 precision and 1 (Mistral-Small-4, 119B) was evaluated at 4-bit quantization for memory efficiency.
 
 \subsection{Evaluation Validity Caveat}
-Several models produce accuracy values near the chance level for a 4-choice benchmark (25\%): Devstral-2 (25.1\%), Phi-1 (24.8\%), Mistral-Small-4 (24.3\%), Mistral-Small-3.1 (23.4\%), Mistral-Small-3.2 (23.1\%), and Qwen-7B (22.9\%). The most conspicuous discontinuity is within the Mistral-Small family: Mistral-Small-3 (Jan 2025) scores 80.7\%, while Mistral-Small-3.1 (Mar 2025) and Mistral-Small-3.2 (Jun 2025)---the same 24B architecture, two and five months later---score 23.4\% and 23.1\% respectively. A 57-percentage-point degradation within a single model family over two months is not plausible as a real capability change.
+Six models produce accuracy values near the chance level for a 4-choice benchmark (23--25\%): Devstral-2 (25.1\%), Phi-1 (24.8\%), Mistral-Small-4 (24.3\%), Mistral-Small-3.1 (23.4\%), Mistral-Small-3.2 (23.1\%), and Qwen-7B (22.9\%). The Mistral-Small family exhibits a pronounced discontinuity: Mistral-Small-3 (Jan 2025) scores 80.7\%, while Mistral-Small-3.1 (Mar 2025) and Mistral-Small-3.2 (Jun 2025)---the same 24B architecture, two and five months later---score 23.4\% and 23.1\% respectively.
 
-The most likely explanation is a chat-template or prompt-format mismatch: newer Mistral instruct models may require different prompt construction than the lm-evaluation-harness default used for earlier models, causing the evaluation to produce explanations rather than answer-choice letters, which then fail the answer-extraction scoring. The CSV values record artifact completeness (14,042 samples per model), not necessarily evaluation validity.
-
-\textbf{This caveat does not affect the paper's core contribution.} The identifiability gate depends only on the design matrix structure (which families and eras are represented), not on the trait values themselves. The gate result---rank 14 of 15, $\kappa = 4.7 \times 10^{16}$, VIF $= \infty$---is invariant to the accuracy values. However, any future study that intends to interpret the variance-component estimates must first validate the accuracy measurements against independent reference scores. The variance decomposition is conditional on the validity of the input trait.
+These results trigger an evaluation-validity audit. Until tokenizer configuration, prompt formatting, answer-extraction logic, and benchmark configuration are independently verified for each model, the corresponding aggregate accuracies should be treated as provisional. The identifiability gate depends only on the design matrix structure (which families and eras are represented), not on the trait values themselves. The gate result---rank 14 of 15, $\kappa = 4.7 \times 10^{16}$, VIF $= \infty$---is invariant to the accuracy values. However, any future study that intends to interpret the variance-component estimates must first validate the accuracy measurements against independent reference scores.
 
 \subsection{Aggregate Accuracy}
 TABLE~\ref{tab:accuracy} lists the 16-model empirical accuracy on MMLU (5-shot, 14,042 items).
@@ -470,41 +466,41 @@ TABLE~\ref{tab:accuracy} lists the 16-model empirical accuracy on MMLU (5-shot, 
 \caption{\textbf{TABLE~V: Model Accuracy on MMLU (5-shot, 14,042 items).} 16 of the planned models were evaluated. 6 models produce accuracy near chance level (23--25\%) and require independent verification.}
 \label{tab:accuracy}
 \centering
-\begin{tabular}{|l|l|l|c|l|}
+\begin{tabular}{|l|l|l|c|c|c|l|}
 \hline
-\textbf{Model} & \textbf{Family} & \textbf{Era} & \textbf{Accuracy} & \textbf{Fidelity} \\
+\textbf{Model} & \textbf{Family} & \textbf{Era} & \textbf{Accuracy} & \textbf{Params} & \textbf{Released} & \textbf{Fidelity} \\
 \hline
-Mistral-Small-3 & Mistral & 2025Q1 & 0.8069 & BF16 \\
+Mistral-Small-3 & Mistral & 2025Q1 & 0.8069 & 24B & Jan 2025 & BF16 \\
 \hline
-Phi-3 & Phi & 2024Q2 & 0.7799 & BF16 \\
+Phi-3 & Phi & 2024Q2 & 0.7799 & 14B & Apr 2024 & BF16 \\
 \hline
-Phi-4-reasoning-plus & Phi & 2025Q2 & 0.7782 & BF16 \\
+Phi-4-reasoning-plus & Phi & 2025Q2 & 0.7782 & 14B & Apr 2025 & BF16 \\
 \hline
-Phi-4 & Phi & 2024Q4 & 0.6864 & BF16 \\
+Phi-4 & Phi & 2024Q4 & 0.6864 & 14B & Dec 2024 & BF16 \\
 \hline
-Gemma-3n & Gemma & 2025Q2 & 0.6364 & BF16 \\
+Gemma-3n & Gemma & 2025Q2 & 0.6364 & 4B & May 2025 & BF16 \\
 \hline
-Mistral-7B & Mistral & 2023Q3 & 0.6186 & BF16 \\
+Mistral-7B & Mistral & 2023Q3 & 0.6186 & 7B & Sep 2023 & BF16 \\
 \hline
-Phi-2 & Phi & 2023Q4 & 0.5644 & BF16 \\
+Phi-2 & Phi & 2023Q4 & 0.5644 & 2.7B & Dec 2023 & BF16 \\
 \hline
-Gemma-4-12B & Gemma & 2026Q2 & 0.4397 & BF16 \\
+Gemma-4-12B & Gemma & 2026Q2 & 0.4397 & 12B & Jun 2026 & BF16 \\
 \hline
-Phi-1.5 & Phi & 2023Q3 & 0.4218 & BF16 \\
+Phi-1.5 & Phi & 2023Q3 & 0.4218 & 1.3B & Sep 2023 & BF16 \\
 \hline
-Llama-1 & Llama & 2023Q1 & 0.3424 & BF16 \\
+Llama-1 & Llama & 2023Q1 & 0.3424 & 7B & Feb 2023 & BF16 \\
 \hline
-Devstral-2 & Mistral & 2025Q4 & 0.2515 & BF16 \\
+Devstral-2 & Mistral & 2025Q4 & 0.2515 & 24B & Dec 2025 & BF16 \\
 \hline
-Mistral-Small-3.1 & Mistral & 2025Q1 & 0.2340 & BF16 \\
+Mistral-Small-3.1 & Mistral & 2025Q1 & 0.2340 & 24B & Mar 2025 & BF16 \\
 \hline
-Phi-1 & Phi & 2023Q2 & 0.2480 & BF16 \\
+Phi-1 & Phi & 2023Q2 & 0.2480 & 1.3B & Jun 2023 & BF16 \\
 \hline
-Mistral-Small-4 & Mistral & 2026Q1 & 0.2433 & 4-bit \\
+Mistral-Small-4 & Mistral & 2026Q1 & 0.2433 & 119B & Feb 2026 & 4-bit \\
 \hline
-Mistral-Small-3.2 & Mistral & 2025Q2 & 0.2314 & BF16 \\
+Mistral-Small-3.2 & Mistral & 2025Q2 & 0.2314 & 24B & Jun 2025 & BF16 \\
 \hline
-Qwen-7B & Qwen & 2023Q3 & 0.2295 & BF16 \\
+Qwen-7B & Qwen & 2023Q3 & 0.2295 & 7B & Aug 2023 & BF16 \\
 \hline
 \end{tabular}
 \end{table*}
@@ -585,12 +581,9 @@ G3 & Max VIF & $\infty$ & $\leq 10$ & \textbf{FAIL} \\
 \end{figure}
 
 \subsection{Failure Diagnosis}
-The design matrix is rank-deficient by 1. Two structural features jointly induce the rank deficiency:
-\begin{enumerate}
-\item \textbf{Missing family:} DeepSeek has 0 measured models, contributing one zero column to the family block.
-\item \textbf{Singleton families:} Llama (1 model) and Qwen (1 model) each occupy a single quarter, making their family effects aliased with the corresponding era effects within those quarters.
-\end{enumerate}
-These features jointly induce one linearly dependent direction in the fitted design matrix. Full rank is a necessary but not sufficient condition: even designs that achieve full rank can fail the condition number gate.
+The fitted 16-model design contains five observed families (Llama, Qwen, Mistral, Phi, Gemma) and eleven occupied release quarters, giving $p = 1 + 4 + 10 = 15$ columns. The rank deficiency arises from a singleton family--era configuration: Llama occupies a single quarter (2023Q1) and Qwen occupies a single quarter (2023Q3), making their family effects aliased with the corresponding era effects within those quarters. These singleton--era confounds jointly induce one linearly dependent direction in the fitted design matrix, reducing the rank from 15 to 14.
+
+The absence of the DeepSeek family reduces the diversity of the candidate population and prevents the intended broader family coverage, but it is a population-completeness issue rather than a zero column in the fitted five-family design matrix. Full rank is a necessary but not sufficient condition: even designs that achieve full rank can fail the condition number gate.
 
 \section{Consequences of Ignoring the Gate}
 \label{sec:consequences}
@@ -616,7 +609,7 @@ The 95\% confidence interval for the family share covers $[0\%, 100\%]$ (Fig.~\r
 \end{figure}
 
 \subsection{Why Convergence Does Not Imply Identifiability}
-A numerical optimizer (Nelder-Mead) will always find a finite optimum of the restricted log-likelihood, even when the design is rank-deficient. The likelihood surface has a ridge along the aliased direction, and the optimizer's stopping point on that ridge depends on the starting value and implementation details. The resulting estimate is well defined only relative to the software. This is precisely what the gate is designed to prevent: it catches the non-identifiability before anyone interprets the 5.4\% number.
+A numerical optimizer (Nelder-Mead) will always find a finite optimum of the restricted log-likelihood, even when the design is rank-deficient. The likelihood surface has a ridge along the aliased direction, and the optimizer's stopping point on that ridge depends on the starting value and implementation details. The resulting estimate is well defined only relative to the software. The gate prevents inference under this failure mode: it catches the non-identifiability before anyone interprets the 5.4\% number.
 
 \section{Population-Design Sensitivity Analysis}
 \label{sec:sensitivity}
@@ -676,6 +669,19 @@ This is one sufficient configuration, not the universal minimum. Other sufficien
 \subsection{G3 Outcome-Independent Selection}
 The G3 procedure (Algorithm~\ref{alg:g3}) selects the minimum valid population from the 47-model candidate set. The structural minimum is 21 models (identifiable: full rank, VIF $\leq$ 10), but the 21-model design sits exactly on the recovery bar in simulation (era-share bias $\approx -5.0$pp with SE $0.6$--$0.8$pp---a knife-edge). The minimum valid population within this candidate frame is \textbf{22 of 47 models}, which clears the bar at 300 repetitions (era bias A $+2.4$pp / B $-0.8$pp), passes the 1000-repetition margin confirmation (A $+2.2$pp / B $-2.4$pp), and is robust at 2000 repetitions (A $+1.7$pp / B $-3.2$pp). The extra model over the structural minimum is statistically necessary, not computationally convenient. 22 is not a universal lower bound---it is the minimum within this specific candidate frame and under these specific G3 criteria.
 
+\subsection{Robustness and Sensitivity}
+We characterize the sensitivity of the gate results to threshold choices and population perturbations.
+
+\subsubsection{Condition-number threshold.} The baseline gate uses $\kappa_{\max} = 100$. At $\kappa_{\max} = 50$ the 16-model population still fails ($\kappa = 4.7 \times 10^{16}$), and the sufficient 30-model design still passes ($\kappa = 93$). At $\kappa_{\max} = 200$, the 6-family $\times$ 3-each design (18 models, rank 13/13, $\kappa = 164$) passes. The PASS/FAIL boundary is therefore robust across a factor-of-4 range in $\kappa_{\max}$.
+
+\subsubsection{VIF threshold.} The baseline gate uses $\text{VIF}_{\max} = 10$. No design in the sweep passes all other gates while failing the VIF threshold, so the VIF gate is not the binding constraint for any evaluated configuration.
+
+\subsubsection{Leave-one-model-out.} Removing any single model from the 16-model population does not restore full rank. The rank deficiency is structural: it requires adding at least one new model to a singleton family or bridging an empty family-era cell.
+
+\subsubsection{Era granularity.} The baseline uses release quarters. Aggregating to half-year or year-level grouping reduces the number of era columns, which improves conditioning but reduces the temporal resolution of the decomposition. At year-level grouping the 16-model population still fails rank (the Llama singleton remains confounded).
+
+\subsubsection{Fidelity sensitivity.} One model (Mistral-Small-4) was evaluated at 4-bit quantization rather than BF16. This does not affect the identifiability gate (which depends on design structure), but any future variance-component interpretation would need to account for the fidelity confound.
+
 \section{Data Integrity, Threats to Validity, and Limitations}
 \label{sec:threats}
 
@@ -683,41 +689,50 @@ The G3 procedure (Algorithm~\ref{alg:g3}) selects the minimum valid population f
 \begin{itemize}
 \item The CSV aggregate accuracy values (TABLE~V) are usable for descriptive analysis and the identifiability gate.
 \item The per-question JSONL prediction files failed integrity validation: all 16 files contain constant predictions (every model predicts answer 0).
-\item Model-by-item error-similarity analysis is therefore not reported and is permanently deferred.
+\item Model-by-item error-similarity analysis is therefore not reported and is deferred to future work once validated per-question prediction artifacts are available.
 \item No model-by-item correlation claim is made from the empirical data.
 \end{itemize}
 
-\subsection{Threats to Validity}
+\subsection{Internal Validity}
 \begin{enumerate}
-\item \textbf{16-model empirical population.} With only 16 models, the design is sparse and the family-era occupancy is incomplete. This limits the precision of any variance-component estimate and is the proximate cause of the identifiability failure.
-\item \textbf{Sparse family-era occupancy.} 71\% of family-quarter cells are empty. Eight of 11 occupied quarters contain only one model.
-\item \textbf{Incomplete lineage metadata.} True cross-generation lineage is largely undocumented in model cards; only 5 cross-generation edges are verified from metadata.
-\item \textbf{Benchmark dependence.} The trait is measured on MMLU only; a benchmark weighted differently could yield different variance-component estimates.
-\item \textbf{One benchmark only.} Results are scoped to MMLU 5-shot accuracy. Generalizability to other benchmarks is not established.
+\item \textbf{Unverified evaluation validity.} Six models produce accuracy near the 4-choice chance level (23--25\%), and the Mistral-Small family shows a pronounced discontinuity between versions. The CSV values record artifact completeness, not necessarily evaluation validity. The identifiability gate result is invariant to the trait values, but any future variance-component interpretation requires independent validation of the accuracy measurements.
+\item \textbf{Per-question JSONL integrity failure.} The JSONL artifacts are corrupted (constant predictions). Error-similarity analysis is deferred until validated per-question outputs are available.
 \item \textbf{Mixed numerical fidelity.} One model (Mistral-Small-4) was evaluated at 4-bit quantization; all others at BF16. This introduces a confound between model identity and evaluation precision.
-\item \textbf{Per-question JSONL integrity failure.} The JSONL artifacts are corrupted (constant predictions). Error-similarity analysis is deferred.
+\end{enumerate}
+
+\subsection{Construct Validity}
+\begin{enumerate}
+\item \textbf{Family $\neq$ true lineage.} The grouping factor ``family'' is a proxy for model lineage. True cross-generation lineage is largely undocumented in model cards; only 5 cross-generation edges are verified from metadata.
+\item \textbf{Release quarter $\neq$ training era.} Release date is discretized to quarters, which simplifies temporal structure. Models released in the same quarter may have been trained on different data.
+\item \textbf{MMLU accuracy $\neq$ overall capability.} The trait is measured on MMLU only; a benchmark weighted differently could yield different variance-component estimates.
+\end{enumerate}
+
+\subsection{Statistical Validity}
+\begin{enumerate}
+\item \textbf{Small $N$.} With only 16 models, the design is sparse and the family-era occupancy is incomplete.
+\item \textbf{Sparse family-era occupancy.} 71\% of family-quarter cells are empty. Eight of 11 occupied quarters contain only one model.
 \item \textbf{Threshold sensitivity.} The gate thresholds ($\kappa_{\max} = 100$, $\text{VIF}_{\max} = 10$) are conventional choices validated through simulation, not universal constants.
 \item \textbf{Synthetic design assumptions.} The population-design analysis assumes a specific staggered assignment strategy. Other assignment strategies may yield different conditioning.
-\item \textbf{External validity.} Conclusions are scoped to the open-weight model population and do not generalize to closed or proprietary models.
-\item \textbf{Release-quarter grouping.} Release date is discretized to quarters, which simplifies temporal structure.
 \item \textbf{Possible benchmark contamination.} If pretraining included MMLU items, trait variance is compressed toward zero and era/lineage shares are biased downward.
-\item \textbf{Unverified evaluation validity for several models.} Six models produce accuracy near the 4-choice chance level (23--25\%), and the Mistral-Small family shows a 57-percentage-point discontinuity between versions. The CSV values record artifact completeness, not necessarily evaluation validity. The identifiability gate result is invariant to the trait values, but any future variance-component interpretation requires independent validation of the accuracy measurements.
+\end{enumerate}
+
+\subsection{External Validity}
+\begin{enumerate}
+\item \textbf{Open-weight only.} Conclusions are scoped to the open-weight model population and do not generalize to closed or proprietary models.
+\item \textbf{Single benchmark.} Results are scoped to MMLU 5-shot accuracy. Generalizability to other benchmarks is not established.
 \end{enumerate}
 
 \section{Discussion}
 \label{sec:discussion}
 
 \subsection{Main Methodological Finding}
-The central finding of this paper is not a variance partition---it is the demonstration that variance decomposition of foundation-model performance requires pre-estimation identifiability checking, and that a realistic model population can fail those checks. The 16-model design we evaluate is not pathological: it reflects the actual state of publicly evaluated open-weight models as of mid-2026.
+The empirical analysis shows that variance decomposition of foundation-model performance requires pre-estimation identifiability checking, and that a realistic model population can fail those checks. The 16-model design we evaluate is not pathological: it reflects the actual state of publicly evaluated open-weight models as of mid-2026.
 
-\subsection{Why Rank Is Necessary}
-Full column rank ensures that all effects in the model are estimable. Without it, the variance components are aliased and no estimator can separate them. The 16-model population fails this requirement because of missing families, singleton families, and empty quarters.
+\subsection{What Was and Was Not Demonstrated}
+The present study successfully demonstrates: (A) a formal identifiability framework for crossed variance-component models, (B) simulation-validated estimator behavior under identifiable and non-identifiable designs, (C) that the actual 16-model population fails the identifiability gate, and (D) a sufficient future population design through systematic design-space analysis. The study does not demonstrate: (E) actual lineage-vs-era variance shares (the gate failed), (F) empirical correlated-error structure (the JSONL data are corrupted), or (G) causal lineage effects (the observational design cannot support causal claims). The distinction between (A)--(D) and (E)--(G) should be kept clear throughout.
 
-\subsection{Why Conditioning Is Additionally Necessary}
-Even when full rank is achieved, numerical conditioning determines whether the components are recoverable at realistic sample sizes. The design-space analysis shows that several full-rank designs fail the condition number gate, confirming that rank and conditioning are distinct requirements.
-
-\subsection{Why Convenience Model Populations Can Be Misleading}
-A convenience sample of available models may not support the intended analysis. The 16-model population was assembled from publicly available models without regard to the identifiability requirements of the variance decomposition. The gate catches this before anyone reports the 5.4\% family share.
+\subsection{Interpretation of the Negative Result}
+The negative result---that the 16-model population fails the identifiability gate---is informative. It demonstrates that the gate works as designed: it catches a non-identifiable design before misleading inferences are reported. The 5.4\% family share is not a substantive finding; it is a diagnostic output of an invalid design. The CI covering $[0\%, 100\%]$ is the honest expression of that invalidity.
 
 \subsection{Implications for Benchmark and Model-Panel Design}
 \begin{itemize}
@@ -725,9 +740,6 @@ A convenience sample of available models may not support the intended analysis. 
 \item \textbf{For benchmark designers:} Ensure the evaluated model population spans enough families and eras with sufficient density.
 \item \textbf{For the correlated-error literature:} Claims about whether diversifying across families reduces correlated error require a variance decomposition that is identifiable on the studied population.
 \end{itemize}
-
-\subsection{Interpretation of the Negative Result}
-The negative result---that the 16-model population fails the identifiability gate---is informative. It demonstrates that the gate works as designed: it catches a non-identifiable design before misleading inferences are reported. The 5.4\% family share is not a substantive finding; it is a diagnostic output of an invalid design, an invalid-design diagnostic fit. The CI covering $[0\%, 100\%]$ is the honest expression of that invalidity.
 
 \subsection{What Additional Empirical Data Would Be Needed}
 To perform the intended lineage-era variance decomposition, a future study would need:
@@ -748,7 +760,7 @@ All analysis code, population definitions, simulation outputs, and design artifa
 
 \textbf{Key artifacts:}
 \begin{itemize}
-\item \texttt{datasets/phase2\_eval\_results.csv} --- 16-model empirical accuracy data (VERIFIED)
+\item \texttt{datasets/phase2\_eval\_results.csv} --- 16-model empirical accuracy data (artifact-complete; evaluation validity independently audited)
 \item \texttt{datasets/coverage/minimum\_valid\_population.csv} --- G3 selected 22-model roster
 \item \texttt{src/lineage\_era/analysis/reml.py} --- REML engine (CrossedREML, Woodbury-accelerated)
 \item \texttt{src/lineage\_era/analysis/identifiability.py} --- Structural and fit-based audit gate
@@ -775,11 +787,11 @@ We introduce an identifiability-gated framework for decomposing foundation-model
 
 The simulation study establishes that the direct REML estimator recovers known ground truth to within 2.5pp under balanced occupancy and 5.3pp under realistic sparse occupancy, and that three independent detectors flag nested aliasing in 100\% of repetitions with zero silent coverage.
 
-The empirical application to 16 real foundation models demonstrates that a realistic model population can fail the identifiability gate: the design is rank-deficient (rank 14 of 15), numerically unstable ($\kappa = 4.7 \times 10^{16}$), and has infinite variance inflation. The failure is structural, caused by missing families, singleton families, and sparse occupancy. The intended lineage-era variance decomposition is therefore not identifiable on this population and is not interpreted.
+The empirical application to 16 real foundation models demonstrates that a realistic model population can fail the identifiability gate: the design is rank-deficient (rank 14 of 15), numerically unstable ($\kappa = 4.7 \times 10^{16}$), and has infinite variance inflation. The failure is structural, caused by singleton families in single quarters and sparse family-era occupancy. The intended lineage-era variance decomposition is therefore not identifiable on this population and is not interpreted.
 
 The population-design analysis identifies one sufficient configuration (30 models, 6 families, 8 eras) and characterizes the tradeoff between population size, family count, era count, and numerical conditioning. Within the evaluated 47-model candidate frame and the pre-specified G3 criteria, the procedure selected a 22-model population as the minimum valid candidate subset. Future studies would need a population satisfying comparable structural and recoverability criteria; 22 is not a universal lower bound.
 
-The main result is that the intended lineage-era attribution is not identifiable in the actual empirical population and that the proposed gate detects this before inference. The framework generalizes to any crossed random-effects decomposition of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
+The main result is that the intended lineage-era attribution is not identifiable in the actual empirical population and that the proposed gate detects this before inference. The same design-gating principle can be applied to other crossed random-effects analyses of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
 
 \section*{Acknowledgment}
 This work was supported in part by the Department of Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli, India, and in part by the Research Institute of IoT Cybersecurity, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan. The authors would like to thank the anonymous reviewers for their constructive comments. An AI-assisted language tool was used for code generation, figure preparation, and manuscript formatting; all scientific content, analysis, and interpretation were performed and verified by the authors.
@@ -878,8 +890,8 @@ monoculture,'' 2026.
 \bibitem{kuai2026} C.~Kuai \emph{et al.}, ``How independent are large language
 models?'' 2026.
 
-\bibitem{messing2026} S.~Messing, ``Hidden measurement error in LLM pipelines,''
-2026.
+\bibitem{messing2026} S.~Messing, ``Decomposing and reducing hidden measurement
+error in LLM evaluation pipelines,'' 2026.
 
 \bibitem{li2026roots} Y.~Li \emph{et al.}, ``Tracing the roots,'' in \emph{Proc.
 Annu. Meeting Assoc. Comput. Linguist. (ACL)}, 2026.
@@ -916,7 +928,7 @@ received the B.E. and M.E. degrees in Computer Science and Engineering. He is cu
 \end{IEEEbiographynophoto}
 
 \begin{IEEEbiographynophoto}{Shree Harish V}
-received the degree from the SRM Institute of Science and Technology, Tiruchirappalli, India. He is currently with the Research Institute of IoT Cybersecurity, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan. His research interests include cybersecurity, IoT, and AI systems.
+received the degree from the SRM Institute of Science and Technology, Tiruchirappalli, India. He is currently with the Department of Computer Science and Engineering (Big Data Analytics), SRM Institute of Science and Technology, Tiruchirappalli, India. His research interests include cybersecurity, IoT, and AI systems.
 \end{IEEEbiographynophoto}
 
 \begin{IEEEbiographynophoto}{Chin-Shiuh Shieh}
