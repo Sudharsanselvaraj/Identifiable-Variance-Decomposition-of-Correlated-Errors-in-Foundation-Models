@@ -55,7 +55,7 @@ Top-level package modules are re-export shims for compatibility; the real code l
   `datasets/phase2_eval_results.csv` back into the repo, then run
   `python3 -m lineage_era.phase2_decomposition` (see `RESEARCH_PROTOCOL.md`, Stage 2).
   G2 pending.
-- The intake validator (`analysis/eval_check.py`) checks the eval CSV + per-question
+- The intake validator (`analysis/eval_check.py`) checks the eval CSV + per question
   samples against the 47-model contract and aborts with a precise message on any
   violation; a shape-exact simulated-eval dry-run (`analysis/eval_simulate.py` +
   `results/phase2_sim_dryrun/`) exercises the full real-data path GPU-free.
