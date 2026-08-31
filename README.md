@@ -8,18 +8,46 @@ structure across public LLMs is separably explained by lineage vs. release-era, 
 to whatever connected subset of the population makes that separation identifiable — and
 what that implies for diversification-as-mitigation.
 
+---
+
+## Manuscript / publication (current focus)
+
+The project's primary deliverable is an **IEEE Access** manuscript, now at **19 pages** and
+at final submission read state. It is organized under `paper/` into a clean, rebuildable
+layout:
+
+| Path | Purpose |
+|---|---|
+| `paper/` | Submission package |
+| `paper/src/` | `ieee_access_manuscript.tex` — the manuscript source |
+| `paper/figures/` | 25 figure assets (`.pdf` / `.png`) referenced by the manuscript |
+| `paper/support/` | IEEE Access class (`.cls`, `.bst`, `.sty`), embedded fonts (`.pfb/.tfm/.map/.fd`), header logos |
+| `paper/tables/` | (reserved) data tables |
+| `paper/build/` | Generated build artifacts: `.aux`, `.log`, and the compiled `.pdf` |
+| `paper/Makefile` | One-command build: `make` (in `paper/`) → `build/ieee_access_manuscript.pdf` |
+
+The Makefile wires up `TEXINPUTS` / `TEXFONTS` / `TEXFONTMAPS` so the class and embedded
+fonts resolve from `support/` during compilation. Rebuild anytime with:
+
+```sh
+make -C paper          # builds paper/build/ieee_access_manuscript.pdf
+make -C paper clean    # removes generated artifacts
+```
+
 ## Repo layout
 
 | Path | Purpose |
 |---|---|
-| `docs/` | Research knowledge base — the source of truth for the project (structure under `docs/00_Project` … `docs/09_Roadmap`; see `RESEARCH_PROTOCOL.md` for the stage-gated execution plan) |
-| `MASTER_PROMPT.md` | Execution master prompt; phase status; Phase 0 log (HF-verified) |
-| `proposal.md` | Full research proposal draft (sections 1–14) |
-| `notebooks/` | Analysis notebooks (Phase 1 onward) |
-| `src/lineage_era/` | Simulation / decomposition code (Phase 1 onward) |
+| `docs/` | Research knowledge base — source of truth for the project (structure under `docs/00_Project` … `docs/09_Roadmap`; see `RESEARCH_PROTOCOL.md`) |
+| `paper/` | IEEE Access submission package (see above) |
+| `scripts/` | Figure / analysis regeneration scripts (e.g. `regen_figs_8_9.py`, `run_design_space_sweep.py`) |
+| `src/lineage_era/` | Simulation / decomposition code (Phase 0–2) |
 | `src/lineage_era/analysis/` | Phase 2 analysis package (trait, metadata, population, identifiability, reml, bootstrap, plots, report) |
-| `src/results/phase2/` | Phase 2 engine outputs (battery, synthetic dry-run, final report) |
-| `datasets/` | Item-level data; `phase2_eval_results.csv` lands here from the GPU eval run |
+| `results/` | Phase 2 engine outputs: `phase2_empirical/`, `phase2_sim_dryrun/`, `design_space/` |
+| `datasets/` | Item-level data; `phase2_eval_results.csv` (16-model empirical set) and `.sim` dry-run set |
+| `notebooks/` | Analysis notebooks (empty at present) |
+| `supplement/` | Supplementary material (reserved) |
+| `requirements.txt` | Python dependencies |
 
 ## Analysis package (module map)
 
@@ -37,25 +65,27 @@ Top-level package modules are re-export shims for compatibility; the real code l
 | `reml.py` | CrossedREML estimator (σ²_L, σ²_E, σ²_U) + θ_P/θ_M decomposition layer |
 | `bootstrap.py` | Bootstrap CIs over models; sensitivity grid |
 | `plots.py` | Partition, era-convergence, and diagnostics figures |
-| `report.py` | `PHASE2_REPORT.md` generation + partition/summary tables |
+| `report.py` | Report generation + partition/summary tables |
 
 ## Standing rules
 
-- No analysis code or data pulls before the plan for that step is approved (Phase 0 done;
-  Phase 1 run — GO WITH CHANGES, see `PHASE1_REPORT.md`).
+- No analysis code or data pulls before the plan for that step is approved.
 - Every citation is independently verified before it enters any document.
 - Lead with the decomposition instrument and the identifiability gate; quantitative-genetics
   language is Phase 3 scaffolding only.
 
 ## Status
 
-- Phase 0 (population) DONE. Phase 1 (simulation) COMPLETE — GO WITH CHANGES.
-- Phase 2 instrument BUILT and verified (battery all pass; synthetic dry-run identical;
-  G1 PASS with changes). **Awaiting the fresh-MMLU eval on a GPU host** — drop
-  `datasets/phase2_eval_results.csv` back into the repo, then run
-  `python3 -m lineage_era.phase2_decomposition` (see `RESEARCH_PROTOCOL.md`, Stage 2).
-  G2 pending.
-- The intake validator (`analysis/eval_check.py`) checks the eval CSV + per question
-  samples against the 47-model contract and aborts with a precise message on any
-  violation; a shape-exact simulated-eval dry-run (`analysis/eval_simulate.py` +
-  `results/phase2_sim_dryrun/`) exercises the full real-data path GPU-free.
+- **Phase 0** (population) — done.
+- **Phase 1** (simulation) — complete.
+- **Phase 2** (instrument + empirical) — built and verified; intake validator and
+  shape-exact simulated dry-run (`results/phase2_sim_dryrun/`) pass. Empirical analysis
+  runs on the 16-model `datasets/phase2_eval_results.csv` set.
+- **Manuscript** — IEEE Access submission at 19 pages, final read state; rebuild from
+  `paper/` via `make`.
+
+## Contributing
+
+This repository is shared; please coordinate changes to `paper/`, `docs/`, and `results/`
+to avoid conflicting edits. Commit with clear, single-purpose messages and run
+`make -C paper` after any manuscript change to confirm the PDF still builds.
