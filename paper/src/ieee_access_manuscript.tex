@@ -3,7 +3,7 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
 \usepackage{textcomp}
-\usepackage{url}
+\usepackage[hyphens]{url}
 \usepackage{bm}
 \usepackage{amsthm}
 \usepackage{float}
@@ -60,6 +60,20 @@
 
 \AtBeginDocument{\renewcommand{\ttdefault}{lmtt}}
 
+\makeatletter
+\newcommand{\needspace}[1]{%
+  \begingroup
+    \setlength\dimen@{#1}%
+    \vskip\z@\@plus\dimen@
+    \penalty -100\vskip\z@\@plus -\dimen@
+    \vskip\dimen@
+    \penalty 9999%
+    \vskip -\dimen@
+    \vskip\z@skip
+  \endgroup
+}
+\makeatother
+
 \begin{document}
 \history{}
 % Volume and year assigned by IEEE after acceptance; placeholder year for draft.
@@ -93,7 +107,7 @@ Tiruchirappalli 620101, India}
 \corresp{Corresponding author: S. Kanaga Suba Raja (e-mail: kanagass@srmist.edu.in).}
 
 \begin{abstract}
-Decomposing foundation-model performance variation into family (as a lineage proxy), temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions---crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation---and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. A simulation study validates a direct restricted-maximum-likelihood estimator, showing it recovers known ground truth to within 2.5 percentage points under balanced occupancy and 5.3 under realistic sparse occupancy, and fails detectably when family and era are nested: three complementary detectors flag aliasing in 100\% of repetitions with zero silent coverage. We then apply the gate to an empirical population of 16 real foundation models spanning 5 families and 11 occupied release quarters. The design fails four of five pre-specified gate diagnostics: family-era crossing (two singleton families), full-rank estimability (rank 14 of 15 columns required), numerical conditioning (condition number $4.7 \times 10^{16}$), and variance inflation (infinite VIF). The connectedness condition passes. The failure is structural, caused by a singleton family--era confound (Llama is the only model in 2023Q1, making its family indicator identical to the 2023Q1 era indicator). When we fit the variance-component model despite gate failure, the resulting estimates are highly unstable and non-identifiable, with confidence intervals covering the full $[0\%, 100\%]$ range. We further characterize alternative population designs through a systematic design-space analysis, identifying a sufficient design configuration in the evaluated design grid (30 models, 6 families, 8 eras, rank 13/13, $\kappa = 93$, VIF $= 2.1$). The same design-gating principle may be applicable to other crossed random-effects analyses of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
+Decomposing foundation-model performance variation into family (as a lineage proxy), temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions---crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation---and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. A simulation study validates a direct restricted-maximum-likelihood estimator, showing it recovers known ground truth to within 2.5 percentage points under balanced occupancy and 5.3 under realistic sparse occupancy, and fails detectably when family and era are nested: three complementary detectors flag aliasing in 100\% of repetitions with zero silent coverage. We then apply the gate to an empirical population of 16 real foundation models spanning 5 families and 11 occupied release quarters. The design fails four of five pre-specified gate diagnostics: family-era crossing (two singleton families), full-rank estimability (rank 14 of 15 columns required), numerical conditioning (condition number $4.7 \times 10^{16}$), and variance inflation (infinite VIF). The connectedness condition passes. The failure is structural, caused by a singleton family--era confound (Llama is the only model in 2023Q1, making its family indicator identical to the 2023Q1 era indicator). When we fit the variance-component model despite gate failure, the resulting estimates are highly unstable and not reportable under the pre-specified criteria, with confidence intervals covering the full $[0\%, 100\%]$ range. We further characterize alternative population designs through a systematic design-space analysis, identifying a sufficient design configuration in the evaluated design grid (30 models, 6 families, 8 eras, rank 13/13, $\kappa = 93$, VIF $= 2.1$). The same design-gating principle may be applicable to other crossed random-effects analyses of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
 \end{abstract}
 
 \begin{keywords}
@@ -130,7 +144,7 @@ Variance decomposition is standard in genetics, education, and psychology, but t
 For a crossed random-effects decomposition to be identifiable, the model population must satisfy several structural requirements: the family-era incidence must be crossed (each family appears in multiple eras, and each era contains multiple families), the design matrix must have full column rank, the numerical conditioning must be sufficient for stable estimation, and the variance inflation factors must be bounded. Throughout, we report the condition number of the Gram matrix, $\kappa(X^\top X)$, rather than of $X$ itself; the corresponding condition index on $X$ is therefore $\sqrt{\kappa}$ (Sec.~\ref{sec:ident}). These requirements can be checked before any model is evaluated.
 
 \subsection{Research Gap}
-Prior work has extensively studied correlated model behavior and model lineage. Kim~\textit{et al.}~\cite{kim2025} construct and analyze a large model population, but their objective is correlation measurement---predictors of pairwise error agreement---not variance attribution. PhyloLM~\cite{phylolm2024} reconstructs ancestry from output similarity without decomposing error variance. Total Evaluation Error (TEE)~\cite{messing2026} decomposes pipeline measurement facets, not model trait variance. The monoculture literature~\cite{kleinberg2021,bommasani2022,jo2026} treats correlated error as a given input to welfare arguments or studies how monoculture claims depend on the choice of model population and independence baseline. Kuai~\textit{et al.}~\cite{kuai2026} measure behavioral entanglement across six families but stop at an independence audit rather than a trait-level variance partition. Recently, the notion of an identifiability audit for LLM evaluation has begun to appear~\cite{identaudit2026}, which argues that controlled reasoning-evaluation protocols can be structurally non-identifiable and should be audited before inference. That work audits the identifiability of an \emph{evaluation-protocol/behavioral} estimand; it does not gate the \emph{population design} that governs variance-component estimands. Our contribution targets precisely that distinct object---the structural and numerical identifiability of crossed family-proxy and release-era variance components over a model population---and is, to our knowledge, the first to combine outcome-independent foundation-model population selection with an explicit pre-measurement identifiability gate for that estimand.
+Prior work has extensively studied correlated model behavior and model lineage. Kim~\textit{et al.}~\cite{kim2025} construct and analyze a large model population, but their objective is correlation measurement---predictors of pairwise error agreement---not variance attribution. PhyloLM~\cite{phylolm2024} reconstructs ancestry from output similarity without decomposing error variance. Total Evaluation Error (TEE)~\cite{messing2026} decomposes pipeline measurement facets, not model trait variance. The monoculture literature~\cite{kleinberg2021,bommasani2022,jo2026} treats correlated error as a given input to welfare arguments or studies how monoculture claims depend on the choice of model population and independence baseline. Kuai~\textit{et al.}~\cite{kuai2026} measure behavioral entanglement across six families but stop at an independence audit rather than a trait-level variance partition. Recently, the notion of an identifiability audit for LLM evaluation has begun to appear~\cite{identaudit2026}, which argues that controlled reasoning-evaluation protocols can be structurally non-identifiable and should be audited before inference. That work audits the identifiability of an \emph{evaluation-protocol/behavioral} estimand; it does not gate the \emph{population design} that governs variance-component estimands. Our contribution targets precisely that distinct object---the structural and numerical identifiability of crossed family-proxy and release-era variance components over a model population---and, to our knowledge, we have not found prior work that combines outcome-independent foundation-model population selection with an explicit pre-measurement identifiability gate for that estimand.
 
 The central methodological claim of this study is that variance attribution should be treated as a gated inference problem: the model population must first be shown to support the intended estimand, then the estimator must be validated under comparable designs, and only then should empirical variance components be interpreted.
 
@@ -162,7 +176,7 @@ Our work addresses a complementary problem: rather than estimating predictors of
 PhyloLM~\cite{phylolm2024} builds phylogenetic trees from output similarity across open and closed models and shows that tree distance predicts benchmark performance. Tracing the Roots~\cite{li2026roots} reconstructs the evolution of datasets in post-training---83 seed datasets giving rise to 430 datasets and 971 inheritance edges---and shows that benchmark contamination propagates along lineage paths. Kuai~\textit{et al.}~\cite{kuai2026} measure behavioral entanglement across six open-weight families but stop at an independence audit rather than a trait-level variance partition.
 
 \subsection{Variance-Component and Mixed-Effects Models}
-The statistical machinery this paper applies is well established. Estimating the variance attributable to each of several crossed grouping factors is the classical variance-components problem, developed for unbalanced designs by Henderson~\cite{henderson1975} and placed on a likelihood footing by Patterson and Thompson~\cite{patterson1971} and Harville~\cite{harville1977}, whose restricted likelihood removes the downward bias that maximum likelihood incurs by ignoring the degrees of freedom spent on fixed effects. Searle, Casella, and McCulloch~\cite{searle1992} and Rao and Kleffe~\cite{rao1988} give the general theory; Laird and Ware~\cite{laird1982} and McCulloch and Searle~\cite{mcculloch2001} extend it to the mixed-model and generalized settings. Generalizability theory~\cite{brennan2001,cronbach1972} was built precisely to ask what fraction of observed variation in a measurement is attributable to persons, items, raters, or occasions. We did not find prior work that explicitly poses model lineage and release era as the crossed facets of a model population's error variance.
+The statistical machinery this paper applies is well established. Estimating the variance attributable to each of several crossed grouping factors is the classical variance-components problem, developed for unbalanced designs by Henderson~\cite{henderson1975} and placed on a likelihood footing by Patterson and Thompson~\cite{patterson1971} and Harville~\cite{harville1977}, whose restricted likelihood removes the downward bias that maximum likelihood incurs by ignoring the degrees of freedom spent on fixed effects. Searle, Casella, and McCulloch~\cite{searle1992} and Rao and Kleffe~\cite{rao1988} give the general theory; Laird and Ware~\cite{laird1982} and McCulloch and Searle~\cite{mcculloch2001} extend it to the mixed-model and generalized settings. Generalizability theory~\cite{brennan2001,cronbach1972} was built precisely to ask what fraction of observed variation in a measurement is attributable to persons, items, raters, or occasions. Our literature search did not identify prior work that explicitly poses model lineage and release era as the crossed facets of a model population's error variance.
 
 \subsection{Variance Decomposition in Evaluation Pipelines}
 The closest statistical neighbor is the total-evaluation-error line. Messing~\cite{messing2026} decomposes the uncertainty of LLM evaluation pipelines---judge-model choice, temperature, and prompt phrasing---into crossed random effects via generalizability theory. The estimator class is the same (crossed random effects, REML), but the grouping factors are properties of the measurement pipeline (prompt, judge, temperature), not of the models themselves. The present work instead treats the model population as the object of study: family/lineage proxy and release era are structural facets of the models, and the target is model-level trait variance rather than pipeline measurement noise. Separately, protocol-level work~\cite{identaudit2026} audits whether a controlled reasoning protocol is identifiable for its own estimand; our gate plays an analogous role for the crossed family-era variance-attribution estimand.
@@ -179,7 +193,7 @@ TABLE~\ref{tab:diff} summarizes the gap. The agreement and co-failure work measu
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{p{76pt}p{74pt}p{80pt}p{46pt}p{40pt}p{48pt}p{80pt}}
+\begin{tabular}{p{76pt}p{70pt}p{92pt}p{50pt}p{40pt}p{58pt}p{70pt}}
 \hline
 \textbf{Work} & \textbf{Population/Setting} & \textbf{Dependence Analyzed} & \textbf{Lineage} & \textbf{Temporal Facet} & \textbf{Stats.\ Attrib.} & \textbf{Pre-analysis Gate} \\
 \hline
@@ -236,7 +250,7 @@ The primary observational estimand is the share vector:
 where $\sigma^2_T = \sigma^2_L + \sigma^2_E + \sigma^2_U$ is the total variance. This is the family (lineage-proxy) share conditional on era grouping---the proportion of performance variance attributable to family membership, holding era as an observed covariate. A causal or mechanistic lineage estimand would require controlled or naturally co-released cohorts and is outside the scope of the present feasibility study.
 
 \subsection{What Is and Is Not Identified}
-If the design is rank-deficient, the variance components are aliased: multiple combinations of $(\sigma^2_L, \sigma^2_E, \sigma^2_U)$ produce the same likelihood. A numerical optimizer can converge to a finite parameter vector even when the design is non-identifiable, but the resulting estimates are not uniquely determined by the data. Reporting them as if they were is misleading. The observational estimand $\theta_P$ is structurally identified when the design is crossed, connected, and has full column rank. Our operational reporting gate additionally requires bounded condition number ($\kappa \leq 100$) and bounded variance inflation (VIF $\leq 10$) based on simulation-calibrated stability criteria; these are necessary for reliable estimation but do not themselves determine mathematical identifiability. Because the measured population contains only 16 model-level observations, the empirical study is designed primarily to evaluate population identifiability rather than to obtain precise variance-component estimates. TABLE~\ref{tab:estimands} summarizes the estimand and identification strategy.
+If the design is rank-deficient, the fixed-effect coefficients are aliased, and variance components may also be aliased depending on the covariance structure: multiple combinations of $(\sigma^2_L, \sigma^2_E, \sigma^2_U)$ can produce the same likelihood. A numerical optimizer can converge to a finite parameter vector even when the design is non-identifiable, but the resulting estimates are not uniquely determined by the data. Reporting them as if they were is misleading. The observational estimand $\theta_P$ is structurally identified when the design is crossed, connected, and has full column rank. Our operational reporting gate additionally requires bounded condition number ($\kappa \leq 100$) and bounded variance inflation (VIF $\leq 10$) based on simulation-calibrated stability criteria; these are necessary for reliable estimation but do not themselves determine mathematical identifiability. For the 16-model population, the covariance-basis rank is full (3/3, Proposition~\ref{prop:rank}); the binding constraints are thus mean-model rank deficiency and catastrophic numerical conditioning, which jointly render the estimates non-reportable under the pre-specified gate. Because the measured population contains only 16 model-level observations, the empirical study is designed primarily to evaluate population identifiability rather than to obtain precise variance-component estimates. TABLE~\ref{tab:estimands} summarizes the estimand and identification strategy.
 
 \begin{table*}[!htbp]
 \caption{\textbf{Estimand and Identification Strategy.}}
@@ -400,10 +414,26 @@ TABLE~\ref{tab:d1} summarizes D1 and D2 results (Fig.~\ref{fig:sim_recovery}). T
 \subsection{D2: Realistic Occupancy Recovery}
 Family-share bias is within 5.3 percentage points under realistic occupancy. The $-5.3$pp family-share bias in scenario A is the documented six-family small-sample limit ($df = 5$) and is reported as a limit, not corrected away. Coverage is 95--100\% across components, with the wider confidence intervals reflecting the sparse cell structure.
 
-\begin{table*}[!htbp]
-\caption{\textbf{Simulation Recovery and Failure Results.} D1 balanced-crossed (300 repetitions, 30 families $\times$ 14 eras $\times$ 2 models) and D2 realistic occupancy (300 repetitions, 47-model occupancy). Family-share bias $(\hat{s}_{\text{family}} - s_{\text{family}}) \times 100\,\mathrm{pp}$ is reported as signed mean over converged repetitions; coverage is 95\% CI coverage.}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\columnwidth]{fig2a_d1_bias.pdf}
+\vspace{2pt}
+
+\includegraphics[width=\columnwidth]{fig2b_d2_bias.png}
+\vspace{2pt}
+
+\includegraphics[width=\columnwidth]{fig2c_coverage.pdf}
+\caption{\textbf{Simulation recovery across D1 (balanced) and D2 (realistic) regimes.} (a)~D1 family-share bias; (b)~D2 family-share bias; (c)~95\% CI coverage. Each bias bar reports the signed family-share bias $(\hat{s}_{\text{family}} - s_{\text{family}}) \times 100\,\mathrm{pp}$, averaged over converged repetitions. The $-5.3$pp family-share bias in scenario A under D2 is the documented six-family small-sample limit (df $= 5$). The family-share-bias panels are recovery diagnostics; the selection acceptance criterion in Algorithm~\ref{alg:g3} uses era-share bias, whose values for the 22-model selection are reported in TABLE~\ref{tab:d1}.}
+\label{fig:sim_recovery}
+\end{figure}
+
+
+\begin{table}[!htbp]
+\caption{\textbf{Simulation Recovery and Failure Results.} D1 balanced-crossed (300 repetitions, 30 families $\times$ 14 eras $\times$ 2 models) and D2 realistic occupancy (300 repetitions, 47-model occupancy). Family-share bias $(\hat{s}_{\text{family}} - s_{\text{family}}) \times 100\,\mathrm{pp}$ is reported as signed mean over converged repetitions; coverage is 95\% CI coverage. The selection acceptance criterion in Algorithm~\ref{alg:g3} uses era-share bias, reported below the table; family-share bias is an independent recovery diagnostic.}
 \label{tab:d1}
 \centering
+\scriptsize
 \begin{tabular}{l cc cc c}
 \hline
 \textbf{Scenario} & \multicolumn{2}{c}{\textbf{D1: Balanced}} & \multicolumn{2}{c}{\textbf{D2: Realistic}} & \textbf{Conv.} \\
@@ -417,20 +447,10 @@ B (era-dom.) & $+1.24$ & 88\% & $-0.63$ & 99\% & 100\% \\
 C (balanced) & $-0.30$ & 94\% & $-3.46$ & 100\% & 100\% \\
 \hline
 \end{tabular}
-\end{table*}
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=\columnwidth]{fig2a_d1_bias.pdf}
-\vspace{2pt}
-
-\includegraphics[width=\columnwidth]{fig2b_d2_bias.png}
-\vspace{2pt}
-
-\includegraphics[width=\columnwidth]{fig2c_coverage.pdf}
-\caption{\textbf{Simulation recovery across D1 (balanced) and D2 (realistic) regimes.} (a)~D1 family-share bias; (b)~D2 family-share bias; (c)~95\% CI coverage. Each bias bar reports the signed family-share bias $(\hat{s}_{\text{family}} - s_{\text{family}}) \times 100\,\mathrm{pp}$, averaged over converged repetitions. The $-5.3$pp family-share bias in scenario A under D2 is the documented six-family small-sample limit (df $= 5$).}
-\label{fig:sim_recovery}
-\end{figure}
+\par\vspace{3pt}
+\scriptsize
+\textit{Era-share bias (the selection criterion):} Scenario~A $+2.4$pp / B $-0.8$pp (search, 300 reps); A $+2.2$pp / B $-2.4$pp (confirmation, 1000 reps); A $+1.7$pp / B $-3.2$pp (robustness, 2000 reps). These are the values that justify the 22-model selection under Algorithm~\ref{alg:g3}; family-share bias above is reported as an independent diagnostic.
+\end{table}
 
 
 
@@ -642,7 +662,7 @@ Gemma & & & & & & & & 1 & & & 1 \\
 
 
 
-\begin{figure}[!h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{fig9_accuracy_distribution.pdf}
 \caption{\textbf{Distribution of measured MMLU accuracy (provisional).} These are descriptive aggregate values reported for diagnostic context only; their evaluation validity is pending an independent audit because the recorded per-question answers were non-informative (Sec.~\ref{sec:threats}). Six models cluster near the chance level (23--25\%) for a 4-choice benchmark, triggering an evaluation-validity audit. The identifiability gate is invariant to accuracy values.}
@@ -650,7 +670,7 @@ Gemma & & & & & & & & 1 & & & 1 \\
 \end{figure}
 
 
-\begin{figure}[!h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{fig4_occupancy_heatmap.pdf}
 \caption{\textbf{Family$\times$era occupancy heatmap of the 16 measured models.} Darker shading indicates more models in a cell. 8 of 11 occupied quarters contain only one model; 40 of 55 possible cells are empty (73\% sparse).}
@@ -683,12 +703,12 @@ N2 & Max VIF & $\infty$ & $\leq 10$ & \textbf{FAIL} \\
 \end{tabular}
 \end{table*}
 
-\begin{figure}[!h]
+\begin{figure*}[!t]
 \centering
-\includegraphics[width=0.85\columnwidth]{fig5a_gate_audit.pdf}
+\includegraphics[width=0.75\textwidth]{fig5a_gate_audit.pdf}
 \caption{\textbf{Gate diagnostics versus pre-specified thresholds.} The 16-model population fails four of five gate conditions: S1 (crossing) fails because Llama and Qwen each occupy a single era; S3 (rank) fails at 14/15; N1 (conditioning) fails at $\kappa = 4.7 \times 10^{16}$; N2 (VIF) fails at $\infty$. S2 (connectedness) passes: the occupancy graph remains connected.}
 \label{fig:gate}
-\end{figure}
+\end{figure*}
 
 
 
@@ -714,10 +734,11 @@ These estimates must be interpreted as diagnostic restricted-design estimates, n
 The 95\% confidence interval for the family share covers $[0\%, 100\%]$ (see Appendix~\ref{app:diagnostic} for the diagnostic variance-component plot). The bootstrap 95\% interval is $[3.4 \times 10^{-8}, 0.776]$---extremely wide and practically uninformative. Leave-one-model-out analysis shows the estimate is driven by 2--3 influential observations: removing Mistral-Small-3 alone shifts the family share from 5.4\% to 26.4\%, and removing any of 7 other models collapses it to 0\%.
 
 \subsection{Why Convergence Does Not Imply Identifiability}
-A numerical optimizer (Nelder-Mead) can converge to a finite optimum of the restricted log-likelihood even when the design is rank-deficient. The likelihood surface has a ridge along the aliased direction, and the optimizer's stopping point on that ridge depends on the starting value and implementation details. The resulting estimate is well defined only relative to the software. The gate prevents inference under this failure mode: it catches the non-identifiability before anyone interprets the 5.4\% number.
+A numerical optimizer (Nelder-Mead) can converge to a finite optimum of the restricted log-likelihood even when the design is rank-deficient. The likelihood surface has a ridge along the aliased direction, and the optimizer's stopping point on that ridge depends on the starting value and implementation details. The resulting estimate is well defined only relative to the software. Although the covariance-basis rank is full (3/3, Sec.~\ref{sec:ident}), the mean-model rank deficiency ($\operatorname{rank}(X) = 14 < 15$) and the catastrophic numerical conditioning ($\kappa = 4.7 \times 10^{16}$) jointly render the variance-component estimates unstable and not uniquely determined by the data. The gate prevents inference under this failure mode: it detects that the population is not reportable under the pre-specified criteria before anyone interprets the 5.4\% number.
 
 \FloatBarrier
 
+\needspace{7\baselineskip}
 \section{Population-Design Sensitivity Analysis}
 \label{sec:sensitivity}
 
@@ -774,7 +795,7 @@ Figs.~\ref{fig:rank_pop}--\ref{fig:design_heatmap} visualize the design-space sw
 
  \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.85\textwidth]{fig6_condition_number_scatter.pdf}
+\includegraphics[width=0.94\textwidth]{fig6_condition_number_scatter.pdf}
 \caption{\textbf{Condition number versus VIF across full-rank designs.} The two numerical gate thresholds ($\kappa = 100$, VIF $= 10$) partition the design space into pass and fail regions. Passing designs (green) satisfy both thresholds simultaneously.}
 \label{fig:kappa_vif}
 \end{figure*}
@@ -889,6 +910,7 @@ Year & 4 & 8 & 8/8 & 202 & 6.0 & FAIL & $\kappa$ \\
 
 \subsubsection{Fidelity sensitivity.} One model (Mistral-Small-4) was evaluated at 4-bit quantization rather than BF16. This does not affect the identifiability gate (which depends on design structure), but any future variance-component interpretation would need to account for the fidelity confound.
 
+\needspace{7\baselineskip}
 \section{Data Integrity, Threats to Validity, and Limitations}
 \label{sec:threats}
 
@@ -962,7 +984,7 @@ To perform the intended family-proxy-era variance decomposition, a future study 
 \section{Reproducibility and Open Science}
 \label{sec:repro}
 
-All analysis code, population definitions, simulation outputs, and design artifacts are available in the project repository.
+All analysis code, population definitions, simulation outputs, and design artifacts are available in the public project repository at \url{https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models}. A tagged release corresponding to the version used for this manuscript, and a persistent Zenodo DOI, will be assigned prior to final publication. \textbf{Data availability statement:} code, data, and analysis artifacts are openly available at the repository above.
 
 \textbf{Environment:} Python 3.11.7, numpy 2.1.3, scipy 1.17.1, pandas 3.0.5, statsmodels 0.14.6, matplotlib 3.9.2.
 
@@ -995,7 +1017,7 @@ All analysis code, population definitions, simulation outputs, and design artifa
 
 We formalized the identifiability conditions for crossed family-proxy-era variance decomposition of foundation-model performance---crossed design, full rank, bounded $\kappa$, and bounded VIF---and developed a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. The simulation study validated the REML estimator under identifiable and non-identifiable designs and confirmed that three complementary detectors flag nested aliasing in 100\% of repetitions.
 
-Applied to 16 real foundation models, the gate fails four of five conditions: the design is rank-deficient (rank 14 of 15), numerically unstable ($\kappa = 4.7 \times 10^{16}$), and has infinite VIF. The failure is structural (Llama alone in 2023Q1). The intended variance decomposition is therefore not identifiable on this population and is not interpreted. A systematic design-space analysis identifies a sufficient design configuration in the evaluated grid (30 models, 6 families, 8 eras). The main result is that the proposed gate detects non-identifiability before inference is attempted.
+Applied to 16 real foundation models, the gate fails four of five conditions: the design is rank-deficient (rank 14 of 15), numerically unstable ($\kappa = 4.7 \times 10^{16}$), and has infinite VIF. The failure is structural (Llama alone in 2023Q1). The intended variance decomposition is therefore not identifiable on this population and is not interpreted. A systematic design-space analysis identifies a sufficient design configuration in the evaluated grid (30 models, 6 families, 8 eras). The main result is that the proposed gate detects that the studied population is not reportable under the pre-specified structural and numerical criteria before variance-attribution inference is attempted.
 
 \section*{Acknowledgment}
 This work was supported in part by the Department of Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli, India, and in part by the Research Institute of IoT Cybersecurity, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan.
@@ -1126,9 +1148,7 @@ pp.~1171--1177, 1994.
 \bibitem{efron1979} B.~Efron, ``Bootstrap methods: Another look at the
 jackknife,'' \emph{Ann. Statist.}, vol.~7, no.~1, pp.~1--26, 1979.
 
-\bibitem{identaudit2026} A.~Reyes \emph{et al.}, ``Beyond local accuracy: A
-protocol-level identifiability audit for controlled LLM reasoning evaluation,''
-\emph{arXiv preprint arXiv:2608.13326}, 2026.
+\bibitem{identaudit2026} J.~Luo, N.~Huang, Z.~Sha, W.~Tang, and W.~Deng, ``Beyond local accuracy: A protocol-level identifiability audit for controlled LLM reasoning evaluation,'' \emph{arXiv preprint arXiv:2608.13326}, 2026.
 
 \end{thebibliography}
 
