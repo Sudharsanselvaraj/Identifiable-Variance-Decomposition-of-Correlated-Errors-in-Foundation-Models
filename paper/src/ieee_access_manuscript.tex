@@ -74,6 +74,14 @@
 }
 \makeatother
 
+\makeatletter
+\renewenvironment{IEEEbiographynophoto}[1]{%
+  \normalfont\@IEEEcompsoconly{\sffamily}\footnotesize\interlinepenalty500%
+  \vskip 1\baselineskip minus 0\baselineskip%
+  \parskip=0pt\par%
+  \noindent\textbf{#1\ }\@IEEEgobbleleadPARNLSP}{\relax\par\normalfont}
+\makeatother
+
 \begin{document}
 \history{}
 % Volume and year assigned by IEEE after acceptance; placeholder year for draft.
@@ -1160,7 +1168,7 @@ Figure~\ref{fig:invalid} reports diagnostic variance-component estimates obtaine
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=\columnwidth]{fig8_diagnostic_estimate.pdf}
+\includegraphics[width=0.85\columnwidth]{fig8_diagnostic_estimate.pdf}
 \caption{\textbf{Diagnostic variance-component estimates under the invalid (non-identifiable) 16-model design.} Panel~(a): historical bootstrap interval as originally reported (raw draws not archived). Panel~(b): \textbf{regenerated sensitivity analysis for reference only --- NOT the primary result.} The 95\% confidence interval for the family share covers $[0\%, 100\%]$, reflecting the non-identifiability of the rank-deficient design. The near-zero era estimate is an aliasing artifact, not evidence of no era effect. These estimates are not scientifically interpretable.}
 \label{fig:invalid}
 \end{figure}
