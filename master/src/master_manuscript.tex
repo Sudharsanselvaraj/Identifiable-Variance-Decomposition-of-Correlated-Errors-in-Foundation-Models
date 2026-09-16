@@ -19,10 +19,12 @@
 \usepackage[hidelinks]{hyperref}
 \urlstyle{same}
 
-
 \renewcommand{\thetable}{\Roman{table}}
 
-\graphicspath{{../paper/figures/}}
+% Graceful line breaking for long unbreakable strings (paths, URLs).
+\setlength{\emergencystretch}{3em}
+
+\graphicspath{{../../paper/figures/}}
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
@@ -51,22 +53,15 @@
 \newcommand{\algind}[1]{\hspace*{#1.1em}}
 \newcommand{\algkw}[1]{\textbf{#1}}
 \newcommand{\algcomment}[1]{\textit{$\triangleright$~#1}}
-\makeatletter
-\AtBeginDocument{\DeclareMathVersion{bold}
-\SetSymbolFont{operators}{bold}{T1}{times}{b}{n}
-\SetSymbolFont{NewLetters}{bold}{T1}{times}{b}{it}
-\SetMathAlphabet{\mathrm}{bold}{T1}{times}{b}{n}
-\SetMathAlphabet{\mathit}{bold}{T1}{times}{b}{it}
-\SetMathAlphabet{\mathbf}{bold}{T1}{times}{b}{n}
-\SetMathAlphabet{\mathtt}{bold}{OT1}{pcr}{b}{n}
-\SetSymbolFont{symbols}{bold}{OMS}{cmsy}{b}{n}
-\renewcommand\boldmath{\@nomath\boldmath\mathversion{bold}}}
-\makeatother
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \AtBeginDocument{\renewcommand{\ttdefault}{lmtt}}
+
+% Neutral paragraph opener: renders the two letters as plain text.
+% (The IEEE version used a decorative drop capital.)
+\providecommand{\PARstart}[2]{#1#2}
 
 \makeatletter
 \newcommand{\needspace}[1]{%
@@ -107,13 +102,9 @@ Corresponding author: S.~Kanaga Suba Raja (e-mail: kanagass@srmist.edu.in).
 Decomposing foundation-model performance variation into family (as a lineage proxy), temporal, and model-specific components requires that these sources be separately identifiable from the observed model population. We formalize the identifiability conditions---crossed family-by-era design, full column rank, bounded condition number, and bounded variance inflation---and develop a pre-measurement gating procedure that detects rank deficiency and collinearity before any variance components are estimated. A simulation study validates a direct restricted-maximum-likelihood estimator, showing it recovers known ground truth to within 2.5 percentage points under balanced occupancy and 5.3 under realistic sparse occupancy, and fails detectably when family and era are nested: three complementary detectors flag aliasing in 100\% of repetitions with zero silent coverage. We then apply the gate to an empirical population of 16 real foundation models spanning 5 families and 11 occupied release quarters. The design fails four of five pre-specified gate diagnostics: family-era crossing (two singleton families), full-rank estimability (rank 14 of 15 columns required), numerical conditioning (condition number $4.7 \times 10^{16}$), and variance inflation (infinite VIF). The connectedness condition passes. The failure is structural, caused by a singleton family--era confound (Llama is the only model in 2023Q1, making its family indicator identical to the 2023Q1 era indicator). When we fit the variance-component model despite gate failure, the resulting estimates are highly unstable and not reportable under the pre-specified criteria, with confidence intervals covering the full $[0\%, 100\%]$ range. We further characterize alternative population designs through a systematic design-space analysis, identifying a sufficient design configuration in the evaluated design grid (30 models, 6 families, 8 eras, rank 13/13, $\kappa = 93$, VIF $= 2.1$). The same design-gating principle may be applicable to other crossed random-effects analyses of model populations, and the gating procedure should be applied before any real-data variance-attribution claim.
 \end{abstract}
 
-\begin{keywords}
-Foundation models, Large language models, Variance decomposition, Identifiability, Mixed-effects models, Model lineage, Experimental design, LLM evaluation
-\end{keywords}
+\noindent\textbf{Keywords:} Foundation models, Large language models, Variance decomposition, Identifiability, Mixed-effects models, Model lineage, Experimental design, LLM evaluation.
 
-\titlepgskip=-21pt
-
-\maketitle
+\vspace{1em}
 
 \section{Introduction}
 \label{sec:introduction}
@@ -190,6 +181,7 @@ TABLE~\ref{tab:diff} summarizes the gap. The agreement and co-failure work measu
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{90pt}p{70pt}p{92pt}p{50pt}p{34pt}p{62pt}p{58pt}}
 \hline
 \textbf{Work} & \textbf{Population/Setting} & \textbf{Dependence Analyzed} & \textbf{Lineage} & \textbf{Temporal Facet} & \textbf{Stats.\ Attrib.} & \textbf{Pre-analysis Gate} \\
@@ -211,7 +203,7 @@ Messing, TEE (2026) & Pipeline facets (prompt, judge, temp.) & Judge/temp. varia
 \hline
 \textbf{This work} & 16 models & Family proxy + era variance & \textbf{Family variance} & \textbf{Release quarter} & \textbf{Crossed REML} & \textbf{Yes: rank/$\kappa$/VIF} \\
 \hline
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \section{Problem Formulation and Estimands}
@@ -254,13 +246,14 @@ If the design is rank-deficient, the fixed-effect coefficients are aliased, and 
 \label{tab:estimands}
 \centering
 \footnotesize
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{65pt}p{80pt}p{50pt}p{160pt}p{80pt}}
 \hline
 \textbf{Estimand} & \textbf{Target Quantity} & \textbf{Unit} & \textbf{Identification Condition} & \textbf{Status} \\
 \hline
 $\theta_P$ & $\sigma^2_L / \sigma^2_T$ & Model & Crossed family-era design, full rank, connected incidence, $\kappa \leq 100$, VIF $\leq 10$ & \textbf{Not identifiable} \\
 \hline
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \section{Formal Identifiability Conditions}
@@ -321,8 +314,6 @@ The thresholds are pre-specified and validated through simulation; they are not 
 \caption{\textbf{Identifiability-gated variance decomposition framework.} The workflow proceeds through structural audit, simulation validation, outcome-independent population selection, measurement, and inference. Each stage has an exit gate that may halt the pipeline before empirical analysis is attempted.}
 \label{fig:framework}
 \end{figure}
-
-
 
 \section{Gated Research Protocol}
 \label{sec:methods}
@@ -406,25 +397,31 @@ D3 & 6 & 6 & 72 & Nested non-identifiable ref. \\
 \end{table}
 
 \subsection{D1: Balanced Crossed Recovery}
-TABLE~\ref{tab:d1} summarizes D1 and D2 results (Fig.~\ref{fig:sim_recovery}). The estimator recovers known ground truth to within 2.5 percentage points under balanced occupancy. Coverage is 88--96\% across components and scenarios. All 300 repetitions converge without warnings.
+TABLE~\ref{tab:d1} summarizes D1 and D2 results (Figs.~\ref{fig:sim_recovery}--\ref{fig:sim_recovery_c}). The estimator recovers known ground truth to within 2.5 percentage points under balanced occupancy. Coverage is 88--96\% across components and scenarios. All 300 repetitions converge without warnings.
 
 \subsection{D2: Realistic Occupancy Recovery}
 Family-share bias is within 5.3 percentage points under realistic occupancy. The $-5.3$pp family-share bias in scenario A is the documented six-family small-sample limit ($df = 5$) and is reported as a limit, not corrected away. Coverage is 95--100\% across components, with the wider confidence intervals reflecting the sparse cell structure.
 
-
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.85\textwidth]{fig2a_d1_bias.pdf}
-\vspace{2pt}
-
-\includegraphics[width=0.85\textwidth]{fig2b_d2_bias.png}
-\vspace{2pt}
-
-\includegraphics[width=0.85\textwidth]{fig2c_coverage.pdf}
-\caption{\textbf{Simulation recovery across D1 (balanced) and D2 (realistic) regimes.} (a)~D1 family-share bias; (b)~D2 family-share bias; (c)~95\% CI coverage. Each bias bar reports the signed family-share bias $(\hat{s}_{\text{family}} - s_{\text{family}}) \times 100\,\mathrm{pp}$, averaged over converged repetitions. The $-5.3$pp family-share bias in scenario A under D2 is the documented six-family small-sample limit (df $= 5$). The family-share-bias panels are recovery diagnostics; the selection acceptance criterion in Algorithm~\ref{alg:g3} uses era-share bias, whose values for the 22-model selection are reported in TABLE~\ref{tab:d1}.}
+\caption{\textbf{Simulation recovery: D1 family-share bias.} Each bar reports the signed family-share bias $(\hat{s}_{\text{family}} - s_{\text{family}}) \times 100\,\mathrm{pp}$, averaged over converged repetitions, for the balanced crossed reference regime D1 (30 families $\times$ 14 eras $\times$ 2 models, 300 repetitions). Family-share-bias panels are recovery diagnostics; the selection acceptance criterion in Algorithm~\ref{alg:g3} uses era-share bias, whose values for the 22-model selection are reported in TABLE~\ref{tab:d1}.}
 \label{fig:sim_recovery}
 \end{figure}
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{fig2b_d2_bias.png}
+\caption{\textbf{Simulation recovery: D2 family-share bias.} Each bar reports the signed family-share bias $(\hat{s}_{\text{family}} - s_{\text{family}}) \times 100\,\mathrm{pp}$ under the realistic sparse D2 occupancy (47-model occupancy, 300 repetitions). The $-5.3$pp family-share bias in scenario A is the documented six-family small-sample limit (df $= 5$).}
+\label{fig:sim_recovery_b}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{fig2c_coverage.pdf}
+\caption{\textbf{Simulation recovery: 95\% CI coverage.} Coverage of the 95\% confidence intervals under the D1 (balanced crossed) and D2 (realistic occupancy) regimes across scenarios A--C.}
+\label{fig:sim_recovery_c}
+\end{figure}
 
 \begin{table}[!htbp]
 \caption{\textbf{Simulation Recovery and Failure Results.} D1 balanced-crossed (300 repetitions, 30 families $\times$ 14 eras $\times$ 2 models) and D2 realistic occupancy (300 repetitions, 47-model occupancy). Family-share bias $(\hat{s}_{\text{family}} - s_{\text{family}}) \times 100\,\mathrm{pp}$ is reported as signed mean over converged repetitions; coverage is 95\% CI coverage. The selection acceptance criterion in Algorithm~\ref{alg:g3} uses era-share bias, reported below the table; family-share bias is an independent recovery diagnostic.}
@@ -448,8 +445,6 @@ C (balanced) & $-0.30$ & 94\% & $-3.46$ & 100\% & 100\% \\
 \scriptsize
 \textit{Era-share bias (the selection criterion):} Scenario~A $+2.4$pp / B $-0.8$pp (search, 300 reps); A $+2.2$pp / B $-2.4$pp (confirmation, 1000 reps); A $+1.7$pp / B $-3.2$pp (robustness, 2000 reps). These are the values that justify the 22-model selection under Algorithm~\ref{alg:g3}; family-share bias above is reported as an independent diagnostic.
 \end{table}
-
-
 
 \subsection{D3: Nested Design Detection}
 TABLE~\ref{tab:d3} and Fig.~\ref{fig:failure} show that all three detectors flag the aliasing in 100\% of repetitions with zero silent coverage. A detector that accepts the nested design would constitute a false-negative identification test. The threshold $1.9207$ is the $\chi^2_1$ 95\% critical value halved. Because the nested design produces maximally wide confidence intervals, the per-rep CI coverage of the true variance share is 16--27\% (scenario-dependent); this is a consequence of the non-identifiability, not evidence of estimator calibration.
@@ -476,12 +471,10 @@ Silent CI coverage & $= 0\%$ & 0\% & 0\% \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{fig3_d3_detection_fixed.pdf}
+\includegraphics[width=0.85\textwidth]{fig3_d3_detection_fixed.pdf}
 \caption{\textbf{D3 failure detection.} Three complementary failure detectors (BLUP collinearity, SE inflation, profile flatness) flag nested aliasing in 100\% of repetitions with zero silent coverage across all scenarios.}
 \label{fig:failure}
 \end{figure}
-
-
 
 \subsection{D4: Small-N Stress Test}
 TABLE~\ref{tab:d4} reports REML recovery at population sizes from $N = 10$ to $N = 30$ under the realistic D2 occupancy (scenario A, 100 repetitions per size). The ``Recovery Gate'' column reports whether the estimator recovers the true variance share within the bias and coverage criteria from the D1--D2 simulations; this is distinct from the identifiability gate (S1--S3, N1--N2), which applies to the design structure. Under the synthetic D2 assignment used in this stress test, the recovery criterion is satisfied at $N \geq 16$ when all 6 families are represented, except at $N = 12$--$14$: $N = 12$ fails due to coverage (80\%, below the 90\% threshold), while $N = 14$ fails due to bias ($+6.82$pp, exceeding the bias bar) despite acceptable coverage (98\%). At $N = 10$, the recovery criterion is met despite the compressed temporal structure; this is a sensitivity artifact rather than evidence of reliable estimation. This does not imply that the actual 16-model empirical population is sufficient: the empirical design fails the identifiability gate due to structural rank deficiency, whereas the synthetic D4 designs at $N \geq 16$ have different occupancy structures that avoid this particular confound. The D4 results (Fig.~\ref{fig:d4}) show that REML recovery is feasible at small $N$ under favorable occupancy, but only when the design satisfies the identifiability requirements.
@@ -518,12 +511,10 @@ TABLE~\ref{tab:d4} reports REML recovery at population sizes from $N = 10$ to $N
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{fig10_d4_stress_test.pdf}
+\includegraphics[width=0.90\textwidth]{fig10_d4_stress_test.pdf}
 \caption{\textbf{D4 small-$N$ stress test.} REML recovery (bias and 95\% CI coverage) at population sizes $N = 10$--$30$ under the realistic D2 occupancy (scenario A, 100 repetitions per size). Shaded regions indicate the bias and coverage thresholds. $N = 12$--$14$ fail the recovery criterion despite satisfying the identifiability gate.}
 \label{fig:d4}
 \end{figure}
-
-
 
 \subsection{Liability Test: Binary Versus Continuous Traits}
 A liability decision was resolved before the trait path was fixed. On item-level binary outcomes at the realistic 47-model occupancy, both a linear-probability model and a binomial GLMM under-estimate the era component and drive it to the boundary in 20--60\% of repetitions. Continuous per-model traits (model accuracy proportions) recover the era component with 98--100\% coverage. The Phase 2 estimator path is therefore LPM-REML on continuous per-model traits, not raw item-level binary responses.
@@ -568,7 +559,6 @@ These results trigger an evaluation-validity audit. Until tokenizer configuratio
 \textbf{Status: provisional.} The following aggregate accuracies are reported for descriptive and diagnostic context only; their evaluation validity is pending independent verification (Sec.~\ref{sec:threats}). They are \emph{not} interpreted as validated benchmark measurements.
 TABLE~\ref{tab:accuracy} lists the 16-model empirical accuracy on MMLU (5-shot, 14,042 items). Fig.~\ref{fig:accuracy_dist} shows the distribution.
 
-
 \subsection{Data Integrity Validation}
 The per-question JSONL prediction files were validated for all 16 models. All 16 files contain identical constant predictions: every model predicts answer 0 for every question. This confirms that the JSONL artifacts are non-informative and inconsistent with the reported aggregate evaluation; they cannot be treated as actual per-question model predictions. The CSV-level aggregate accuracy values were used as inputs to the diagnostic (not inferential) REML fit in Section~\ref{sec:consequences}; their evaluation validity remains provisional per Section~\ref{sec:empirical} and does not affect the gate diagnostics in Section~\ref{sec:empirical_results}, which depend only on design structure. The error-similarity analysis specified in the original plan cannot be performed on this dataset and is deferred to future work once validated per-question outputs are available.
 
@@ -580,8 +570,6 @@ The following populations exist in the project but are NOT measured empirical re
 \item \textbf{DeepSeek models:} DeepSeek-V3.1 \mbox{(671B)} and DeepSeek-V3.2 \mbox{(685B)} were NOT empirically measured. They must not be described as measured results.
 \end{itemize}
 
-\FloatBarrier
-
 \section{Empirical Identifiability Results}
 \label{sec:empirical_results}
 
@@ -589,6 +577,8 @@ The following populations exist in the project but are NOT measured empirical re
 \caption{\textbf{Aggregate MMLU Measurements Used for Descriptive and Diagnostic Analysis (5-shot, 14,042 items).} 16 of the planned models were evaluated. Six models produce accuracy near chance level (23--25\%) and are flagged for independent audit. All measurements are provisional pending evaluation-validity verification.}
 \label{tab:accuracy}
 \centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{|l|l|l|c|c|c|l|l|}
 \hline
 \textbf{Model} & \textbf{Family} & \textbf{Era} & \textbf{Acc.} & \textbf{Params} & \textbf{Fidelity} & \textbf{Source} & \textbf{Validity} \\
@@ -628,7 +618,6 @@ Qwen-7B & Qwen & 2023Q3 & 0.2295 & 7B & BF16 & Direct & \textbf{Audit req.} \\
 \end{tabular}
 \end{table}
 
-
 \subsection{Family-Era Occupancy}
 TABLE~\ref{tab:occupancy} shows the family-era occupancy of the 16 measured models. Three quarters are unoccupied (2024Q1, 2024Q3, 2025Q3). Eight of 11 occupied quarters contain only one model. No measured models belong to the DeepSeek family. The occupancy matrix is sparse: 40 of 55 possible family-quarter cells are empty (73\% sparse). The full family-era occupancy is shown in Fig.~\ref{fig:occupancy}.
 
@@ -656,25 +645,19 @@ Gemma & & & & & & & & 1 & & & 1 \\
 \end{tabular}
 \end{table}
 
-
-
-
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\columnwidth]{fig9_accuracy_distribution.pdf}
+\includegraphics[width=0.85\textwidth]{fig9_accuracy_distribution.pdf}
 \caption{\textbf{Distribution of measured MMLU accuracy (provisional).} These are descriptive aggregate values reported for diagnostic context only; their evaluation validity is pending an independent audit because the recorded per-question answers were non-informative (Sec.~\ref{sec:threats}). Six models cluster near the chance level (23--25\%) for a 4-choice benchmark, triggering an evaluation-validity audit. The identifiability gate is invariant to accuracy values.}
 \label{fig:accuracy_dist}
 \end{figure}
 
-
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\columnwidth]{fig4_occupancy_heatmap.pdf}
+\includegraphics[width=0.90\textwidth]{fig4_occupancy_heatmap.pdf}
 \caption{\textbf{Family$\times$era occupancy heatmap of the 16 measured models.} Darker shading indicates more models in a cell. 8 of 11 occupied quarters contain only one model; 40 of 55 possible cells are empty (73\% sparse).}
 \label{fig:occupancy}
 \end{figure}
-
-
 
 \subsection{Gate Diagnostics}
 The observed 16-model population spans 11 occupied release quarters within a 14-quarter observation window (2024Q1, 2024Q3, and 2025Q3 are unoccupied). After removing unoccupied factor levels, the fitted design matrix has $p = 1 + (F-1) + (E-1) = 1 + 4 + 10 = 15$ columns. TABLE~\ref{tab:gate} and Fig.~\ref{fig:gate} summarize gate diagnostic results. Four of five gate conditions fail; connectedness (S2) passes.
@@ -702,12 +685,10 @@ N2 & Max VIF & $\infty$ & $\leq 10$ & \textbf{FAIL} \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.75\textwidth]{fig5a_gate_audit.pdf}
+\includegraphics[width=0.95\textwidth]{fig5a_gate_audit.pdf}
 \caption{\textbf{Gate diagnostics versus pre-specified thresholds.} The 16-model population fails four of five gate conditions: S1 (crossing) fails because Llama and Qwen each occupy a single era; S3 (rank) fails at 14/15; N1 (conditioning) fails at $\kappa = 4.7 \times 10^{16}$; N2 (VIF) fails at $\infty$. S2 (connectedness) passes: the occupancy graph remains connected.}
 \label{fig:gate}
 \end{figure}
-
-
 
 \subsection{Failure Diagnosis}
 The fitted 16-model design contains five observed families (Llama, Qwen, Mistral, Phi, Gemma) and eleven occupied release quarters, giving $p = 1 + 4 + 10 = 15$ columns. A null-space computation on the fitted design matrix shows that the rank deficiency (rank 14 of 15) is fully explained by a single exact linear dependency: the Llama family-dummy column equals the 2023Q1 era-dummy column, because Llama-1 is the only model in that quarter. The null-space vector is $(\ldots, +1, \ldots, -1, \ldots)$ with nonzero entries at the Llama and 2023Q1 positions.
@@ -732,8 +713,6 @@ The 95\% confidence interval for the family share covers $[0\%, 100\%]$ (see App
 
 \subsection{Why Convergence Does Not Imply Identifiability}
 A numerical optimizer (Nelder-Mead) can converge to a finite optimum of the restricted log-likelihood even when the design is rank-deficient. The likelihood surface has a ridge along the aliased direction, and the optimizer's stopping point on that ridge depends on the starting value and implementation details. The resulting estimate is well defined only relative to the software. Although the covariance-basis rank is full (3/3, Sec.~\ref{sec:ident}), the mean-model rank deficiency ($\operatorname{rank}(X) = 14 < 15$) and the catastrophic numerical conditioning ($\kappa = 4.7 \times 10^{16}$) jointly render the variance-component estimates unstable and not uniquely determined by the data. The gate prevents inference under this failure mode: it detects that the population is not reportable under the pre-specified criteria before anyone interprets the 5.4\% number.
-
-\FloatBarrier
 
 \needspace{7\baselineskip}
 \section{Population-Design Sensitivity Analysis}
@@ -774,7 +753,7 @@ Figs.~\ref{fig:rank_pop}--\ref{fig:design_heatmap} visualize the design-space sw
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=\columnwidth]{fig5b_rank_vs_population.pdf}
+\includegraphics[width=0.85\textwidth]{fig5b_rank_vs_population.pdf}
 \caption{\textbf{Population size versus rank across the design space.} Each point is one evaluated (F, E, M) configuration. The passing design (N = 30, F = 6, E = 8) is highlighted; the measured 16-model population (rank 14/15) and the 22-model candidate (rank 19/19) are marked as reference points.}
 \label{fig:rank_pop}
 \end{figure}
@@ -783,7 +762,7 @@ Figs.~\ref{fig:rank_pop}--\ref{fig:design_heatmap} visualize the design-space sw
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=\columnwidth]{fig5c_conditioning_vs_population.pdf}
+\includegraphics[width=0.85\textwidth]{fig5c_conditioning_vs_population.pdf}
 \caption{\textbf{Conditioning versus population size.} The condition number $\kappa$ is shown for all full-rank designs, with the $\kappa = 100$ numerical-gate threshold marked. The passing design (N = 30, $\kappa = 93$) sits below the threshold; the measured 16-model population ($\kappa = 4.7 \times 10^{16}$) and the 22-model candidate ($\kappa = 1100$) are noted as reference points.}
 \label{fig:kappa_pop}
 \end{figure}
@@ -792,7 +771,7 @@ Figs.~\ref{fig:rank_pop}--\ref{fig:design_heatmap} visualize the design-space sw
 
  \begin{figure}[!t]
 \centering
-\includegraphics[width=0.94\textwidth]{fig6_condition_number_scatter.pdf}
+\includegraphics[width=0.95\textwidth]{fig6_condition_number_scatter.pdf}
 \caption{\textbf{Condition number versus VIF across full-rank designs.} The two numerical gate thresholds ($\kappa = 100$, VIF $= 10$) partition the design space into pass and fail regions. Passing designs (green) satisfy both thresholds simultaneously.}
 \label{fig:kappa_vif}
 \end{figure}
@@ -807,8 +786,6 @@ The joint $\kappa$--VIF partition in Fig.~\ref{fig:kappa_vif} shows that no full
 \end{figure}
 
 \textbf{One sufficient configuration.} 30 models across 6 families and 8 eras, with balanced occupancy (five models per family and approximately 3--4 models per era), achieves rank 13/13, $\kappa = 93$, and max VIF $= 2.1$. This is one sufficient design configuration within the evaluated grid---smaller or differently structured populations may also pass.
-
-
 
 \subsection{Outcome-Independent Selection Within the Candidate Frame}
 The selection procedure (Algorithm~\ref{alg:g3}) selects the candidate subset from the 47-model candidate set. The structural minimum is 21 models (identifiable: full rank, VIF $\leq$ 10). This minimum is derived by the procedure rather than assumed: it is the smallest population count for which any outcome-independent, connected subset of the 47-model candidate frame induces a family-by-era design that is simultaneously full-rank and VIF-bounded, subject to the per-family span and per-quarter occupancy constraints---below 21 models those structural constraints cannot all be met within this candidate frame. The 21-model design, however, sits exactly on the recovery bar in simulation (era-share bias $\approx -5.0$pp with SE $0.6$--$0.8$pp---a knife-edge). Within the 47-model candidate frame, the selection procedure identifies a \textbf{22-model candidate subset} that clears the recovery bar at 300 repetitions (era bias A $+2.4$pp / B $-0.8$pp), passes the 1000-repetition margin confirmation (A $+2.2$pp / B $-2.4$pp), and is robust at 2000 repetitions (A $+1.7$pp / B $-3.2$pp). The extra model over the structural minimum is required by the pre-specified recovery criterion within this candidate frame. The 22-model population satisfies the structural gate conditions (S1--S3, N2) but does not satisfy the condition-number gate ($\kappa = 1100 > 100$); Algorithm~\ref{alg:g3} checks rank, VIF, and crossing but does not check $\kappa$, which is instead reported as a post-selection diagnostic. The 22-model subset is therefore not a fully gate-passing population; it is the outcome-independent candidate within this specific frame and under these specific selection criteria.
@@ -868,12 +845,10 @@ Gemma-4-12B & 15 & 5 & 10 & 13/14 & $3.2\!\times\!10^{17}$ & FAIL & rank + $\kap
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.75\textwidth]{fig11_leave_one_out_clean.pdf}
+\includegraphics[width=0.85\textwidth]{fig11_leave_one_out_clean.pdf}
 \caption{\textbf{Leave-one-model-out diagnostics.} Each row shows the rank and condition number after removing one model. Removing Llama-1 alone restores full rank (13/13) but $\kappa = 585 > 100$, demonstrating that rank deficiency and conditioning failure are separable problems.}
 \label{fig:loo}
 \end{figure}
-
-
 
 \subsubsection{Era granularity.} TABLE~\ref{tab:era_res} reports gate diagnostics at three temporal resolutions (Fig.~\ref{fig:era_res}). At quarter level (baseline), the design is rank-deficient with catastrophic conditioning ($\kappa = 4.7 \times 10^{16}$). Aggregating to half-year ($E = 7$ occupied levels) restores full rank (11/11) and improves conditioning to $\kappa = 227$, but the condition number still exceeds the $\kappa \leq 100$ threshold, so the numerical stability gate fails. Year-level aggregation ($E = 4$ occupied levels) also restores full rank (8/8) with $\kappa = 202 > 100$, again failing the numerical stability gate. The rank failure is specific to the quarterly resolution and is eliminated by coarser grouping. However, numerical instability persists at all three resolutions, demonstrating that rank deficiency and conditioning failure are separable problems.
 
@@ -896,12 +871,10 @@ Year & 4 & 8 & 8/8 & 202 & 6.0 & FAIL & $\kappa$ \\
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=\columnwidth]{fig12_era_resolution_fixed.pdf}
+\includegraphics[width=0.85\textwidth]{fig12_era_resolution_fixed.pdf}
 \caption{\textbf{Era-resolution sensitivity.} Gate diagnostics at quarter, half-year, and year resolution. Collapsing quarters eliminates rank deficiency but does not satisfy the numerical stability gate: $\kappa$ remains above 100 at all resolutions.}
 \label{fig:era_res}
 \end{figure}
-
-
 
 \subsubsection{Contrast coding.} The baseline uses treatment (reference) coding. Sum-to-zero (deviation) coding produces rank 14/15, $\kappa = 3.6 \times 10^{16}$, VIF $= \infty$---the same FAIL verdict. The rank deficiency is structural (a consequence of the Llama--2023Q1 confound) and is not an artifact of the contrast parameterization.
 
@@ -1149,7 +1122,7 @@ jackknife,'' \emph{Ann. Statist.}, vol.~7, no.~1, pp.~1--26, 1979.
 
 \end{thebibliography}
 
-\appendices
+\appendix
 
 \section{Diagnostic Variance-Component Estimate}
 \label{app:diagnostic}
@@ -1157,7 +1130,7 @@ Figure~\ref{fig:invalid} reports diagnostic variance-component estimates obtaine
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=0.85\columnwidth]{fig8_diagnostic_estimate.pdf}
+\includegraphics[width=0.70\textwidth]{fig8_diagnostic_estimate.pdf}
 \caption{\textbf{Diagnostic variance-component estimates under the invalid (non-identifiable) 16-model design.} Panel~(a): historical bootstrap interval as originally reported (raw draws not archived). Panel~(b): \textbf{regenerated sensitivity analysis for reference only --- NOT the primary result.} The 95\% confidence interval for the family share covers $[0\%, 100\%]$, reflecting the non-identifiability of the rank-deficient design. The near-zero era estimate is an aliasing artifact, not evidence of no era effect. These estimates are not scientifically interpretable.}
 \label{fig:invalid}
 \end{figure}
@@ -1165,8 +1138,6 @@ Figure~\ref{fig:invalid} reports diagnostic variance-component estimates obtaine
 \section{Outcome-Independent Candidate Population}
 \label{app:22model}
 TABLE~\ref{tab:22model} lists the 22 models selected by the outcome-independent procedure from the 47-model candidate population. The selection satisfies all structural gate conditions (S1--S3, N2) within the candidate frame, but does not satisfy the condition-number gate ($\kappa = 1100 > 100$) and is therefore not a fully gate-passing population.
-
-
 
 \begin{table}[!ht]
 \caption{\textbf{Outcome-Independent Candidate Population (22 Models).} Candidate subset from the 47-model frame, selected by the outcome-independent procedure. All 6 families are represented with $\geq 2$ models each. The selection crossing constraint requires every family to span $\geq 2$ eras and at least 2 eras to contain $\geq 2$ families; this subset satisfies both. This subset satisfies structural conditions (S1--S3, N2) but not the condition-number gate ($\kappa = 1100 > 100$).}
@@ -1225,32 +1196,18 @@ DeepSeek-V3.2 & DeepSeek & 2025Q4 & 685B & Public & No \\
 \end{tabular}
 \end{table}
 
-\begin{IEEEbiographynophoto}{Sudharsan S}
-received the B.E. degree in Computer Science and Engineering from the SRM Institute of Science and Technology, Tiruchirappalli, India, where he is currently pursuing the degree with the Department of Computer Science and Engineering. His research interests include natural language processing, large language model evaluation, and variance decomposition methods.
-\end{IEEEbiographynophoto}
+\section*{Author Biographies}
 
-\begin{IEEEbiographynophoto}{S. Kanaga Suba Raja}
-received the B.E. and M.E. degrees in Computer Science and Engineering. He is currently an Assistant Professor with the Department of Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli, India, and a Visiting Researcher with the Research Institute of IoT Cybersecurity, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan. His research interests include machine learning, natural language processing, and statistical methods for AI evaluation.
-\end{IEEEbiographynophoto}
+\noindent\textbf{Sudharsan S} received the B.E. degree in Computer Science and Engineering from the SRM Institute of Science and Technology, Tiruchirappalli, India, where he is currently pursuing the degree with the Department of Computer Science and Engineering. His research interests include natural language processing, large language model evaluation, and variance decomposition methods.
 
-\begin{IEEEbiographynophoto}{Shree Harish V}
-received the degree from the SRM Institute of Science and Technology, Tiruchirappalli, India. He is currently with the Department of Computer Science and Engineering (Big Data Analytics), SRM Institute of Science and Technology, Tiruchirappalli, India. His research interests include cybersecurity, IoT, and AI systems.
-\end{IEEEbiographynophoto}
+\noindent\textbf{S. Kanaga Suba Raja} received the B.E. and M.E. degrees in Computer Science and Engineering. He is currently an Assistant Professor with the Department of Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli, India, and a Visiting Researcher with the Research Institute of IoT Cybersecurity, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan. His research interests include machine learning, natural language processing, and statistical methods for AI evaluation.
 
-\begin{IEEEbiographynophoto}{Chin-Shiuh Shieh}
-received the Ph.D. degree in Electrical Engineering. He is currently with the Research Institute of IoT Cybersecurity, Department of Electrical Engineering, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan. His research interests include wireless networks, cybersecurity, and IoT systems.
-\end{IEEEbiographynophoto}
+\noindent\textbf{Shree Harish V} received the degree from the SRM Institute of Science and Technology, Tiruchirappalli, India. He is currently with the Department of Computer Science and Engineering (Big Data Analytics), SRM Institute of Science and Technology, Tiruchirappalli, India. His research interests include cybersecurity, IoT, and AI systems.
 
-\begin{IEEEbiographynophoto}{Mong-Fong Horng}
-received the Ph.D. degree in Electrical Engineering. He is currently with the Research Institute of IoT Cybersecurity, Department of Electrical Engineering, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan. His research interests include computer networks, cybersecurity, and AI applications.
-\end{IEEEbiographynophoto}
+\noindent\textbf{Chin-Shiuh Shieh} received the Ph.D. degree in Electrical Engineering. He is currently with the Research Institute of IoT Cybersecurity, Department of Electrical Engineering, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan. His research interests include wireless networks, cybersecurity, and IoT systems.
 
-\begin{IEEEbiographynophoto}{Lavanya R}
-received the degree from the SRM Institute of Science and Technology, Tiruchirappalli, India. She is currently with the Department of Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli, India. Her research interests include machine learning, data analytics, and AI systems.
-\end{IEEEbiographynophoto}
+\noindent\textbf{Mong-Fong Horng} received the Ph.D. degree in Electrical Engineering. He is currently with the Research Institute of IoT Cybersecurity, Department of Electrical Engineering, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan. His research interests include computer networks, cybersecurity, and AI applications.
 
-
-
-\EOD
+\noindent\textbf{Lavanya R} received the degree from the SRM Institute of Science and Technology, Tiruchirappalli, India. She is currently with the Department of Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli, India. Her research interests include machine learning, data analytics, and AI systems.
 
 \end{document}
