@@ -34,7 +34,7 @@ Models descended from the same base model choose the same wrong answer **13.3 pe
 - **Dose-response.** Agreement increases with closeness of descent: parent–child pairs +18.5 points, distance two +13.6, more distant relatives +11.5.
 - **Consistency.** The association appears separately in each of the seven largest base-model families (10.3–14.8 points) and in all 57 MMLU subjects.
 - **Release timing.** Unadjusted, same-month pairs agree 8.7 points more than pairs released a year or more apart. This difference is accounted for by accuracy similarity, which rose steeply over the period, and no positive association remains under either timing measure (fine-tune upload month or base-model release month).
-- **Lineage detection.** A pair's agreement alone separates same-root from different-root pairs with an area under the ROC curve of 0.95.
+- **Lineage signal.** A pair's agreement alone separates same-root from different-root pairs with an area under the ROC curve of 0.95, consistent with prior work on model provenance testing.
 - **Data quality.** The leaderboard lists some models more than once under different names (50 entries resolve to 23 repositories) and includes models that give one answer letter to almost every item. Neither affects the conclusions.
 - **Pre-specified design.** The analysis, sample rules and a simulation check were fixed before any pairwise outcome was computed; every later analysis is labelled as exploratory or post hoc.
 

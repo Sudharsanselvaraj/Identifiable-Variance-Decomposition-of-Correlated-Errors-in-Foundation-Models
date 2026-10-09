@@ -168,11 +168,11 @@ Fig.~\ref{fig:workflow} outlines the study.
 \section{Related Work}
 \label{sec:related}
 
-\textbf{Correlated errors in LLMs.} Kim~\textit{et al.}~\cite{kim2025} measure pairwise agreement on wrong answers across 349 Hugging Face models and 71 models from the Holistic Evaluation of Language Models (HELM) and regress it on pair characteristics, finding that a shared provider, a shared base architecture and similar size predict higher agreement, and that larger and more accurate models have more correlated errors. They suggest that newer models may be converging but do not test this over release time. Chen~\cite{chen2026} shows across 67 models that the gain from routing, voting or mixture-of-agents is capped by the rate at which all models fail the same query. Kuai~\textit{et al.}~\cite{kuai2026} audit 18 models from six families for synchronized failures and reweight verifier ensembles accordingly. Goel~\textit{et al.}~\cite{goel2025} propose chance-adjusted probabilistic agreement (CAPA), a similarity metric based on overlapping mistakes, and report that mistakes become more similar as capability increases. Kim~\cite{kimd2026} audits majority-vote gain across subsets of 30 models and finds that, once capability is controlled, shared errors are the only stable predictor of lower gain. In vision-language models, Bugaud~\cite{bugaud2026} finds correlated mistakes within model families and proposes family-aware aggregation.
+\textbf{Correlated errors in LLMs.} Kim~\textit{et al.}~\cite{kim2025} measure pairwise agreement on wrong answers across 349 Hugging Face models and 71 models from the Holistic Evaluation of Language Models (HELM) and regress it on pair characteristics, finding that a shared provider, a shared base architecture and similar size predict higher agreement, and that larger and more accurate models have more correlated errors. Their Hugging Face regressions include per-model ``generation'' covariates with small positive coefficients, and they interpret the accuracy result as newer models converging, but they do not measure how close two models' releases are or separate that from lineage, and the paper does not describe any correction for the dependence among pairs that share a model. Chen~\cite{chen2026} shows across 67 models that the gain from routing, voting or mixture-of-agents is capped by the rate at which all models fail the same query. Kuai~\textit{et al.}~\cite{kuai2026} audit 18 models from six families for synchronized failures and reweight verifier ensembles accordingly. Goel~\textit{et al.}~\cite{goel2025} propose chance-adjusted probabilistic agreement (CAPA), a similarity metric based on overlapping mistakes, and report that mistakes become more similar as capability increases. Kim~\cite{kimd2026} audits majority-vote gain across subsets of 30 models and finds that, once capability is controlled, shared errors are the only stable predictor of lower gain. In vision-language models, Bugaud~\cite{bugaud2026} finds correlated mistakes within architectural families and proposes family-aware aggregation. Evidence on families is not uniform: across 20 instruction-tuned models from 10 families, Li and Hai~\cite{lihai2026} find no association between same-family membership and error dependence once capability is controlled, and Hossain~\textit{et al.}~\cite{hossain2026} report, for four separately pretrained base models, that overlap in one class of errors tracks shared pretraining recency more than architectural lineage. In both, ``family'' groups separately pretrained models; in our data, related models share a checkpoint. Tieman and Markou~\cite{tieman2026} show that diversity in how models generate outputs predicts lower correlated failure.
 
 \textbf{Null models for excess agreement.} Jo, Garg and Raghavan~\cite{jo2026} show that whether models agree ``more than expected'' depends on the null model of independence---accounting for item difficulty changes conclusions---and on the population of models and items. Three estimands are in use: correlated correctness (whether two models fail the same items), conditional agreement on the wrong option (whether two models that both fail choose the same distractor~\cite{kim2025}) and accuracy-adjusted similarity~\cite{goel2025}. Our primary estimand is the second and our secondary the first. Our quantity of interest is a \emph{contrast} between related and unrelated pairs rather than the level of excess agreement, so a null that shifts all pairs equally leaves it unchanged; we test this with item-difficulty-aware nulls.
 
-\textbf{Lineage and ancestry.} Laufer, Oderinwale and Kleinberg~\cite{laufer2025} map the family trees of about 1.86 million Hugging Face models from declared parents and study how metadata traits are inherited. Horwitz, Shul and Hoshen~\cite{horwitz2025} recover model trees from weights, and Wu~\textit{et al.}~\cite{wu2026dna} infer relationships from a compact representation of model behaviour. Tamura~\textit{et al.}~\cite{tamura2025} show that declared parent--child relations improve the prediction of benchmark performance. PhyloLM~\cite{phylolm2024} reconstructs phylogenies from output similarity, and Li~\textit{et al.}~\cite{li2026roots} trace the lineage of post-training datasets. None of these measures whether related models make the same errors, item by item.
+\textbf{Lineage and ancestry.} Laufer, Oderinwale and Kleinberg~\cite{laufer2025} map the family trees of about 1.86 million Hugging Face models from declared parents and study how metadata traits are inherited. Horwitz, Shul and Hoshen~\cite{horwitz2025} recover model trees from weights, and Wu~\textit{et al.}~\cite{wu2026dna} infer relationships from a compact representation of model behaviour. Tamura~\textit{et al.}~\cite{tamura2025} show that declared parent--child relations improve the prediction of benchmark performance, and Choi~\textit{et al.}~\cite{choi2026} find that attention-head truthfulness scores are preserved from base models to their descendants. Nikoli\'c~\textit{et al.}~\cite{nikolic2025} test whether one model is derived from another from output similarity alone. PhyloLM~\cite{phylolm2024} reconstructs phylogenies from output similarity, and Li~\textit{et al.}~\cite{li2026roots} trace the lineage of post-training datasets. None of these measures whether related models make the same errors, item by item.
 
 \textbf{Statistical tools.} Crossed variance-component models estimated by restricted maximum likelihood (REML)~\cite{patterson1971,harville1977,searle1992} and generalizability theory~\cite{brennan2001} underlie the per-model analysis in Supplementary Section~S1; Messing~\cite{messing2026} shows that ignoring design choices in LLM pipelines understates evaluation uncertainty. Pairwise outcomes are dependent, because every model appears in many pairs; we use dyadic cluster-robust variance estimators~\cite{fafchamps2007,cameron2011,aronow2015} and a delete-one-root jackknife~\cite{efron1982}. Ensemble gains depend on error diversity~\cite{breiman2001}, and monoculture arguments~\cite{kleinberg2021,bommasani2022} treat correlated error as a risk.
 
@@ -187,7 +187,7 @@ Fig.~\ref{fig:workflow} outlines the study.
 \toprule
 Study & Outcome & Relatedness of models & Release timing \\
 \midrule
-Kim \textit{et al.}~\cite{kim2025} & Same wrong option when both wrong & Shared provider, base architecture & Suggested, not tested \\
+Kim \textit{et al.}~\cite{kim2025} & Same wrong option when both wrong & Shared provider, base architecture & Per-model generation covariate; proximity not tested \\
 Goel \textit{et al.}~\cite{goel2025} & Chance-adjusted agreement (CAPA) & -- & Capability, not time \\
 Chen~\cite{chen2026} & Rate at which all models fail an item & -- & -- \\
 Kuai \textit{et al.}~\cite{kuai2026} & Synchronized failures of LLM judges & Model family & -- \\
@@ -254,7 +254,7 @@ Each population was sampled with at most 40 models per root and a fixed seed, an
 \end{figure*}
 
 \subsection{Data Quality}
-Two problems in the leaderboard data affect pairwise analyses. First, some models are listed more than once: in the primary sample, 50 leaderboard entries resolve on the Hub to only 23 repositories (renamed or moved), and most such pairs give identical predictions on every item; 193 primary pairs agree on at least 99.9\% of items. Second, 21 primary models choose one answer letter on at least 95\% of items; all score below 0.30. Both inflate agreement for some pairs, in opposite directions for the lineage contrast. Neither was anticipated in the analysis plan; Section~\ref{sec:robust} reports the results without them.
+Two problems in the leaderboard data affect pairwise analyses. First, some models are listed more than once, a redundancy also noted by Paquin and Jain~\cite{paquin2026}: in the primary sample, 50 leaderboard entries resolve on the Hub to only 23 repositories (renamed or moved), and most such pairs give identical predictions on every item; 193 primary pairs agree on at least 99.9\% of items. Second, 21 primary models choose one answer letter on at least 95\% of items; all score below 0.30. Both inflate agreement for some pairs, in opposite directions for the lineage contrast. Neither was anticipated in the analysis plan; Section~\ref{sec:robust} reports the results without them.
 
 \subsection{How Lineage and Release Timing Overlap}
 Fig.~\ref{fig:lineagemap} places the primary models on a grid of root by upload month and shows what the data can identify. Most roots contribute one model (288 of 351); such models enter only different-root pairs, so the lineage contrast is identified by the 63 roots with two or more models. The fine-tunes of a root are uploaded within a few months of one another, so same-root pairs are concentrated at short gaps (711, 1{,}004, 259, 45 and 1 pairs at 0, 1--2, 3--5, 6--11 and 12 or more months), and gaps of a year or more are populated almost entirely by different-root pairs.
@@ -497,7 +497,7 @@ The contrast is identified by 63 roots, two of which contribute 39 and 37 models
 \end{figure*}
 
 \subsection{Can Agreement Reveal Lineage?}
-If related models share wrong answers, a pair's agreement should carry information about whether the two share a root, which bears on inferring lineage from behaviour~\cite{phylolm2024,wu2026dna}. In the primary sample it does: agreement alone separates same-root from different-root pairs with an area under the receiver operating characteristic curve (AUC) of 0.95, and agreement net of the accuracy and release-gap terms with 0.88 (Fig.~\ref{fig:detection}). Above an agreement of 0.7 lie 68\% of same-root pairs but only 2.1\% of different-root pairs. Because different-root pairs outnumber same-root pairs by 85 to 1, however, most pairs above that threshold are still unrelated (about 3{,}600 against 1{,}400), so agreement on one benchmark flags candidate relatives rather than establishing them. The analysis is post hoc and descriptive.
+If related models share wrong answers, a pair's agreement should carry information about whether the two share a root. Inferring derivation from output similarity is established~\cite{nikolic2025,phylolm2024,wu2026dna}; the question here is only how strong that signal is in benchmark error agreement. In the primary sample it is strong: agreement alone separates same-root from different-root pairs with an area under the receiver operating characteristic curve (AUC) of 0.95, and agreement net of the accuracy and release-gap terms with 0.88 (Fig.~\ref{fig:detection}). Above an agreement of 0.7 lie 68\% of same-root pairs but only 2.1\% of different-root pairs. Because different-root pairs outnumber same-root pairs by 85 to 1, however, most pairs above that threshold are still unrelated (about 3{,}600 against 1{,}400), so agreement on one benchmark flags candidate relatives rather than establishing them. The analysis is post hoc and descriptive.
 
 \begin{figure}[!t]
 \centering
@@ -552,7 +552,7 @@ This work was supported in part by the Department of Computer Science and Engine
 
 \textbf{Use of AI-generated content.} The authors used Claude (Anthropic; model Claude Opus 5.5, accessed through Claude Code)~\cite{claude2026} in October 2026, with substantial use. It wrote and debugged the analysis, simulation, data-extraction and figure/table-generation code, and drafted the text of every section of this revised manuscript (Sections~I--VIII) and of the supplementary material. The authors directed the study, approved each analysis decision and analysis-plan amendment, reviewed and edited the text, and take full responsibility for the content; every reported number is produced by the released code from the committed outputs.
 
-\begin{thebibliography}{30}
+\begin{thebibliography}{40}
 
 \bibitem{kim2025} E.~Kim, A.~Garg, K.~Peng, and N.~Garg, ``Correlated errors in
 large language models,'' in \emph{Proc. Int. Conf. Mach. Learn. (ICML)},
@@ -586,6 +586,18 @@ capability-controlled audit of majority-vote gain in LLM ensembles,''
 \bibitem{bugaud2026} Z.~Bugaud, ``Hidden clones: Exposing and fixing family bias
 in vision-language model ensembles,'' \emph{arXiv preprint arXiv:2603.17111}, 2026.
 
+\bibitem{lihai2026} H.~Li and M.~Hai, ``State-dependent error correlations shape
+voting thresholds in committees of AI agents,'' \emph{arXiv preprint
+arXiv:2607.23931}, 2026.
+
+\bibitem{hossain2026} E.~Hossain \emph{et al.}, ``Right knowledge, wrong answer:
+Characterizing parametric temporal conflict in open-weight language models,''
+\emph{arXiv preprint arXiv:2606.20959}, 2026.
+
+\bibitem{tieman2026} R.~Tieman and E.~Markou, ``Inferred generative-process
+diversity predicts correlated failure across language models,'' \emph{arXiv
+preprint arXiv:2609.03422}, 2026.
+
 \bibitem{jo2026} N.~Jo, N.~Garg, and M.~Raghavan, ``The subjectivity of
 monoculture,'' \emph{arXiv preprint arXiv:2602.24086}, 2026.
 
@@ -604,6 +616,14 @@ Int. Conf. Learn. Represent. (ICLR)}, 2026.
 \bibitem{tamura2025} T.~Tamura, T.~Yano, M.~Enomoto, and M.~Oyamada, ``Can a crow
 hatch a falcon? Lineage matters in predicting large language model
 performance,'' \emph{arXiv preprint arXiv:2504.19811}, 2025.
+
+\bibitem{choi2026} M.~Choi \emph{et al.}, ``The truth stays in the family:
+Enhancing contextual grounding via inherited truthful heads in model lineages,''
+in \emph{Proc. Int. Conf. Mach. Learn. (ICML)}, 2026.
+
+\bibitem{nikolic2025} I.~Nikoli\'c, T.~Baluta, and P.~Saxena, ``Model provenance
+testing for large language models,'' in \emph{Proc. Adv. Neural Inf. Process.
+Syst. (NeurIPS)}, 2025.
 
 \bibitem{phylolm2024} N.~Yax, P.-Y.~Oudeyer, and S.~Palminteri, ``PhyloLM:
 Inferring the phylogeny of large language models,'' in \emph{Proc. Int. Conf.
@@ -668,6 +688,10 @@ language understanding,'' in \emph{Proc. Int. Conf. Learn. Represent. (ICLR)},
 
 \bibitem{gao2021} L.~Gao \emph{et al.}, ``A framework for few-shot language model
 evaluation,'' Zenodo, 2021, doi: 10.5281/zenodo.5371628.
+
+\bibitem{paquin2026} D.~Paquin and R.~Jain, ``What does MMLU actually measure? A
+psychometric audit of difficulty structure in aggregate benchmark scores,''
+\emph{arXiv preprint arXiv:2609.09372}, 2026.
 
 \bibitem{claude2026} Anthropic, ``Claude (Claude Opus 5.5), accessed through
 Claude Code,'' large language model, Oct. 2026. [Online]. Available:
