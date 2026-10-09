@@ -1,5 +1,55 @@
 # Exp04 — Lineage vs era on the Open LLM Leaderboard population (Option B)
 
+## Amendment 1 (2026-10-09, still pre-outcome)
+
+- **Primary arm switched to the v1 leaderboard** (`open-llm-leaderboard-old`,
+  7,055 details repos, MMLU 5-shot, 4 options, not gated). The v2 details repos
+  are each individually gated and could not be read (403); v2 becomes an
+  optional replication if access is obtained.
+- **Metadata:** `open-llm-leaderboard-old/contents` read with metadata columns
+  only (scores never saved): `datasets/ollb/v1_contents_meta.csv` (7,260 rows,
+  6,896 models). It has no `base_model`, so lineage and creation month come
+  from the Hub (`lineage_era/ollb/hub_meta.py`, cache
+  `datasets/ollb/hub_meta.jsonl`; API limit 1,000 requests / 5 min).
+- **Fetcher validated on one model** (`lineage_era/ollb/fetch_v1.py`,
+  Llama-2-7b-hf): 14,042 items; argmax(predictions) reproduces stored `acc` on
+  every item; macro accuracy 43.80 equals the official results file for the same
+  run. Partial (`--limit`) runs exist and are skipped by choosing the complete
+  run with most rows; items are keyed by subject and position because 27 MMLU
+  questions are exact duplicates. Cost ≈ 13 MB and ≈ 3.4 min per model.
+- **Roster rules (v1):** exclude merges (flag, type, or multi-parent card),
+  flagged, adapter/delta weights, Hub-missing, unresolved lineage, and fine-tunes
+  with no declared parent (depth 0 but not pretrained). Lineage root = end of
+  the single-parent `base_model` walk with renames collapsed.
+- **Sample:** shuffle eligible models with a fixed seed, cap at 15 models per
+  root (so a few popular bases do not dominate), take the first N. N is the
+  smallest size at which the pair gate passes (below).
+
+### Primary analysis (fixed before data)
+
+Unit: unordered model pair (i, j). Outcome: agree_ij = P(same wrong option |
+both wrong) over the common MMLU items. Model:
+
+    agree_ij = b0 + bL·same_root_ij + Σ_g bE_g·[|Δmonth_ij| ∈ g]
+               + c1·(acc_i + acc_j) + c2·|acc_i − acc_j| + e_ij
+
+gap bins g ∈ {0, 1–2, 3–5, 6–11} months, reference 12+. Inference: two-way
+(model i, model j) cluster-robust SEs (Cameron–Gelbach–Miller). Estimands:
+bL = lineage effect at equal time gap; bE_0 = contemporaneity effect at equal
+lineage status. Secondary: tree distance instead of same_root; phi of error
+indicators as the outcome; v2 replication.
+
+### Pair gate (`lineage_era/ollb/pair_gate.py`, `scripts/run_pair_gate.py`)
+
+Item-level simulation on the sampled design (roots and months only): wrong
+answers come from a root attractor (λ_L), a month attractor that drifts over
+time (λ_E, AR(1) ρ = 0.8), a global attractor, or uniform noise. Pass criteria:
+(1) separation — under lineage-only truth the gap terms reject at ≤ 10% and
+under era-only truth the same-root term rejects at ≤ 10%; (2) calibration —
+null rejection ≤ 10%; (3) power ≥ 80% for λ = 0.05 for both terms.
+Trial on 400 models from the v2 roster: separation and calibration hold, SE
+matches the simulated spread (0.0011 vs 0.0013), power 100% at λ = 0.10.
+
 Status: **plan, pre-data.** Written 2026-10-09 before any per-question outcome
 was read. Supersedes the 16-model empirical arm (see
 `docs/08_Reviews/Revision_2026-10_Precision_Gate.md` for why that arm cannot
