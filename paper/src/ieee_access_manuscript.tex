@@ -161,15 +161,15 @@ This paper reports a study that answers a narrower, well-posed version of that q
 \section{Related Work}
 \label{sec:related}
 
-\textbf{Correlated errors in LLMs.} Kim~\textit{et al.}~\cite{kim2025} measure pairwise agreement on wrong answers across 349 Hugging Face models and 71 HELM models and regress it on pair characteristics, finding that a shared provider, a shared base architecture and similar size predict higher agreement, and that larger and more accurate models have more correlated errors even across architectures and providers. They suggest that newer models may be converging in their outputs but do not test this over release time. Chen~\cite{chen2026} shows that pairwise correlation understates the probability that every member of an ensemble fails together. Goel~\textit{et al.}~\cite{goel2025} propose a chance-adjusted similarity metric based on overlapping mistakes and report that mistakes become more similar as capability increases. Our temporal predictor is different from both accuracy-related correlation and model age: it is the \emph{proximity} of two models' release months, estimated at equal lineage status and conditional on both models' accuracies, which the model controls for (the accuracy-sum coefficient is positive, consistent with~\cite{kim2025}). We make no claim about absolute model age.
+\textbf{Correlated errors in LLMs.} Kim~\textit{et al.}~\cite{kim2025} measure pairwise agreement on wrong answers across 349 Hugging Face models and 71 HELM models and regress it on pair characteristics, finding that a shared provider, a shared base architecture and similar size predict higher agreement, and that larger and more accurate models have more correlated errors even across architectures and providers. They suggest that newer models may be converging in their outputs but do not test this over release time. Chen~\cite{chen2026} shows, across 67 models, that the gain from routing, voting or mixture-of-agents is capped by the rate at which all models fail the same query, and that average pairwise error correlation understates that rate. Kuai~\textit{et al.}~\cite{kuai2026} audit 18 models from six families for synchronized failures with difficulty-weighted dependence metrics, relate dependence to judges over-endorsing responses, and reweight verifier ensembles accordingly. Goel~\textit{et al.}~\cite{goel2025} propose a chance-adjusted similarity metric based on overlapping mistakes and report that mistakes become more similar as capability increases. Our temporal predictor is different from both accuracy-related correlation and model age: it is the \emph{proximity} of two models' release months, estimated at equal lineage status and conditional on both models' accuracies, which the model controls for (the accuracy-sum coefficient is positive, consistent with~\cite{kim2025}). We make no claim about absolute model age.
 
 \textbf{Null models for excess agreement.} Jo, Garg and Raghavan~\cite{jo2026} argue that whether models agree ``more than expected'' depends on two analyst choices: the null model of independence, where accounting for item difficulty leads to very different conclusions from nulls that do not, and the population of models and items compared. They conclude that monoculture is a context-dependent inference rather than an absolute property of models. This bears directly on our study, which uses one benchmark and one leaderboard population. Three estimands are in use: correlated correctness (whether two models fail the same items, e.g.\ the phi coefficient of error indicators, or co-failure in excess of an item-difficulty null); conditional agreement on the wrong option (whether two models that both fail an item choose the same distractor~\cite{kim2025}); and accuracy-adjusted similarity~\cite{goel2025}. Our primary estimand is the second and our secondary the first. More importantly, our quantity of interest is a \emph{contrast}---the difference in agreement between pairs that share a lineage root and pairs that do not, at equal release-month gap---not the \emph{level} of excess agreement that the null-model debate concerns. A null that shifts all pairs' expected agreement equally leaves such a contrast unchanged; a null that differs between related and unrelated pairs does not. Section~\ref{sec:itemnull} therefore re-estimates both outcomes against item-difficulty-aware nulls.
 
-\textbf{Our contribution.} We do not claim to be the first study of correlated errors in language models. To our knowledge, and based on the work reviewed here, this is the first study to examine declared fine-tune ancestry and release-month proximity jointly as correlates of conditional same-wrong-answer agreement. Relative to the work above, we separate the two explicitly: lineage is taken from declared ancestry rather than provider labels, release time is the gap between upload months in categorical bins, inference accounts for the dependence of pairs that share a model or a lineage root, and the design was checked by a pre-specified simulation gate.
+\textbf{Our contribution.} We do not claim to be the first study of correlated errors in language models. To our knowledge, and based on the work reviewed here, this is the first study to examine declared fine-tune ancestry and release-month proximity jointly as correlates of conditional same-wrong-answer agreement. Relative to the work above, the outcome is conditional same-wrong-option agreement between pairs of models (not the all-fail rate of an ensemble~\cite{chen2026}, judge dependence~\cite{kuai2026} or pipeline measurement error~\cite{messing2026}); lineage is each model's declared fine-tune ancestry resolved to a root checkpoint (not provider or architecture labels~\cite{kim2025}, family membership~\cite{kuai2026} or dataset lineage~\cite{li2026roots}); and release time enters as the proximity of two models' upload months, estimated jointly with lineage. We separate the two explicitly: lineage is taken from declared ancestry rather than provider labels, release time is the gap between upload months in categorical bins, inference accounts for the dependence of pairs that share a model or a lineage root, and the design was checked by a pre-specified simulation gate.
 
-\textbf{Lineage and ancestry.} Laufer, Oderinwale and Kleinberg~\cite{laufer2025} map the family trees of about 1.86 million Hugging Face models from their declared parents and study how metadata traits---licenses, language support, model cards---are inherited and drift along lineages. Horwitz, Shul and Hoshen~\cite{horwitz2025} recover model trees from model weights alone. Both treat lineage as the object of study; neither measures whether related models make the same errors on benchmark items. PhyloLM~\cite{phylolm2024} reconstructs phylogenies of language models from output similarity; Li~\textit{et al.}~\cite{li2026roots} trace how post-training datasets propagate along lineage paths; Kuai~\textit{et al.}~\cite{kuai2026} audit behavioral entanglement across model families. These works infer or exploit lineage; we take lineage from declarations and ask how much error agreement it accounts for relative to release time.
+\textbf{Lineage and ancestry.} Laufer, Oderinwale and Kleinberg~\cite{laufer2025} map the family trees of about 1.86 million Hugging Face models from their declared parents and study how metadata traits---licenses, language support, model cards---are inherited and drift along lineages. Horwitz, Shul and Hoshen~\cite{horwitz2025} recover model trees from model weights alone. Both treat lineage as the object of study; neither measures whether related models make the same errors on benchmark items. PhyloLM~\cite{phylolm2024} reconstructs phylogenies of language models from output similarity; Li~\textit{et al.}~\cite{li2026roots} reconstruct the lineage of post-training \emph{datasets} and show that benchmark contamination can propagate along it. These works infer or exploit lineage of models or data; we take lineage from declarations and ask how much error agreement it accounts for relative to release time.
 
-\textbf{Variance components and dyadic inference.} Crossed variance-component models estimated by restricted maximum likelihood~\cite{patterson1971,harville1977,searle1992} underlie the per-model analysis in Section~\ref{sec:precision}; generalizability theory~\cite{brennan2001} asks the same question of measurement facets, as does recent work on LLM evaluation pipelines~\cite{messing2026}. Pairwise outcomes are not independent, because every model appears in many pairs; we use dyadic cluster-robust variance estimators~\cite{fafchamps2007,cameron2011,aronow2015} and a delete-one-root jackknife~\cite{efron1982}.
+\textbf{Variance components and dyadic inference.} Crossed variance-component models estimated by restricted maximum likelihood~\cite{patterson1971,harville1977,searle1992} underlie the per-model analysis in Section~\ref{sec:precision}; generalizability theory~\cite{brennan2001} asks the same question of measurement facets, and Messing~\cite{messing2026} shows that ignoring design choices in LLM pipelines (judge model, temperature, prompt) makes evaluation uncertainty, including on MMLU, look smaller than it is. Pairwise outcomes are not independent, because every model appears in many pairs; we use dyadic cluster-robust variance estimators~\cite{fafchamps2007,cameron2011,aronow2015} and a delete-one-root jackknife~\cite{efron1982}.
 
 \textbf{Ensembles and monoculture.} Ensemble gains depend on error diversity~\cite{dietterich2000,breiman2001,kuncheva2003}; algorithmic monoculture arguments~\cite{kleinberg2021,bommasani2022} treat correlated error as an input. Our results bear on which kind of diversity is associated with less shared error, without testing ensembles directly.
 
@@ -433,7 +433,7 @@ This work was supported in part by the Department of Computer Science and Engine
 large language models,'' in \emph{Proc. Int. Conf. Mach. Learn. (ICML)},
 vol.~267, pp.~30038--30066, 2025.
 
-\bibitem{chen2026} J.~Chen, ``When does combining language models help? A
+\bibitem{chen2026} J.~L.~Chen, ``When does combining language models help? A
 co-failure ceiling on routing, voting, and mixture-of-agents across 67 frontier
 models,'' \emph{arXiv preprint arXiv:2606.27288}, 2026.
 
@@ -454,12 +454,14 @@ tree heritage recovery,'' in \emph{Proc. Int. Conf. Learn. Represent. (ICLR)},
 Inferring the phylogeny of large language models,'' in \emph{Proc. Int. Conf.
 Learn. Represent. (ICLR)}, 2025.
 
-\bibitem{li2026roots} Y.~Li \emph{et al.}, ``Tracing the roots,'' in \emph{Proc.
-Annu. Meeting Assoc. Comput. Linguist. (ACL)}, 2026.
+\bibitem{li2026roots} Y.~Li \emph{et al.}, ``Tracing the roots: A multi-agent
+framework for uncovering data lineage in post-training LLMs,'' in \emph{Proc.
+64th Annu. Meeting Assoc. Comput. Linguist. (Volume 1: Long Papers)}, 2026,
+pp.~9606--9625.
 
-\bibitem{kuai2026} C.~Kuai \emph{et al.}, ``How independent are large language
-models? A statistical framework for auditing behavioral entanglement and
-reweighting verifier ensembles,'' \emph{arXiv preprint arXiv:2604.07650}, 2026.
+\bibitem{kuai2026} C.~Kuai \emph{et al.}, ``A statistical framework for auditing
+behavioral dependence and induced bias in LLM judges,'' \emph{arXiv preprint
+arXiv:2604.07650v2}, 2026.
 
 \bibitem{patterson1971} H.~D.~Patterson and R.~Thompson, ``Recovery of
 inter-block information when block sizes are unequal,'' \emph{Biometrika},
@@ -475,8 +477,9 @@ vol.~72, no.~358, pp.~320--338, 1977.
 \bibitem{brennan2001} R.~L.~Brennan, \emph{Generalizability Theory}. New York, NY,
 USA: Springer, 2001.
 
-\bibitem{messing2026} S.~Messing, ``Decomposing and reducing hidden measurement
-error in LLM evaluation pipelines,'' \emph{arXiv preprint arXiv:2604.11581}, 2026.
+\bibitem{messing2026} S.~Messing, ``Hidden measurement error in LLM pipelines
+distorts annotation, evaluation, and benchmarking,'' \emph{arXiv preprint
+arXiv:2604.11581}, 2026.
 
 \bibitem{fafchamps2007} M.~Fafchamps and F.~Gubert, ``The formation of risk
 sharing networks,'' \emph{J. Develop. Econ.}, vol.~83, no.~2, pp.~326--350, 2007.
@@ -542,7 +545,7 @@ The earlier version of this manuscript (archived in the repository as \texttt{pa
 
 
 \begin{IEEEbiographynophoto}{Sudharsan S}
-received the B.E. degree in Computer Science and Engineering from the SRM Institute of Science and Technology, Tiruchirappalli, India, where he is currently pursuing the degree with the Department of Computer Science and Engineering. His research interests include natural language processing, large language model evaluation, and variance decomposition methods.
+is currently pursuing the B.Tech. degree in Computer Science and Engineering at the SRM Institute of Science and Technology, Tiruchirappalli, India. His research interests include natural language processing, large language model evaluation, and variance decomposition methods.
 \end{IEEEbiographynophoto}
 
 \begin{IEEEbiographynophoto}{S. Kanaga Suba Raja}

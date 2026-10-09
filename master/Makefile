@@ -20,6 +20,7 @@ PDF      := build/master_manuscript.pdf
 all: pdf
 
 pdf: $(PDF)
+	@echo "WARNING: master/ is the SUPERSEDED 16-model manuscript; the current study is in paper/ (see master/README.md)."
 
 $(PDF): $(SRC)
 	cd $(dir $(SRC)) && $(TEX) -interaction=nonstopmode -halt-on-error -output-directory=../$(OUTDIR) $(notdir $(SRC))
