@@ -264,7 +264,7 @@ def figures(prereg: pd.DataFrame) -> list[str]:
     axes[0].set_yticklabels([o.replace("_", " ") for o in order], fontsize=7)
     fig.tight_layout()
     p = figdir / "exp04_forest.pdf"
-    fig.savefig(p); plt.close(fig); made.append(p.name)
+    fig.savefig(p, metadata={"CreationDate": None}); plt.close(fig); made.append(p.name)
 
     # Fig: raw mean agreement by month gap, same vs different root (primary)
     d = prepared("primary")
@@ -284,7 +284,7 @@ def figures(prereg: pd.DataFrame) -> list[str]:
     ax.tick_params(labelsize=7); ax.legend(fontsize=7, frameon=False)
     fig.tight_layout()
     p = figdir / "exp04_agreement_by_gap.pdf"
-    fig.savefig(p); plt.close(fig); made.append(p.name)
+    fig.savefig(p, metadata={"CreationDate": None}); plt.close(fig); made.append(p.name)
 
     # Fig: precision of per-model family/era shares vs number of families
     sc = pd.read_csv(ROOT / "results/precision_gate/family_scaling.csv")
@@ -298,7 +298,7 @@ def figures(prereg: pd.DataFrame) -> list[str]:
     ax.tick_params(labelsize=7); ax.legend(fontsize=7, frameon=False)
     fig.tight_layout()
     p = figdir / "precision_scaling.pdf"
-    fig.savefig(p); plt.close(fig); made.append(p.name)
+    fig.savefig(p, metadata={"CreationDate": None}); plt.close(fig); made.append(p.name)
     return made
 
 
