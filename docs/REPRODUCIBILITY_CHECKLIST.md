@@ -79,9 +79,18 @@ python scripts/validation_report.py               # reconciled per-model categor
 python scripts/run_exp04_final.py                 # 12 pre-registered analyses + audits; diffs vs committed outputs
 python scripts/run_exp04_item_null.py             # item-difficulty-aware nulls (post hoc)
 python scripts/run_pair_gate_audit.py --population primary --cap 40 --reps 500   # post-hoc gate audit
-make -C paper tables && make -C paper             # tables from outputs, then the PDF
+make -C paper tables figures && make -C paper     # tables and all 14 figures from outputs, then the PDF
 python -m pytest                                  # test suite
 ```
+
+Figures: `scripts/make_exp04_figures.py` draws every manuscript figure from
+`results/` (vector PDF, embedded fonts, no timestamp). Two of them also read the
+rebuilt frozen lists and validated answer files; the two diagrams take their
+counts from `results/`; Fig. 3 is the only illustration with hypothetical models.
+
+Root-level dyadic standard errors were corrected on 2026-10-09 (see
+`docs/08_Reviews/Revision_2026-10_Precision_Gate.md`, "Erratum"); model-level
+results, which include every pre-registered analysis, are unaffected.
 
 ## 5. Pre-registration
 

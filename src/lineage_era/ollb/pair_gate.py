@@ -93,21 +93,38 @@ def design(i: np.ndarray, j: np.ndarray, root_id: np.ndarray, month: np.ndarray,
 
 def ols_twoway(X: np.ndarray, y: np.ndarray, i: np.ndarray, j: np.ndarray,
                N: int) -> tuple[np.ndarray, np.ndarray]:
-    """OLS with Cameron–Gelbach–Miller two-way clustering on models i and j.
+    """OLS with dyadic (Cameron–Gelbach–Miller / Aronow) clustering.
 
-    A pair belongs to both its models' clusters; V = V_i + V_j - V_pair, with
-    V_pair the heteroskedasticity-robust term (each pair is its own cell).
+    Pair p has endpoints i[p], j[p] (models, or lineage roots for root-level
+    clustering). The meat is the sum of e_p e_q x_p x_q' over all pairs p, q
+    that share at least one endpoint cluster, each (p, q) counted once.
+
+    S'S, with S_g the sum of the scores of pairs touching cluster g, counts a
+    combination (p, q) once per cluster the two pairs have in common. Pairs in
+    the same cell {a, b} with a != b have two clusters in common, so the cell
+    sums T_ab are subtracted once (the CGM form V_a + V_b - V_ab). A pair whose
+    two endpoints coincide (a same-root pair under root-level clustering) is
+    added to its cluster once. For model-level clustering every cell holds a
+    single pair, so this reduces to subtracting each pair's own term.
     """
     XtX_inv = np.linalg.inv(X.T @ X)
     beta = XtX_inv @ (X.T @ y)
     e = y - X @ beta
     s = X * e[:, None]
-    # Undirected pairs: cluster on the union of memberships via one model
-    # index space (a pair contributes to cluster i and to cluster j).
+    two = i != j
     S = np.zeros((N, X.shape[1]))
     np.add.at(S, i, s)
-    np.add.at(S, j, s)
-    meat = S.T @ S - s.T @ s                       # subtract double-counted pairs
+    np.add.at(S, j[two], s[two])
+    lo, hi = np.minimum(i, j)[two], np.maximum(i, j)[two]
+    cell = np.unique(lo.astype(np.int64) * N + hi, return_inverse=True)[1]
+    T = np.zeros((cell.max() + 1 if len(cell) else 0, X.shape[1]))
+    np.add.at(T, cell, s[two])
+    meat = S.T @ S - T.T @ T
+    # Correction 2026-10-09: before this date every pair was added to both
+    # endpoint clusters and only its own term was subtracted. That is exact for
+    # model-level clustering (all pre-registered results), but under root-level
+    # clustering it counted same-root pairs three times with themselves and
+    # pairs spanning the same two roots twice with each other (conservative).
     V = XtX_inv @ meat @ XtX_inv
     return beta, np.sqrt(np.clip(np.diag(V), 0, None))
 

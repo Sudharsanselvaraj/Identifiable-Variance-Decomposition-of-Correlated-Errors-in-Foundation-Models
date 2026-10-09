@@ -15,7 +15,7 @@ Sections
      >= 1000 jointly-wrong items; phi of error indicators (pre-registered
      secondary); agreement in excess of position-based chance (exploratory)
   F  exploratory E1/E2 reproduced and diffed
-  G  figures for the manuscript
+  G  three manuscript figures (all figures: scripts/make_exp04_figures.py)
 
 Usage (repo root): python3 scripts/run_exp04_final.py
 """
@@ -236,79 +236,24 @@ def reproduce_exploratory() -> pd.DataFrame:
                          "same_arch": f"{b3[-1]:+.4f} ({se3[-1]:.4f})"})
     new = pd.DataFrame(rows)
     old = pd.read_csv(COMMITTED / "exploratory_E1_E2.csv")
-    new["matches_committed"] = (new.astype(str).values == old.astype(str).values).all(1)
+    # The two root-clustered columns were computed at commit 679c5b7 with the
+    # root-level dyadic estimator before its 2026-10-09 correction (see
+    # pair_gate.ols_twoway); every other column must still match exactly.
+    cols = [c for c in new.columns if "(root-cl)" not in c]
+    new["matches_committed"] = (new[cols].astype(str).values
+                                == old[cols].astype(str).values).all(1)
     return new
 
 
 # ------------------------------------------------------------------ G
 def figures(prereg: pd.DataFrame) -> list[str]:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    figdir = ROOT / "paper" / "figures"
-    made = []
-    # Fig: forest plot of same_root and gap0 across the 12 analyses
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.6), sharey=True)
-    order = list(dict.fromkeys(prereg.analysis))
-    for ax, t, title in zip(axes, ("same_root", "gap0"),
-                            ("Shared lineage root", "Same release month (vs. 12+)")):
-        d = prereg[prereg.term == t].set_index("analysis").loc[order]
-        yy = np.arange(len(order))[::-1]
-        ax.errorbar(d.estimate, yy, xerr=1.96 * d.se, fmt="o", color="#1f4e79",
-                    ms=4, capsize=2, lw=1)
-        ax.axvline(0, color="0.5", lw=0.8, ls="--")
-        ax.set_title(title, fontsize=9)
-        ax.set_xlabel("Δ P(same wrong | both wrong)", fontsize=8)
-        ax.tick_params(labelsize=7)
-    axes[0].set_yticks(np.arange(len(order))[::-1])
-    axes[0].set_yticklabels([o.replace("_", " ") for o in order], fontsize=7)
-    fig.tight_layout()
-    p = figdir / "exp04_forest.pdf"
-    fig.savefig(p, metadata={"CreationDate": None}); plt.close(fig); made.append(p.name)
-
-    # Fig: raw mean agreement by month gap, same vs different root (primary)
-    d = prepared("primary")
-    gap = np.abs(month_index(d["pop"].created_month)[d["i"]]
-                 - month_index(d["pop"].created_month)[d["j"]])
-    same = d["rid"][d["i"]] == d["rid"][d["j"]]
-    bins = [0, 1, 3, 6, 12, 100]
-    lab = ["0", "1–2", "3–5", "6–11", "12+"]
-    b = np.digitize(gap, bins[1:])
-    fig, ax = plt.subplots(figsize=(3.5, 2.6))
-    MIN_PAIRS = 20   # bins with fewer pairs are not plotted (e.g. 1 same-root pair at 12+)
-    for flag, name, c in [(True, "same root", "#b2182b"), (False, "different root", "#2166ac")]:
-        cnt = [int(((b == k) & (same == flag)).sum()) for k in range(5)]
-        m = [d["y"][(b == k) & (same == flag)].mean() if cnt[k] >= MIN_PAIRS else np.nan
-             for k in range(5)]
-        ax.plot(lab, m, "o-", label=name, color=c, ms=4)
-        for k in range(5):
-            if cnt[k] >= MIN_PAIRS:
-                ax.annotate(f"n={cnt[k]:,}", (k, m[k]), textcoords="offset points",
-                            xytext=(0, 5 if flag else -10), ha="center", fontsize=5.5,
-                            color=c)
-    ax.margins(x=0.08, y=0.12)
-    ax.set_xlabel("Release-month gap", fontsize=8)
-    ax.set_ylabel("Mean P(same wrong | both wrong)", fontsize=8)
-    ax.tick_params(labelsize=7); ax.legend(fontsize=7, frameon=False, loc="center right")
-    fig.tight_layout()
-    p = figdir / "exp04_agreement_by_gap.pdf"
-    fig.savefig(p, metadata={"CreationDate": None}); plt.close(fig); made.append(p.name)
-
-    # Fig: precision of per-model family/era shares vs number of families
-    sc = pd.read_csv(ROOT / "results/precision_gate/family_scaling.csv")
-    fig, ax = plt.subplots(figsize=(3.5, 2.6))
-    for (E, M), g in sc.groupby(["E", "M"]):
-        ax.plot(g.F, g[["worst_family", "worst_era"]].max(1), "o-", ms=3,
-                label=f"{E} eras, {M} models/family")
-    ax.axhline(0.10, color="0.5", ls="--", lw=0.8)
-    ax.set_xlabel("Families (lineage levels)", fontsize=8)
-    ax.set_ylabel("Worst-case share RMSE", fontsize=8)
-    ax.tick_params(labelsize=7); ax.legend(fontsize=7, frameon=False)
-    fig.tight_layout()
-    p = figdir / "precision_scaling.pdf"
-    fig.savefig(p, metadata={"CreationDate": None}); plt.close(fig); made.append(p.name)
-    return made
+    """The three figures whose inputs this script has written by now (prereg_12.csv)
+    or that need no results; the others come from make_exp04_figures.py, which
+    draws every manuscript figure in one style."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from make_exp04_figures import ALL
+    assert (OUT / "prereg_12.csv").exists()
+    return [f"{ALL[k]()}.pdf" for k in ("forest", "gap", "precision")]
 
 
 # ------------------------------------------------------------------ H

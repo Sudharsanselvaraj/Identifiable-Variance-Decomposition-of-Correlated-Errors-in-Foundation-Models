@@ -158,6 +158,15 @@ This paper reports a study that answers a narrower, well-posed version of that q
 \item \textbf{Results with explicit robustness.} Shared lineage is strongly and consistently associated with shared wrong answers; release-month proximity is not, in a consistent direction (Section~\ref{sec:results}).
 \end{enumerate}
 
+Fig.~\ref{fig:workflow} summarizes the study. Steps 2--6 were fixed in a dated pre-registration before any pair outcome was computed; the audits in step 7 are partly post hoc and are labelled as such where they are reported. Throughout, ``pre-registered'' refers to that document, ``exploratory'' to analyses specified after it, and ``post hoc'' to analyses added after the results were known.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{fig_workflow.pdf}
+\caption{\textbf{Study workflow.} Counts are read from the analysis outputs. Steps 2--6 were fixed before outcomes were computed (three dated amendments, Section~\ref{sec:gate}); step 7 combines pre-registered secondary analyses with exploratory and post-hoc audits. Primary and expanded populations differ only in the lineage evidence accepted (Section~\ref{sec:lineage}); $a_{ij}$ is the outcome of Eq.~\eqref{eq:outcome}.}
+\label{fig:workflow}
+\end{figure*}
+
 \section{Related Work}
 \label{sec:related}
 
@@ -209,7 +218,7 @@ No design reaches an RMSE of 0.10 for both shares (TABLE~\ref{tab:precision}): n
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{precision_scaling.pdf}
-\caption{\textbf{Precision of per-model variance shares versus the number of families.} Worst-case Monte Carlo RMSE of the family or era share across four scenarios (300 replicates each) for staggered designs. The dashed line marks $\pm 0.10$.}
+\caption{\textbf{Precision of per-model variance shares versus the number of families.} Worst-case Monte Carlo RMSE of the family or era share across four scenarios (300 replicates each) for staggered designs with 8 or 14 release quarters. The dashed line marks an RMSE of 0.10; only the largest design with 14 quarters (60 families, 360 models) reaches it.}
 \label{fig:scaling}
 \end{figure}
 
@@ -220,8 +229,20 @@ No design reaches an RMSE of 0.10 for both shares (TABLE~\ref{tab:precision}): n
 For models $i$ and $j$ evaluated on the same $K = 14{,}042$ MMLU items~\cite{hendrycks2021}, let $c_{ik}$ be model $i$'s chosen option on item $k$ (the argmax of its per-option log-likelihoods) and $g_k$ the correct option. The outcome is the conditional agreement~\cite{kim2025}
 \begin{equation}
 a_{ij} = \frac{\sum_k \mathbf{1}[c_{ik} = c_{jk} \neq g_k]}{\sum_k \mathbf{1}[c_{ik} \neq g_k]\,\mathbf{1}[c_{jk} \neq g_k]},
+\label{eq:outcome}
 \end{equation}
 the probability of choosing the same wrong option given that both are wrong. Every pair contributes all items on which both models are wrong; in the data this denominator ranges from 1{,}166 to 10{,}820 items (median 4{,}109 in the primary sample), so every $a_{ij}$ is estimated from more than a thousand items.
+
+\textbf{What the outcome measures.} Each MMLU item has three wrong options. If two models that both err chose among them independently and uniformly, $a_{ij}$ would be $1/3$; values above $1/3$ arise either because some distractors are more attractive to all models, or because the two models share a preference. The outcome therefore separates two questions that are often merged: \emph{whether} two models fail on the same items (correlated correctness, measured here by the secondary outcome, the phi coefficient of the two error indicators), and \emph{how} they fail when they do (which distractor they choose). Conditioning on joint failure removes most of the mechanical dependence of agreement on accuracy, because two weak models are not counted as agreeing merely for being wrong often; it does not remove all of it, which is why accuracy enters the model below. Because $a_{ij}$ is a ratio over a pair-specific set of items, pairs with low accuracy are evaluated on more, and on average easier, items than pairs with high accuracy; the item-difficulty-aware nulls of Section~\ref{sec:itemnull} address this directly.
+
+\textbf{Estimand.} The quantity of interest is a \emph{contrast} between kinds of pairs, not the level of $a_{ij}$: how much more often two models agree on wrong options when they descend from the same root, at equal release-month gap and equal accuracies, and how much more often they agree when released close together, at equal lineage status and equal accuracies. Fig.~\ref{fig:schematic} illustrates the two predictors. Every pair has one value of each, so the design crosses them: same-root pairs occur at several gaps and same-month pairs occur with and without a shared root. The two terms are separated only to the extent that these combinations are populated, which Section~\ref{sec:lineage} documents.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{fig_schematic.pdf}
+\caption{\textbf{The two pair-level predictors} (illustration with hypothetical models). Squares are lineage roots and circles fine-tunes placed at their upload month; arcs show declared ancestry. A1 and A2 share a root and were uploaded one month apart (shared root, gap bin 1--2); A3 and B2 descend from different roots but were uploaded in the same month (no shared root, gap bin 0). Every pair carries one value of each predictor, and the pair model estimates each association at equal levels of the other.}
+\label{fig:schematic}
+\end{figure}
 
 \subsection{Model and Inference}
 \begin{equation}
@@ -231,10 +252,28 @@ a_{ij} = {}& b_0 + b_L\, s_{ij} + \textstyle\sum_{g} b_{E,g}\, \mathbf{1}[\,|m_i
 \end{aligned}
 \label{eq:pair}
 \end{equation}
-where $s_{ij}$ indicates a shared lineage root, $m_i$ is the model's upload month, and the gap bins are 0, 1--2, 3--5 and 6--11 months with 12 or more as reference. $b_L$ is the association of shared lineage with agreement at equal time gap; $b_{E,0}$ is the association of same-month release at equal lineage status. Accuracy terms control for the fact that weaker models have more, and different, errors. Because every model enters many pairs, pair residuals are dependent; the pre-registered standard errors are dyadic cluster-robust~\cite{fafchamps2007,cameron2011,aronow2015}, allowing arbitrary correlation between any two pairs that share a model. Section~\ref{sec:inference} adds root-level dyadic clustering and a delete-one-root jackknife.
+where $s_{ij}$ indicates a shared lineage root, $m_i$ is the model's upload month, and the gap bins are 0, 1--2, 3--5 and 6--11 months with 12 or more as reference. $b_L$ is the association of shared lineage with agreement at equal time gap; $b_{E,0}$ is the association of same-month release at equal lineage status. Accuracy terms control for the fact that weaker models have more, and different, errors. Because every model enters many pairs, pair residuals are dependent; the pre-registered standard errors are dyadic cluster-robust~\cite{fafchamps2007,cameron2011,aronow2015}, allowing arbitrary correlation between any two pairs that share a model. With $\mathbf{x}_p$ the covariate vector and $\hat e_p$ the residual of pair $p$, the estimator is
+\begin{equation}
+\widehat{V}(\hat{\mathbf{b}}) = (X^\top X)^{-1}\Big(\sum_{p,q:\;p \cap q \neq \emptyset} \hat e_p \hat e_q\, \mathbf{x}_p \mathbf{x}_q^\top\Big)(X^\top X)^{-1},
+\label{eq:dyadic}
+\end{equation}
+where $p \cap q \neq \emptyset$ means that pairs $p$ and $q$ share at least one model (including $p = q$). Section~\ref{sec:inference} adds two procedures that treat the lineage root as the unit of dependence: root-level dyadic clustering, Eq.~\eqref{eq:dyadic} with ``share a model'' replaced by ``touch a common root'', and a delete-one-root jackknife, which refits the model $G$ times, each time omitting every pair that involves one of the $G$ roots, and estimates the variance as $\frac{G-1}{G}\sum_g (\hat{\mathbf{b}}_{(g)} - \bar{\mathbf{b}})^2$. Root-level procedures matter because fine-tunes of one root may share errors beyond what their shared membership in pairs captures.
+
+\textbf{Why accuracy is controlled.} Two models of similar accuracy tend to fail on similar items, and the items that strong models fail are the hardest ones, which may have more attractive distractors. Agreement can therefore vary with accuracy for reasons unrelated to lineage or release time. The sum and absolute difference of the two accuracies were pre-registered as controls. They are not neutral: if release time shifts accuracy, part of a release-time relationship runs through accuracy, and the adjusted coefficient describes only the remainder. We therefore also report the unadjusted model (Section~\ref{sec:results}).
 
 \subsection{Simulation Gate and Amendments}
-Before outcomes were read, the design was checked by simulation on the actual roster (roots and months only). Item-level choices were generated with wrong answers drawn from a root-specific attractor (weight $\lambda_L$), a month-specific attractor drifting over time ($\lambda_E$), a global attractor, or uniform noise, and Eq.~\eqref{eq:pair} was refitted. The pre-registered pass criteria were: null rejection at most 10\%; cross-leakage (the lineage term rejecting under era-only truth, or vice versa) at most 10\%; and power at least 80\% for $\lambda = 0.05$ on both terms. TABLE~\ref{tab:pairgate} shows the gate on the primary roster for three caps on the number of models per lineage root.
+\label{sec:gate}
+Before outcomes were read, the design was checked by simulation on the actual roster (roots and months only). For model $i$ with ability $\theta_i \sim \mathcal{N}(0.3, 1)$ and item $k$ with difficulty $d_k \sim \mathcal{N}(0, 1)$, the model answers correctly with probability $\operatorname{logit}^{-1}(\theta_i - d_k)$. If it errs, its wrong option is
+\begin{equation}
+c_{ik} = \begin{cases}
+R_{r(i),k} & \text{with probability } \lambda_L,\\
+E_{m(i),k} & \text{with probability } \lambda_E,\\
+G_k & \text{with probability } \lambda_G = 0.15,\\
+\text{uniform} & \text{otherwise,}
+\end{cases}
+\label{eq:sim}
+\end{equation}
+where $R_{r,k}$ is a wrong option preferred by root $r$ on item $k$, $E_{m,k}$ a wrong option preferred in month $m$ (persisting from one month to the next with probability 0.8, so that adjacent months share preferences), and $G_k$ a wrong option preferred by all models. Under this model a lineage effect and a release-time effect act through the same mechanism, a shared preferred distractor, which is the scenario in which the two are hardest to tell apart. The full pair pipeline, Eq.~\eqref{eq:outcome}--\eqref{eq:pair} with dyadic standard errors, was applied to each simulated data set. Three properties were checked: null rejection when $\lambda_L = \lambda_E = 0$; \emph{cross-leakage}, the rate at which the wrong term rejects (the lineage term under a release-time-only truth, or a release-month term under a lineage-only truth), which measures whether the confounding of lineage and time is handled; and power. The pre-registered pass criteria were: null rejection at most 10\%; cross-leakage (the lineage term rejecting under era-only truth, or vice versa) at most 10\%; and power at least 80\% for $\lambda = 0.05$ on both terms. TABLE~\ref{tab:pairgate} shows the gate on the primary roster for three caps on the number of models per lineage root.
 
 \begin{table}[!t]
 \caption{\textbf{Pair-level simulation gate (primary roster, 14{,}042 simulated items, 20 replicates per truth).} Null: largest rejection rate under no effect. Leakage: largest cross-term rejection. Power: rejection of the lineage / era term at the stated effect weight.}
@@ -250,7 +289,7 @@ Cap & $N$ & Null & Leakage & Power $\lambda{=}0.05$ & Power $\lambda{=}0.03$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Post-hoc audit of the gate.} With 20 replicates per truth, the rates in TABLE~\ref{tab:pairgate} move in steps of five points. After the results were known, and in response to review, we re-ran the same simulation with 500 replicates per truth (TABLE~\ref{tab:gateaudit}, Wilson 95\% intervals). This audit does not alter the dated decision above, and we report it against the original criteria. For the chosen design (primary, cap 40), the null rejection rate is 5.8--7.8\% (upper limits up to 10.5\%) and power at $\lambda = 0.05$ is 100\% for both terms, so those criteria are met. Power at $\lambda = 0.03$ is 63\% for lineage and 88\% for release month; the gate did not require power at this effect size. The leakage criterion is \emph{not} met at the strongest era effect: with $\lambda_E = 0.10$ the lineage term rejects in 10.8\% of replicates (95\% CI 8.4--13.8; 12.6\% in the expanded sample), against a threshold of 10\%. Every other leakage rate (era into lineage at $\lambda_E \leq 0.05$, and lineage into either release-month term at all three $\lambda_L$) lies between 3.6 and 7.8\%. The leak is a small positive bias---the lineage estimate rises by $1.4\times 10^{-4}$, about 2\% of the simulated era effect---arising because pairs sharing a root were released closer together; applied to the largest observed release-month coefficient ($|b_{E,0}| \leq 0.015$), it implies a bias of about $3\times 10^{-4}$ on a lineage estimate of 0.133. The audit also shows that in the primary design the dyadic standard errors are about 4--6\% smaller than the simulated sampling spread, consistent with null rejection rates slightly above 5\%; in the expanded design they are calibrated. The gate therefore passes its null and power criteria and narrowly fails its leakage criterion at the largest simulated era effect; the root-level inference procedures in Section~\ref{sec:inference}, which give wider intervals, are the appropriate protection. The audit also does not support the 20-replicate choice among caps: the uncapped design (7.2\% leakage) and a cap of 15 (7.2\%) meet all three criteria, and only the chosen cap of 40 narrowly fails; the earlier ranking reflected simulation noise. We keep the dated choice. Because the cap-15 sample is a subset of the cap-40 sample under the same seeded ordering, we re-estimated the primary model on it (exploratory; 540 validated models): the shared-root coefficient is $+0.146$ (jackknife SE 0.015) and the same-month coefficient $+0.005$ (SE 0.005). The uncapped design could not be analysed, because only the capped samples were downloaded.
+\textbf{Post-hoc audit of the gate.} With 20 replicates per truth, the rates in TABLE~\ref{tab:pairgate} move in steps of five points. After the results were known, and in response to review, we re-ran the same simulation with 500 replicates per truth (TABLE~\ref{tab:gateaudit} and Fig.~\ref{fig:gateaudit}, Wilson 95\% intervals). This audit does not alter the dated decision above, and we report it against the original criteria. For the chosen design (primary, cap 40), the null rejection rate is 5.8--7.8\% (upper limits up to 10.5\%) and power at $\lambda = 0.05$ is 100\% for both terms, so those criteria are met. Power at $\lambda = 0.03$ is 63\% for lineage and 88\% for release month; the gate did not require power at this effect size. The leakage criterion is \emph{not} met at the strongest era effect: with $\lambda_E = 0.10$ the lineage term rejects in 10.8\% of replicates (95\% CI 8.4--13.8; 12.6\% in the expanded sample), against a threshold of 10\%. Every other leakage rate (era into lineage at $\lambda_E \leq 0.05$, and lineage into either release-month term at all three $\lambda_L$) lies between 3.6 and 7.8\%. The leak is a small positive bias---the lineage estimate rises by $1.4\times 10^{-4}$, about 2\% of the simulated era effect---arising because pairs sharing a root were released closer together; applied to the largest observed release-month coefficient ($|b_{E,0}| \leq 0.015$), it implies a bias of about $3\times 10^{-4}$ on a lineage estimate of 0.133. The audit also shows that in the primary design the dyadic standard errors are about 4--6\% smaller than the simulated sampling spread, consistent with null rejection rates slightly above 5\%; in the expanded design they are calibrated. The gate therefore passes its null and power criteria and narrowly fails its leakage criterion at the largest simulated era effect; the root-level inference procedures in Section~\ref{sec:inference}, which give wider intervals, are the appropriate protection. The audit also does not support the 20-replicate choice among caps: the uncapped design (7.2\% leakage) and a cap of 15 (7.2\%) meet all three criteria, and only the chosen cap of 40 narrowly fails; the earlier ranking reflected simulation noise. We keep the dated choice. Because the cap-15 sample is a subset of the cap-40 sample under the same seeded ordering, we re-estimated the primary model on it (exploratory; 540 validated models): the shared-root coefficient is $+0.146$ (jackknife SE 0.015) and the same-month coefficient $+0.005$ (SE 0.005). The uncapped design could not be analysed, because only the capped samples were downloaded.
 
 \begin{table*}[!t]
 \caption{\textbf{Post-hoc gate audit} (500 replicates per truth; Wilson 95\% intervals, in percent). Null: largest rejection rate of any term under no effect. Leakage: largest cross-term rejection across $\lambda \in \{0.03, 0.05, 0.10\}$. Power: rejection of the lineage (L) or release-month (E) term. Not pre-registered.}
@@ -266,35 +305,54 @@ Sample & Cap & $N$ & Null & Leakage & L, $\lambda{=}0.05$ & E, $\lambda{=}0.05$ 
 \end{tabular}
 \end{table*}
 
-Three amendments were made and dated in the project's pre-registration document, each before the quantities it concerns were computed: (1) the primary data source moved from the second to the first version of the leaderboard, whose item-level files are not access-gated; (2) the per-root cap was set to 40, the only setting meeting all gate criteria (TABLE~\ref{tab:pairgate}), and the gate was re-run with the real item count after an initial run with 1{,}500 items understated power; (3) after the per-model accuracies of the first 443 validated files showed many near-chance models, two sensitivity analyses were added before any pair outcome was computed: S1 adds the total-variation distance between two models' distributions over chosen answer options as a covariate (an answer-option-distribution control: two models that both favor the same letters agree more for that reason alone, whatever their lineage), and S2 restricts to models with accuracy $\geq 0.30$.
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{fig_gate_audit.pdf}
+\caption{\textbf{Post-hoc audit of the simulation gate} (500 replicates per truth; bars are Wilson 95\% intervals). (a) Rejection rate of each term when no effect is simulated. (b) Cross-leakage: rejection of the lineage term under release-time-only truths ($\lambda_E$), and of the more often rejecting of the 0- and 1--2-month terms under lineage-only truths ($\lambda_L$). (c) Power of the lineage and same-month terms. Dashed lines mark the pre-registered criteria (10\% for null and leakage, 80\% for power at $\lambda = 0.05$; no power criterion applied at $\lambda = 0.03$). The chosen design (primary, cap 40) exceeds the leakage criterion at $\lambda_E = 0.10$ (10.8\%, interval 8.4--13.8\%), as does the expanded design (12.6\%). Not pre-registered.}
+\label{fig:gateaudit}
+\end{figure*}
+
+Three amendments were made and dated in the project's pre-registration document, each before the quantities it concerns were computed: (1) the primary data source moved from the second to the first version of the leaderboard, whose item-level files are not access-gated; (2) the per-root cap was set to 40, the only setting meeting all gate criteria (TABLE~\ref{tab:pairgate}), and the gate was re-run with the real item count after an initial run with 1{,}500 items understated power; (3) after the per-model accuracies of the first 443 validated files showed many near-chance models, two sensitivity analyses were added before any pair outcome was computed: S1 adds the total-variation distance $\tfrac12\sum_{o}|\pi_i(o) - \pi_j(o)|$ between the two models' distributions $\pi$ over chosen answer options as a covariate (an answer-option-distribution control: two models that both favor the same letters agree more for that reason alone, whatever their lineage), and S2 restricts to models with accuracy $\geq 0.30$.
 
 \section{Data}
 \label{sec:data}
 
 \subsection{Source and Validation}
-The first version of the Open LLM Leaderboard~\cite{beeching2023} evaluated thousands of open-weight models on MMLU (5-shot) with the LM Evaluation Harness~\cite{gao2021} and published per-item details, including per-option log-likelihoods. For each model we select the most complete run covering all 57 subjects and read four fields per item: the per-option log-likelihoods, the gold option, the leaderboard's stored per-item correctness and, where present, an item hash. We accept the model only if (i) all 14{,}042 items are present, (ii) the argmax of the per-option scores reproduces the stored per-item correctness on \emph{every} item, and (iii) item order and gold answers match a reference model. Three storage layouts occur; in the newest, the gold column is empty and gold is taken from the reference by position, which check (ii) then validates (a misaligned gold vector fails on roughly three quarters of items). Extracted macro-accuracy equals the leaderboard's official results files for the models we spot-checked (43.80, 70.06 and 75.56). For each accepted model we store the chosen option (the argmax), the gold option, the item identifier and hash, the run identifier and the file layout; the per-option scores are used for validation and not retained.
+The first version of the Open LLM Leaderboard~\cite{beeching2023} evaluated thousands of open-weight models on MMLU (5-shot) with the LM Evaluation Harness~\cite{gao2021} and published per-item details, including per-option log-likelihoods. For each model we select the most complete run covering all 57 subjects and read four fields per item: the per-option log-likelihoods, the gold option, the leaderboard's stored per-item correctness and, where present, an item hash. We accept the model only if (i) all 14{,}042 items are present, (ii) the argmax of the per-option scores reproduces the stored per-item correctness on \emph{every} item, and (iii) item order and gold answers match a reference model. Three storage layouts occur; in the newest, the gold column is empty and gold is taken from the reference by position, which check (ii) then validates (a misaligned gold vector fails on roughly three quarters of items). Extracted macro-accuracy equals the leaderboard's official results files for the models we spot-checked (43.80, 70.06 and 75.56). For each accepted model we store the chosen option (the argmax), the gold option, the item identifier and hash, the run identifier and the file layout; the per-option scores are used for validation and not retained. Fig.~\ref{fig:validation} shows the procedure and where models were rejected.
+
+Check (ii) is the substantive one. The earlier version of this work failed precisely here: its evaluation code read one field per item and recorded the first answer option for every question, producing constant predictions that no aggregate statistic flagged (Appendix~\ref{app:v1}). Requiring the extracted answer to reproduce the leaderboard's own correctness flag on all 14{,}042 items rules out that failure, a misaligned item order, and a misread gold column, because each of these produces thousands of disagreements. It cannot detect an error in the leaderboard's evaluation itself, such as an unsuitable prompt format for a particular model (Section~\ref{sec:limitations}).
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{fig_validation.pdf}
+\caption{\textbf{Prediction extraction and validation} for the 1{,}018 models in the two frozen samples. Rejections are logged with their reason and were not replaced. Check (ii) compares the argmax of the per-option log-likelihoods with the leaderboard's stored per-item correctness on every item; no model that reached this step failed it.}
+\label{fig:validation}
+\end{figure}
 
 \subsection{Lineage and Release Time}
+\label{sec:lineage}
 Lineage is resolved by following each model's declared \texttt{base\_model} on Hugging Face to a root, collapsing repository renames and a short, documented list of straight re-uploads and quantisations. A chain is unresolved if it passes through a merge (several parents), reaches a deleted or invalid ancestor, or ends at a fine-tune with no declared parent. Two populations are frozen: \emph{primary}, in which every link comes from a model card, and \emph{expanded}, which additionally accepts a model's own first link from the \texttt{\_name\_or\_path} field of its configuration file when that field names an existing Hugging Face repository (valid for 1{,}066 of 2{,}978 models lacking a card declaration, of which 574 then resolved to an eligible root; local paths, merge-tool paths and self-references were rejected). A \emph{strict} variant keeps only chains ending at a checkpoint the leaderboard lists as pretrained. Release time is the Hub creation month of the model repository (27 distinct months, March 2022 to July 2024).
 
 \subsection{Model Flow}
-TABLE~\ref{tab:flow} reconciles the populations. The two frozen samples (at most 40 models per root, fixed seed) overlap in 562 models and together comprise 1{,}018; 977 passed validation and 41 were excluded and documented (33 without a complete MMLU run, 7 whose details repository is missing, and 1 with unreadable predictions). No excluded model was replaced.
+Fig.~\ref{fig:population} reconciles the populations. The two frozen samples (at most 40 models per root, fixed seed) overlap in 562 models and together comprise 1{,}018; 977 passed validation and 41 were excluded and documented (33 without a complete MMLU run, 7 whose details repository is missing, and 1 with unreadable predictions). No excluded model was replaced. Every exclusion was decided before any pair outcome was computed.
 
-\begin{table}[!t]
-\caption{\textbf{Model flow.} Exclusion counts refer to the frozen samples.}
-\label{tab:flow}
+\begin{figure}[!t]
 \centering
-\footnotesize
-\begin{tabular}{p{0.60\columnwidth}rr}
-\toprule
-Stage & Primary & Expanded \\
-\midrule
-\tabinput{../tables/tab_flow.tex}
-\bottomrule
-\end{tabular}
-\end{table}
+\includegraphics[width=\columnwidth]{fig_population.pdf}
+\caption{\textbf{Model populations and exclusions.} The primary population accepts only lineage links declared on model cards; the expanded population also accepts a model's first link from its configuration file. Each frozen sample holds at most 40 models per lineage root (seed 0); exclusions are counted per sample, so models in both samples appear in both columns. ``Verified pretrained root'': the strict variant used in two pre-registered analyses per population.}
+\label{fig:population}
+\end{figure}
 
 The analysed primary sample comprises 590 models from 351 lineage roots, of which 63 roots contribute two or more models; the expanded sample comprises 928 models from 422 roots (108 with two or more). The largest roots are Llama-3-8B and Mistral-7B-v0.1 (39 and 37 models in the primary sample). Median accuracy is 0.415; 247 of 590 primary models score below 0.30, close to chance for four options, which motivated S1 and S2.
+
+\textbf{How lineage and release time overlap.} Fig.~\ref{fig:lineagemap} places the primary models on a grid of lineage root by upload month. Two features matter for interpretation. First, most roots contribute a single model (288 of 351 in the primary sample); such models enter only different-root pairs, and the lineage contrast is identified by the 63 roots with two or more models. Second, the fine-tunes of a root are uploaded within a few months of one another, and the fine-tunes of the largest roots were uploaded in late 2023 and 2024, so same-root pairs are concentrated at short gaps (711, 1{,}004, 259, 45 and 1 pairs in the 0, 1--2, 3--5, 6--11 and 12+ month bins). Release-month gaps of a year or more are populated almost entirely by different-root pairs. The lineage coefficient is therefore estimated mainly from comparisons at gaps under six months, and the release-time coefficients mainly from different-root pairs; the simulation gate was designed to test whether this structure lets either term absorb the other.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{fig_lineage_month_map.pdf}
+\caption{\textbf{Lineage roots by upload month} (primary sample, 590 models). Each cell counts the analysed models of one root uploaded in one month (log color scale; empty cells blank). The 14 largest roots are shown individually; the bottom row pools the remaining 337 roots, most of which contribute a single model. Fine-tunes of a root cluster within a few months, so same-root pairs are concentrated at short release-month gaps.}
+\label{fig:lineagemap}
+\end{figure*}
 
 \section{Results}
 \label{sec:results}
@@ -319,20 +377,29 @@ Analysis & Models & Pairs & Shared root & Same month & $p$ (same month) \\
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{exp04_forest.pdf}
-\caption{\textbf{Shared-root and same-month coefficients across the twelve pre-registered analyses} (95\% CIs, dyadic cluster-robust).}
+\caption{\textbf{Shared-root and same-month coefficients across the twelve pre-registered analyses} (95\% CIs from model-level dyadic cluster-robust standard errors). Diamonds: the primary specification of each population. Strict: root verified as a pretrained checkpoint. S1: adds the answer-option-distribution covariate. S2: models with accuracy $\geq 0.30$. Note the different horizontal scales: every shared-root interval lies above 0.10, while same-month estimates lie within $\pm 0.02$ and change sign between specifications. Root-level intervals are in Fig.~\ref{fig:inference}.}
 \label{fig:forest}
 \end{figure}
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=0.8\columnwidth]{exp04_agreement_by_gap.pdf}
-\caption{\textbf{Unadjusted mean agreement on wrong answers by release-month gap}, for pairs sharing a lineage root and other pairs (primary sample). Labels give the number of pairs; bins with fewer than 20 pairs are omitted (one same-root pair is 12 or more months apart).}
+\caption{\textbf{Unadjusted agreement on wrong answers by release-month gap} for pairs sharing a lineage root and other pairs (primary sample). Points: mean of $a_{ij}$; shaded bars: interquartile range across pairs; labels: number of pairs. Bins with fewer than 20 pairs are omitted (one same-root pair is 12 or more months apart). The gap between the two lines is present at every release-month gap; the decline of the lower line with gap is the unadjusted release-time gradient that accuracy similarity accounts for (Fig.~\ref{fig:rawadj}).}
 \label{fig:gap}
 \end{figure}
 
+Fig.~\ref{fig:gap} shows the raw pattern behind these estimates. At every release-month gap at which both kinds of pair occur, same-root pairs agree on 71--75\% of jointly wrong items and different-root pairs on 40--45\%. Among different-root pairs agreement declines slowly with the gap, from 0.45 in the same month to 0.37 at a year or more.
+
 \textbf{Lineage (RQ2).} In the primary analysis, sharing a root is associated with a 13.3-point higher agreement (95\% CI 11.8--14.8). Across the twelve analyses the estimate ranges from 11.7 to 13.4 points; every confidence interval excludes zero by a wide margin. Controlling for the answer-option distribution (S1) leaves it unchanged; restricting to models above 0.30 accuracy (S2) reduces it slightly, to about 12 points.
 
-\textbf{Release time (RQ3).} In the primary analysis the same-month coefficient is $+0.004$ (CI $-0.003$ to $+0.011$, $p = 0.26$). It is positive and nominally significant when the answer-option distribution is controlled ($+0.010$, CI $+0.0005$ to $+0.0195$, $p = 0.04$), and negative when near-chance models are excluded ($-0.015$, CI $-0.027$ to $-0.002$, $p = 0.02$ in the primary S2 analysis; $-0.009$, $p = 0.07$ in the expanded S2 analysis). The 1--2, 3--5 and 6--11-month bins show the same pattern. The data therefore do not show a release-time association of consistent sign; where coefficients are nominally significant they are an order of magnitude smaller than the lineage association and change sign between specifications. This is a lack of consistent evidence, not evidence that the association is zero. It is also conditional on accuracy. TABLE~\ref{tab:rawadj} reports the model with and without the pre-registered accuracy terms. Without them, release proximity has a graded association (same month $+0.087$, falling to $+0.029$ at 6--11 months) and the shared-root coefficient is $+0.283$; with them, every release-month coefficient is near zero and the shared-root coefficient is $+0.133$. The unadjusted release-time gradient, and about half of the unadjusted lineage gap, are therefore accounted for by models of similar accuracy agreeing more~\cite{kim2025}. The two columns answer different questions. The adjusted coefficient is the association of release proximity \emph{conditional on} both models' accuracies; because release time can itself shift accuracy, conditioning may remove part of a genuine release-time relationship, and the raw coefficient is the better description of how much more contemporaneous models agree overall.
+\textbf{Release time (RQ3).} In the primary analysis the same-month coefficient is $+0.004$ (CI $-0.003$ to $+0.011$, $p = 0.26$). It is positive and nominally significant when the answer-option distribution is controlled ($+0.010$, CI $+0.0005$ to $+0.0195$, $p = 0.04$), and negative when near-chance models are excluded ($-0.015$, CI $-0.027$ to $-0.002$, $p = 0.02$ in the primary S2 analysis; $-0.009$, $p = 0.07$ in the expanded S2 analysis). The 1--2, 3--5 and 6--11-month bins show the same pattern. The data therefore do not show a release-time association of consistent sign; where coefficients are nominally significant they are an order of magnitude smaller than the lineage association and change sign between specifications. This is a lack of consistent evidence, not evidence that the association is zero. It is also conditional on accuracy. TABLE~\ref{tab:rawadj} reports the model with and without the pre-registered accuracy terms. Without them, release proximity has a graded association (same month $+0.087$, falling to $+0.029$ at 6--11 months) and the shared-root coefficient is $+0.283$; with them, every release-month coefficient is near zero and the shared-root coefficient is $+0.133$. The unadjusted release-time gradient, and about half of the unadjusted lineage gap, are therefore accounted for by models of similar accuracy agreeing more~\cite{kim2025}. The two columns answer different questions. The adjusted coefficient is the association of release proximity \emph{conditional on} both models' accuracies; because release time can itself shift accuracy, conditioning may remove part of a genuine release-time relationship, and the raw coefficient is the better description of how much more contemporaneous models agree overall. Fig.~\ref{fig:rawadj} shows the comparison for both populations.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{fig_raw_adjusted.pdf}
+\caption{\textbf{Raw and accuracy-adjusted associations} (delete-one-root jackknife 95\% CIs). Raw: the pre-registered model without the two accuracy terms. Adjusted: the pre-registered model. Release-month bins are relative to a gap of 12 or more months. Adding the accuracy terms halves the shared-root coefficient and removes the graded release-time association in both populations. Values: TABLE~\ref{tab:rawadj}.}
+\label{fig:rawadj}
+\end{figure}
 
 \begin{table*}[!t]
 \caption{\textbf{Raw and accuracy-adjusted associations} (primary and expanded samples; 95\% CIs from the delete-one-root jackknife). Raw: Eq.~\eqref{eq:pair} without the accuracy terms. Adjusted: the pre-registered model. Release-month bins are relative to 12 or more months.}
@@ -352,7 +419,14 @@ Term & Raw & Adjusted & Raw & Adjusted \\
 
 \subsection{Dependence and Inference}
 \label{sec:inference}
-The 173{,}755 primary pairs are generated by 590 models, and pairs within a lineage root may be dependent beyond shared membership. TABLE~\ref{tab:inference} compares the pre-registered model-level dyadic standard errors with root-level dyadic clustering, which allows correlation between any two pairs touching the same root, and a delete-one-root jackknife, which removes all pairs involving one root at a time. Root-level procedures roughly double the standard error of the lineage coefficient; its intervals remain far from zero (primary: jackknife CI 10.8--15.8). For the same-month coefficient in the primary S2 analysis, the jackknife interval includes zero ($p = 0.07$), so that negative estimate is not robust to root-level dependence.
+The 173{,}755 primary pairs are generated by 590 models, and pairs within a lineage root may be dependent beyond shared membership. TABLE~\ref{tab:inference} compares the pre-registered model-level dyadic standard errors with root-level dyadic clustering, which allows correlation between any two pairs touching the same root, and a delete-one-root jackknife, which removes all pairs involving one root at a time. Root-level procedures widen the interval of the lineage coefficient, by 10--26\% with root-level dyadic clustering and by 39--63\% with the jackknife; its intervals remain far from zero (primary: jackknife CI 10.8--15.8). For the same-month coefficient in the primary S2 analysis, the jackknife interval includes zero ($p = 0.07$), so that negative estimate is not robust to root-level dependence. Fig.~\ref{fig:inference} compares the three procedures. The jackknife gives the widest interval for both terms in all four samples, so it is the conservative reference. Whichever procedure is used, every shared-root interval lies above 0.09, and of the twelve same-month intervals shown only the model-level and root-level dyadic intervals of the primary S2 analysis exclude zero.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{fig_inference.pdf}
+\caption{\textbf{Sensitivity of the intervals to the unit of dependence.} The pre-registered model-level dyadic intervals allow correlation between pairs sharing a model; root-level dyadic intervals allow it between pairs touching the same lineage root; the jackknife removes one root, and every pair involving it, at a time. Values: TABLE~\ref{tab:inference}.}
+\label{fig:inference}
+\end{figure}
 
 \begin{table*}[!t]
 \caption{\textbf{Inference audit.} $^\dagger$Pre-registered. Root-level procedures treat lineage roots as the unit of dependence.}
@@ -369,7 +443,14 @@ Sample & Term & Standard error & Estimate [95\% CI] & $p$ \\
 \end{table*}
 
 \subsection{Outcome Definition and Weighting}
-TABLE~\ref{tab:outcome} varies the outcome and weighting. Weighting pairs by their number of jointly wrong items raises the lineage estimate slightly (14.2 points) and makes the same-month coefficient positive ($+0.012$, $p = 0.02$). The pre-registered secondary outcome, the phi correlation of error indicators, measures whether two models fail the \emph{same items} rather than choose the same wrong option; it shows a lineage association of $+0.170$ and a smaller, positive same-month association ($+0.018$, CI $+0.010$ to $+0.027$). Subtracting the agreement expected from each model's marginal distribution over answer options (exploratory; an item-level version follows in Section~\ref{sec:itemnull}) leaves the lineage estimate at 12.5 points and the same-month coefficient at $-0.002$. Restricting to pairs with at least 1{,}000 jointly wrong items changes nothing, because every pair already exceeds that threshold. A small, positive association between release proximity and \emph{which items} fail together is therefore plausible; an association with \emph{which wrong option} is chosen is not supported once the answer-option distribution is accounted for.
+TABLE~\ref{tab:outcome} varies the outcome and weighting. Weighting pairs by their number of jointly wrong items raises the lineage estimate slightly (14.2 points) and makes the same-month coefficient positive ($+0.012$, $p = 0.02$). The pre-registered secondary outcome, the phi correlation of error indicators, measures whether two models fail the \emph{same items} rather than choose the same wrong option; it shows a lineage association of $+0.170$ and a smaller, positive same-month association ($+0.018$, CI $+0.010$ to $+0.027$). Subtracting the agreement expected from each model's marginal distribution over answer options (exploratory; an item-level version follows in Section~\ref{sec:itemnull}) leaves the lineage estimate at 12.5 points and the same-month coefficient at $-0.002$. Restricting to pairs with at least 1{,}000 jointly wrong items changes nothing, because every pair already exceeds that threshold. A small, positive association between release proximity and \emph{which items} fail together is therefore plausible; an association with \emph{which wrong option} is chosen is not supported once the answer-option distribution is accounted for. Fig.~\ref{fig:outcomes} shows that the lineage estimate is stable across these definitions, while the same-month estimate is sensitive to both weighting and outcome.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{fig_outcomes.pdf}
+\caption{\textbf{Outcome and weighting variants} (95\% CIs, model-level dyadic). WLS: pairs weighted by the number of jointly wrong items. Minus option chance: agreement minus the agreement expected from the two models' marginal distributions over answer options (exploratory). Phi: the pre-registered secondary outcome, a correlation of error indicators on a different scale. The variant restricted to pairs with at least 1{,}000 jointly wrong items is identical to the pre-registered fit and is omitted. Values: TABLE~\ref{tab:outcome}.}
+\label{fig:outcomes}
+\end{figure}
 
 \begin{table*}[!t]
 \caption{\textbf{Outcome and weighting variants} (dyadic cluster-robust 95\% CIs). Same month: 0-month gap bin relative to 12 or more months.}
@@ -389,7 +470,14 @@ Sample & Variant & Shared root & Same month & $p$ (same month) \\
 \label{sec:itemnull}
 Added after the results were known, in response to review and following~\cite{jo2026}, these analyses are exploratory. Two nulls condition on the item. \emph{N1} sets the expected agreement on each item to $q_k = \sum_o p_k(o)^2$, where $p_k(o)$ is the share of wrong models choosing wrong option $o$ on item $k$, so that an item with one attractive distractor is expected to produce agreement regardless of lineage; the outcome is observed agreement minus the mean of $q_k$ over the pair's jointly wrong items. N1a computes $p_k$ from all models, which is conservative because a large lineage cluster pulls $p_k$ towards its own choices; N1b weights every lineage root equally. \emph{N2} fits a Rasch model, $\operatorname{logit} P(\text{wrong}_{ik}) = d_k - \theta_i$, by joint maximum likelihood and measures co-failure in excess of $\sum_k \hat{P}_{ik}\hat{P}_{jk}$, per item. TABLE~\ref{tab:itemnull} reports both with delete-one-root jackknife intervals.
 
-Item-level distractor popularity accounts for almost all of the \emph{average} agreement: the mean excess falls from 0.423 to 0.002 (N1a) and 0.019 (N1b), consistent with the observation of~\cite{jo2026} that levels of excess agreement depend on the null. The lineage \emph{contrast} does not change: pairs sharing a root exceed the item-aware expectation by 13.3 points (N1a and N1b, primary), and co-fail on 4.0\% more items than the Rasch model predicts. The same-month coefficient for the choice of wrong option is unchanged ($+0.004$, jackknife $p = 0.37$). For co-failure, a small positive same-month association remains in the full samples ($+0.0036$ per item, jackknife $p = 0.003$) but not among models scoring at least 30\% ($p = 0.56$ and $0.48$).
+Item-level distractor popularity accounts for almost all of the \emph{average} agreement: the mean excess falls from 0.423 to 0.002 (N1a) and 0.019 (N1b), consistent with the observation of~\cite{jo2026} that levels of excess agreement depend on the null. The lineage \emph{contrast} does not change: pairs sharing a root exceed the item-aware expectation by 13.3 points (N1a and N1b, primary), and co-fail on 4.0\% more items than the Rasch model predicts. The same-month coefficient for the choice of wrong option is unchanged ($+0.004$, jackknife $p = 0.37$). For co-failure, a small positive same-month association remains in the full samples ($+0.0036$ per item, jackknife $p = 0.003$) but not among models scoring at least 30\% ($p = 0.56$ and $0.48$). Fig.~\ref{fig:itemnull} shows the central point: the item-level nulls move the \emph{level} of the outcome from 0.42--0.55 to between 0.000 and 0.024, yet the shared-root \emph{contrast} changes by less than 0.002 in every sample. The nulls therefore shift related and unrelated pairs almost equally.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{fig_item_null.pdf}
+\caption{\textbf{Item-difficulty-aware nulls} (exploratory, added after review; delete-one-root jackknife 95\% CIs). (a) Mean outcome over pairs: observed agreement on wrong answers, and agreement in excess of the item-level distractor null computed from all models (N1a) or with roots weighted equally (N1b). (b) Shared-root coefficient for the same three outcomes. (c) Excess co-failure over a Rasch null (N2), a measure of whether the same items fail, per item: shared-root and same-month coefficients. Values: TABLE~\ref{tab:itemnull}.}
+\label{fig:itemnull}
+\end{figure*}
 
 \begin{table*}[!t]
 \caption{\textbf{Item-difficulty-aware nulls} (exploratory, added after review). Mean: average outcome across pairs. Estimates with 95\% CIs and $p$-values from the delete-one-root jackknife.}
@@ -406,7 +494,14 @@ Sample & Outcome & Mean & Shared root & $p$ & Same month & $p$ \\
 \end{table*}
 
 \subsection{Exploratory Controls}
-Two checks were not pre-registered (TABLE~\ref{tab:exploratory}). Adding model size and same-architecture controls reduces the lineage estimate to 10.2--12.6 points; a shared architecture is associated with a further 0.3--1.8 points. Shared lineage and shared architecture are nested in this population (fine-tunes keep their base architecture), so these coefficients partition one association rather than test two independent ones.
+Two checks were not pre-registered (TABLE~\ref{tab:exploratory}). Adding model size and same-architecture controls reduces the lineage estimate to 10.2--12.6 points; a shared architecture is associated with a further 0.3--1.8 points. Shared lineage and shared architecture are nested in this population (fine-tunes keep their base architecture), so these coefficients partition one association rather than test two independent ones. Fig.~\ref{fig:controls} shows the comparison. The reduction is largest among models scoring at least 30\%, where a shared architecture also carries its largest coefficient (about 0.018 in both populations); in the full samples the same-architecture coefficient is 0.003--0.005.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{fig_controls.pdf}
+\caption{\textbf{Size and architecture controls} (exploratory; 95\% CIs from model-level dyadic standard errors). Both models include the pre-registered terms and the S1 covariate; the second adds the absolute difference and sum of log parameter counts and a same-architecture indicator. Values: TABLE~\ref{tab:exploratory}.}
+\label{fig:controls}
+\end{figure}
 
 \begin{table*}[!t]
 \caption{\textbf{Exploratory controls} (not pre-registered; all include the S1 covariate). Entries: estimate (standard error).}
@@ -430,6 +525,10 @@ Sample & Models & Shared root (root-clustered SE) & Shared root (+ size, archite
 
 \textbf{What they do not say.} The association is observational. Fine-tunes of one base share its parameters, its pretraining data and often similar post-training data; the design does not separate these routes, and it does not show that fine-tuning causes inherited errors. Nor does it show that release time is irrelevant: the pretraining era of a foundation model is a property of its root and therefore nested in lineage here; the release-time estimate is net of accuracy, and contemporaneous models agree more partly because they are similarly accurate; and the phi analysis suggests a small association between release proximity and which items fail together.
 
+\textbf{Adjusted and unadjusted associations.} Without the accuracy terms, models uploaded in the same month agree on wrong answers 8.7 points more often than models uploaded a year or more apart; with them, the difference is 0.4 points. Which number is relevant depends on the role accuracy plays. If release time affects agreement partly \emph{through} accuracy---for example, because models of one period share a level of capability and therefore fail on the same hard items---then accuracy is a mediator, the unadjusted gradient is the total association, and the adjusted coefficient is the part that does not run through accuracy. If instead accuracy and release time are both consequences of something else, such as which base models were available, adjustment removes a confounded component. The data cannot distinguish these readings. What they do show is narrower: once two models' accuracies are known, also knowing how far apart they were released adds nothing of consistent sign about whether they will choose the same distractor, whereas knowing whether they share a root still adds about 13 points. For lineage the choice matters less, because the shared-root coefficient is large under every specification, falling from 28.3 points unadjusted to 13.3 points adjusted.
+
+\textbf{Size of the lineage association.} In raw terms, when two fine-tunes of the same root both fail an item they choose the same distractor about three times in four (73.1\%), against about two times in five (42.0\%) for models from different roots. Net of accuracy and release gap the difference is 13.3 points. The item-difficulty nulls show that this is not an artefact of particular items attracting all models to one distractor: relative to an item-level expectation the excess for same-root pairs is again 13.3 points, while the excess for an average pair is close to zero. Related models are, in this sense, the main source of agreement on wrong answers beyond what the items themselves induce.
+
 \textbf{Implications.} For practitioners combining open-weight models, the results suggest that drawing members from different base models is associated with less shared wrong-answer behavior than drawing them from one base at different times. We did not evaluate ensembles directly, and the effect on ensemble accuracy depends on how members are combined~\cite{chen2026}.
 
 \section{Limitations}
@@ -450,7 +549,7 @@ Sample & Models & Shared root (root-clustered SE) & Shared root (+ size, archite
 \section{Reproducibility}
 \label{sec:repro}
 {\sloppy
-All code, frozen rosters (with SHA-256 hashes), Hub metadata caches, validation reports and analysis outputs are in the project repository at \url{https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models}. A single script (\path{scripts/run_exp04_final.py}) re-runs the twelve pre-registered analyses, the inference and outcome audits and the exploratory checks from the frozen data, verifies the roster hashes, and diffs every coefficient against the committed outputs (maximum absolute difference below $10^{-16}$); all tables in Sections~\ref{sec:design}--\ref{sec:results} are generated from those outputs by \path{scripts/make_exp04_tables.py}. The leaderboard's per-item details and metadata declare no licence, so neither the derived item-level answer files (103~MB) nor the copied metadata fields are redistributed; the full model lists are rebuilt from the public source by \path{scripts/rebuild_frozen_lists.py}, which verifies them against the SHA-256 hashes recorded when they were frozen, and the answer files are regenerated by \path{scripts/download_ollb_v1.py} from the public leaderboard and validated by \path{scripts/validation_report.py}. The pre-registration and its three dated amendments are in \path{docs/05_Experiments/Exp04_Leaderboard_Lineage_Era.md}.\par}
+All code, frozen rosters (with SHA-256 hashes), Hub metadata caches, validation reports and analysis outputs are in the project repository at \url{https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models}. A single script (\path{scripts/run_exp04_final.py}) re-runs the twelve pre-registered analyses, the inference and outcome audits and the exploratory checks from the frozen data, verifies the roster hashes, and diffs every coefficient against the committed outputs (maximum absolute difference below $10^{-16}$); all tables in Sections~\ref{sec:design}--\ref{sec:results} are generated from those outputs by \path{scripts/make_exp04_tables.py}, and every figure, including the counts in the two diagrams, by \path{scripts/make_exp04_figures.py}; Fig.~\ref{fig:schematic} is the only illustration with hypothetical models. The leaderboard's per-item details and metadata declare no licence, so neither the derived item-level answer files (103~MB) nor the copied metadata fields are redistributed; the full model lists are rebuilt from the public source by \path{scripts/rebuild_frozen_lists.py}, which verifies them against the SHA-256 hashes recorded when they were frozen, and the answer files are regenerated by \path{scripts/download_ollb_v1.py} from the public leaderboard and validated by \path{scripts/validation_report.py}. The pre-registration and its three dated amendments are in \path{docs/05_Experiments/Exp04_Leaderboard_Lineage_Era.md}.\par}
 
 \section{Conclusion}
 \label{sec:conclusion}

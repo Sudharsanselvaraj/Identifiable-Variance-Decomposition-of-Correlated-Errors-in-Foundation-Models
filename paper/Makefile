@@ -11,6 +11,8 @@
 #   make          build the PDF (two passes)
 #   make pdf      same
 #   make clean    remove build artifacts
+#   make tables   regenerate table rows from results/
+#   make figures  regenerate every figure from results/ (scripts/make_exp04_figures.py)
 #
 # TeX needs the class, style, font-map and font files to be resolvable from
 # ../support, which is why TEXINPUTS / TEXFONTS / TEXFONTMAPS are set here.
@@ -24,7 +26,7 @@ export TEXINPUTS   := ../support:
 export TEXFONTS    := ../support:
 export TEXFONTMAPS := ../support:
 
-.PHONY: all pdf clean tables
+.PHONY: all pdf clean tables figures
 
 
 all: pdf
@@ -44,3 +46,7 @@ clean:
 # Regenerate table rows from the committed analysis outputs.
 tables:
 	cd .. && python3 scripts/make_exp04_tables.py
+
+# Regenerate every figure from the committed analysis outputs.
+figures:
+	cd .. && python3 scripts/make_exp04_figures.py

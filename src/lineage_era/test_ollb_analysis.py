@@ -52,3 +52,31 @@ def test_position_tv_bounds():
     pred = np.array([[0, 0, 0, 0], [0, 0, 0, 0], [1, 2, 3, 1]], np.int8)
     tv = position_tv(pred, np.array([0, 0]), np.array([1, 2]))
     assert tv[0] == 0.0 and tv[1] == 1.0
+
+
+def test_dyadic_meat_matches_brute_force_with_shared_clusters():
+    """Each pair of pairs sharing a cluster counted once, including pairs whose
+    two endpoints are in the same cluster (root-level clustering)."""
+    rng = np.random.default_rng(5)
+    n_models, G = 12, 4
+    root = rng.integers(0, G, n_models)
+    i, j = np.triu_indices(n_models, 1)
+    X = np.column_stack([np.ones(len(i)), rng.normal(size=len(i))])
+    y = X @ np.array([0.3, 0.1]) + rng.normal(size=len(i))
+    ci, cj = root[i], root[j]
+    assert (ci == cj).any() and (ci != cj).any()
+    _, se = ols_twoway(X, y, ci, cj, G)
+    XtX_inv = np.linalg.inv(X.T @ X)
+    e = y - X @ (XtX_inv @ X.T @ y)
+    share = ((ci[:, None] == ci[None, :]) | (ci[:, None] == cj[None, :])
+             | (cj[:, None] == ci[None, :]) | (cj[:, None] == cj[None, :]))
+    s = X * e[:, None]
+    meat = s.T @ (share.astype(float) @ s)
+    V = XtX_inv @ meat @ XtX_inv
+    assert np.allclose(se, np.sqrt(np.diag(V)))
+    # model-level clustering (endpoints always distinct) is a special case
+    _, se_m = ols_twoway(X, y, i, j, n_models)
+    share_m = ((i[:, None] == i[None, :]) | (i[:, None] == j[None, :])
+               | (j[:, None] == i[None, :]) | (j[:, None] == j[None, :]))
+    Vm = XtX_inv @ (s.T @ (share_m.astype(float) @ s)) @ XtX_inv
+    assert np.allclose(se_m, np.sqrt(np.diag(Vm)))

@@ -227,3 +227,33 @@ Open items before submission are listed in the session change summary and below:
 - Repository URL, licence and pinned commit in `docs/REPRODUCIBILITY_CHECKLIST.md`.
 - Author review of framing, biographies and the AI-use disclosure.
 - Optional: a second benchmark or the v2 leaderboard (MMLU-Pro) as replication.
+
+## Erratum: root-level dyadic standard errors (2026-10-09, after manuscript-v3)
+
+Found while writing the variance estimator out as an equation for the expanded
+manuscript. `pair_gate.ols_twoway` added every pair to the clusters of both of
+its endpoints and subtracted only the pair's own term. For **model-level**
+clustering (every pre-registered analysis, the simulation gate and its audit,
+the item-difficulty nulls) this is exact, because a pair's two models always
+differ and no two pairs share both models; those results are unchanged (largest
+difference 1e-16). For **root-level** clustering (the post-hoc inference audit
+and the exploratory E1 column) it over-counted: a same-root pair entered three
+times with itself, and two pairs spanning the same two roots entered twice with
+each other. The error was conservative (intervals too wide).
+
+Fix: each pair is added once to each *distinct* endpoint cluster, and the
+cell sums of pairs spanning the same two clusters are subtracted (the CGM form
+V_a + V_b − V_ab). A brute-force test
+(`test_dyadic_meat_matches_brute_force_with_shared_clusters`) checks the meat
+against an explicit sum over all pairs of pairs sharing a cluster, for both
+model-level and root-level clustering.
+
+Effect on the shared-root standard error (root-level dyadic): primary
+0.0151 → 0.0098, expanded 0.0163 → 0.0080; same-month standard errors change
+in the fourth decimal. The delete-one-root jackknife is unaffected and is now
+the most conservative procedure for both terms. The manuscript statement that
+root-level procedures "roughly double" the lineage standard error is withdrawn:
+the corrected root-level dyadic SE is 1.2–1.3 times the model-level SE, and the
+jackknife 1.1–1.6 times. `run_exp04_final.py` still diffs every other
+exploratory column against commit 679c5b7; the two root-clustered columns are
+excluded from that diff for this reason.
