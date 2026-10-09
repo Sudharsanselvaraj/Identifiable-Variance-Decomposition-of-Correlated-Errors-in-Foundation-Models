@@ -11,11 +11,17 @@ The checklist for the superseded 16-model study is archived in
 | Item | Value |
 |---|---|
 | Repository | `https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models` |
-| Manuscript version | git tag `manuscript-v3` (branch `revision/precision-gate`) |
-| Earlier versions | tags `manuscript-v2-exp04`, `manuscript-v1-16model` |
+| Manuscript version | git tag `manuscript-v3` on branch `release/manuscript-v3` |
+| Earlier public version | tag `manuscript-v1-16model` (on `main`) |
 | Code licence | **pending**: MIT proposed (`docs/release/LICENSE-MIT.draft`), awaiting co-author and institutional approval |
 
 A file cannot record its own commit hash; the tag above pins the exact commit.
+The public release is a single commit on top of `main` whose file tree is
+identical to the final commit of the development branch. The development history
+(about 30 commits) is kept privately because earlier commits contain the
+leaderboard metadata that is not redistributed; commit hashes cited in
+`results/` (e.g. the download-validation commit) refer to that private history,
+which is preserved in a verified git bundle and available on request.
 `results/exp04_validation/report.md` records the commit at which the download was
 validated, and `scripts/run_exp04_final.py` diffs every reported coefficient
 against the committed outputs.
