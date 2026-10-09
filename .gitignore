@@ -21,3 +21,5 @@ datasets/ollb/frozen_full/
 datasets/ollb/v1_roster.csv
 # private snapshot of exact analysis inputs (not for redistribution)
 private/
+paper/submission_package/
+paper/submission_package.zip
