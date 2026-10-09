@@ -2,12 +2,12 @@
 
 **Lineage and Release Timing in Correlated Errors of Open-Weight Language Models: A Pair-Level Study**
 
-*IEEE Access manuscript in preparation (10 pp. + 8 pp. supplement)*
+*IEEE Access manuscript in preparation (14 pp. + 6 pp. supplement)*
 
 Sudharsan S · S. Kanaga Suba Raja · Shree Harish V · Chin-Shiuh Shieh · Mong-Fong Horng · Lavanya R
 SRM Institute of Science and Technology, Tiruchirappalli · National Kaohsiung University of Science and Technology
 
-[![Manuscript](https://img.shields.io/badge/manuscript-10_pages-blue)](paper/build/ieee_access_manuscript.pdf)
+[![Manuscript](https://img.shields.io/badge/manuscript-14_pages-blue)](paper/build/ieee_access_manuscript.pdf)
 [![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
 [![Status](https://img.shields.io/badge/status-in_preparation-orange)]()
 [![Python](https://img.shields.io/badge/python-3.11-blue)](pyproject.toml)
@@ -45,6 +45,7 @@ same time)? The two are entangled, because fine-tunes always appear after their 
 |---|---|
 | Shared lineage root | **+13.3 points** (jackknife 95% CI 10.8–15.8); 11.7–13.4 across all 12 pre-specified analyses |
 | Lineage dose-response | parent–child +18.5, distance 2 +13.6, more distant +11.5 points |
+| Heterogeneity | present in each of the 7 largest base-model families (10.3–14.8) and all 57 MMLU subjects |
 | Same release month vs. 12+ months, net of accuracy | +0.4 points; 90% interval excludes effects above 1.1 points; not stable in sign across specifications, also when timing is measured by the base model's release month |
 | Same release month, unadjusted | +8.7 points, accounted for by accuracy similarity |
 | Item-difficulty-aware nulls | average excess agreement ≈ 0; lineage contrast unchanged |
@@ -61,7 +62,7 @@ fine-tunes; see the manuscript's limitations section.
 | `paper/` | Manuscript and supplement source (`src/`), figures, generated tables, IEEE class files, `Makefile`; compiled PDFs in `paper/build/` |
 | `src/lineage_era/ollb/` | Leaderboard pipeline: Hub metadata, lineage rosters, extraction and validation, pair gate, analysis |
 | `src/lineage_era/analysis/` | Per-model precision analysis (crossed REML, expected information, Monte Carlo) |
-| `scripts/` | Entry points: `run_exp04_final.py`, `run_exp04_item_null.py`, `run_pair_gate_audit.py`, `run_exp04_revision2.py`, `make_exp04_tables.py`, `make_exp04_figures.py`, … |
+| `scripts/` | Entry points: `run_exp04_final.py`, `run_exp04_item_null.py`, `run_pair_gate_audit.py`, `run_exp04_revision2.py`, `run_exp04_heterogeneity.py`, `make_exp04_tables.py`, `make_exp04_figures.py`, … |
 | `results/` | Committed analysis outputs that every reported number and table is generated from |
 | `datasets/ollb/frozen/` | Frozen model lists (public versions; see licensing below) |
 | `docs/05_Experiments/Exp04_Leaderboard_Lineage_Era.md` | Analysis plan and its three dated amendments |

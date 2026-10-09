@@ -351,9 +351,27 @@ def tab_robust():
     write("tab_robust.tex", body + "\n")
 
 
+def tab_descriptives():
+    d = pd.read_csv(R / "exp04_heterogeneity/descriptives.csv").set_index("sample")
+    order = [("primary", "Primary"), ("primary_S2", "Primary, S2"), ("expanded", "Expanded"),
+             ("expanded_S2", "Expanded, S2")]
+    rows = [("Models", lambda r: f"{int(r.models):,}"),
+            ("Lineage roots (with $\\geq 2$ models)", lambda r: f"{int(r.roots)} ({int(r.roots_ge2)})"),
+            ("Upload months", lambda r: f"{int(r.months)}"),
+            ("Pairs", lambda r: f"{int(r.pairs):,}"),
+            ("Same-root pairs", lambda r: f"{int(r.same_root_pairs):,}"),
+            ("Accuracy, median [range]", lambda r: f"{r.accuracy_median:.3f} [{r.accuracy_min:.3f}, {r.accuracy_max:.3f}]"),
+            ("Jointly wrong items per pair, median", lambda r: f"{int(r.joint_wrong_median):,}"),
+            ("Agreement $a_{ij}$, mean", lambda r: f"{r.agreement_mean:.3f}"),
+            ("\\quad same-root pairs", lambda r: f"{r.agreement_same_root:.3f}"),
+            ("\\quad different-root pairs", lambda r: f"{r.agreement_other:.3f}")]
+    lines = [f"{lab} & " + " & ".join(f(d.loc[k]) for k, _ in order) + " \\\\" for lab, f in rows]
+    write("tab_descriptives.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
               tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj,
-              tab_revision2, tab_robust):
+              tab_revision2, tab_robust, tab_descriptives):
         f()
     print(sorted(p.name for p in T.glob("*.tex")))

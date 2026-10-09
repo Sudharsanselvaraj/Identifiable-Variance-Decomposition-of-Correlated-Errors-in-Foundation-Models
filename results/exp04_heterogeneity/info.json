@@ -1,0 +1,43 @@
+{
+ "delete_one_root_same_root": {
+  "min": 0.13096080872455942,
+  "min_root": "meta-llama/Meta-Llama-3-70B",
+  "max": 0.14356355035645904,
+  "max_root": "mistralai/Mistral-7B-v0.1"
+ },
+ "delete_one_root_gap0": {
+  "min": 0.002860675837341077,
+  "min_root": "facebook/opt-125m",
+  "max": 0.005054240984685236,
+  "max_root": "mistralai/Mistral-7B-v0.1"
+ },
+ "per_subject": {
+  "subjects": 57,
+  "same_root_positive": 57,
+  "same_root_ci_excludes_zero": 57,
+  "same_root_median": 0.12206825130866461,
+  "same_root_min": [
+   "management",
+   0.07034344225652478
+  ],
+  "same_root_max": [
+   "moral_scenarios",
+   0.1801793478797551
+  ],
+  "gap0_median": 0.005538605989781509,
+  "gap0_ci_above_zero": 12,
+  "gap0_ci_below_zero": 1
+ },
+ "detection": {
+  "auc_raw": 0.9523945524520134,
+  "auc_net_of_accuracy_and_gap": 0.8844646656560144,
+  "same_root_pairs": 2020,
+  "other_pairs": 171735,
+  "share_same_root_pairs_above_0.5": 0.9658415841584158,
+  "share_other_pairs_above_0.5": 0.26221212915247327,
+  "share_same_root_pairs_above_0.6": 0.8777227722772277,
+  "share_other_pairs_above_0.6": 0.12253763065187644,
+  "share_same_root_pairs_above_0.7": 0.6782178217821783,
+  "share_other_pairs_above_0.7": 0.021160508923632342
+ }
+}

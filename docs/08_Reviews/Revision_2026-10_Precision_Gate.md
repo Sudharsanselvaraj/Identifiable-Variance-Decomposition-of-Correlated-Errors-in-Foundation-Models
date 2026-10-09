@@ -278,3 +278,18 @@ deposited with an independent registry and its commit timestamps cannot be
 verified externally). Section III (per-model precision analysis), Appendix A and
 the gate-audit table moved to `paper/src/supplement.tex`. Abstract cut to 243
 words; gate result removed from it.
+
+## Manuscript at 14 pages (2026-10-09): added analyses and one correction
+
+Added (post hoc, `scripts/run_exp04_heterogeneity.py` -> `results/exp04_heterogeneity/`):
+per-root shared-root coefficients (seven roots with >= 8 models: 10.3-14.8 points;
+56 smaller roots pooled: 22.0, 19.8 without duplicate/degenerate models);
+delete-one-root range (13.1-14.4); by capability; per MMLU subject (positive with
+CI excluding zero in all 57; same-month CI excludes zero in 13 subjects, 12
+positive, reported as such); lineage detection from agreement (AUC 0.95 raw, 0.88
+net of accuracy and gap); descriptive statistics of the four samples.
+
+Correction: the manuscript said configuration links were valid for "1,066 of 2,978"
+models. The latest record per model gives 1,066 because seven models' final records
+are unvalidated re-reads ("candidate") of links validated earlier with the same
+value; the frozen roster uses all 1,073 validated links. The text now says 1,073.

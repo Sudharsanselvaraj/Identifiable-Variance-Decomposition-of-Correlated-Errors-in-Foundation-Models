@@ -635,11 +635,212 @@ def fig_gap():
     return save(fig, "exp04_agreement_by_gap")
 
 
+# ------------------------------------------------------------------ dose-response
+def fig_dose():
+    rv = pd.read_csv(RES / "exp04_revision2/revision2.csv")
+    pre = pd.read_csv(RES / "exp04_final/inference_audit.csv")
+    base = pre[(pre.population == "primary") & (pre.term == "same_root")
+               & (pre.inference == "delete-one-root jackknife")].iloc[0]
+    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.3), sharey=True,
+                             gridspec_kw=dict(width_ratios=[1, 1]))
+    for ax, analysis, terms, labels, title in (
+            (axes[0], "lineage dose-response: tree distance",
+             ["distance 1", "distance 2", "distance 3+"], ["1", "2", "3+"],
+             "(a) Tree distance"),
+            (axes[1], "lineage dose-response: relation type",
+             ["ancestor-descendant", "siblings", "more distant"],
+             ["ancestor–\ndescendant", "siblings", "more\ndistant"], "(b) Relation")):
+        d = rv[(rv.population == "primary") & (rv.analysis == analysis)].set_index("term").loc[terms]
+        x = np.arange(len(terms))
+        ax.errorbar(x, d.estimate, yerr=[d.estimate - d.ci95_low, d.ci95_high - d.estimate],
+                    fmt="o", ms=4, color=BLUE, lw=1)
+        for k, n in enumerate(d.pairs):
+            ax.annotate(f"{int(n):,}", (x[k], d.ci95_high.iloc[k]), textcoords="offset points",
+                        xytext=(0, 3), ha="center", fontsize=7.5, color=GREY)
+        ax.axhspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
+        ax.axhline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
+        ax.set_xticks(x, labels)
+        ax.set_xlim(-0.5, len(terms) - 0.5)
+        ax.set_title(title)
+    axes[0].set_ylabel("Coefficient vs different roots")
+    axes[0].set_ylim(0.08, 0.235)
+    fig.tight_layout(pad=0.3, w_pad=0.6)
+    return save(fig, "fig_dose")
+
+
+# ------------------------------------------------------------------ timing measures
+def fig_timing():
+    raw = pd.read_csv(RES / "exp04_final/raw_vs_adjusted.csv")
+    rv = pd.read_csv(RES / "exp04_revision2/revision2.csv")
+    bins = ["gap0", "gap1_2", "gap3_5", "gap6_11"]
+    lab = ["0", "1–2", "3–5", "6–11"]
+    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.35), sharey=True)
+    x = np.arange(len(bins))
+    for ax, pop, title in ((axes[0], "primary", "(a) Primary"), (axes[1], "expanded", "(b) Expanded")):
+        u = raw[(raw.population == pop) & (raw.model == "adjusted (pre-registered)")] \
+            .set_index("term").loc[bins]
+        r = rv[(rv.population == pop) & (rv.analysis ==
+               "root release month in place of upload month")].set_index("term").loc[bins]
+        ax.errorbar(x - 0.1, u.estimate, yerr=[u.estimate - u.ci_low, u.ci_high - u.estimate],
+                    fmt="o", ms=3.5, color=ORANGE, lw=1, label="upload month (pre-specified)")
+        ax.errorbar(x + 0.1, r.estimate, yerr=[r.estimate - r.ci95_low, r.ci95_high - r.estimate],
+                    fmt="s", ms=3.5, color=GREY, mfc="white", lw=1, label="root release month")
+        zero(ax, horizontal=True)
+        ax.set_xticks(x, lab)
+        ax.set_xlabel("Gap (months; vs 12+)")
+        ax.set_title(title)
+    axes[0].set_ylabel("Coefficient")
+    axes[0].set_ylim(-0.045, 0.045)
+    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2,
+               frameon=False, fontsize=8, bbox_to_anchor=(0.55, 1.0), handletextpad=0.2,
+               columnspacing=0.8)
+    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.9), w_pad=0.6)
+    return save(fig, "fig_timing")
+
+
+# ------------------------------------------------------------------ item nulls (main text)
+def fig_itemnull_main():
+    n = pd.read_csv(RES / "exp04_item_null/item_null.csv")
+    outs = [("pre-registered: same-wrong agreement", "observed", GREY, "o"),
+            ("N1a: minus item distractor null (all models)", "N1a", BLUE, "s"),
+            ("N1b: minus item distractor null (roots weighted equally)", "N1b", LBLUE, "D")]
+    pops = list(SAMPLES)
+    x = np.arange(len(pops))
+    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.45))
+    for k, (o, lab, c, mk) in enumerate(outs):
+        d = n[(n.outcome == o) & (n.term == "same_root")].set_index("population").loc[pops]
+        axes[0].plot(x + (k - 1) * 0.18, d.outcome_mean, mk, color=c, ms=4.5, label=lab,
+                     mfc=c if k < 2 else "white")
+        axes[1].errorbar(x + (k - 1) * 0.18, d.estimate, yerr=Z * d.se_jackknife, fmt=mk,
+                         ms=3.5, color=c, lw=1, mfc=c if k < 2 else "white")
+    axes[0].set_ylim(-0.03, 0.62); axes[0].set_ylabel("Mean over pairs")
+    axes[0].set_title("(a) Level")
+    axes[1].set_ylim(0, 0.17); axes[1].set_ylabel("Shared-root coefficient")
+    axes[1].set_title("(b) Lineage contrast")
+    for ax in axes:
+        zero(ax, horizontal=True)
+        ax.set_xticks(x, ["P", "P-S2", "E", "E-S2"])
+    axes[0].legend(frameon=False, loc="center right", fontsize=8, handletextpad=0.2)
+    fig.tight_layout(pad=0.3, w_pad=0.8)
+    return save(fig, "fig_item_null_main")
+
+
+# ------------------------------------------------------------------ heterogeneity
+def fig_heterogeneity():
+    h = pd.read_csv(RES / "exp04_heterogeneity/heterogeneity.csv")
+    sub = pd.read_csv(RES / "exp04_heterogeneity/per_subject.csv").sort_values("same_root")
+    base = pd.read_csv(RES / "exp04_final/inference_audit.csv")
+    base = base[(base.population == "primary") & (base.term == "same_root")
+                & (base.inference == "delete-one-root jackknife")].iloc[0]
+    fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.6),
+                             gridspec_kw=dict(width_ratios=[1.25, 0.8, 1.35]))
+    # (a) per root
+    ax = axes[0]
+    r = h[h.analysis == "per root"].reset_index(drop=True)
+    y = np.arange(len(r))[::-1]
+    ax.errorbar(r.estimate, y, xerr=[r.estimate - r.ci95_low, r.ci95_high - r.estimate],
+                fmt="o", ms=3.5, color=BLUE, lw=1)
+    lab = [g.split("/")[-1].replace("Meta-", "") if g != "other multi-model roots"
+           else "56 smaller roots" for g in r.group]
+    ax.set_yticks(y, [f"{l} ({int(n)})" for l, n in zip(lab, r.pairs)])
+    ax.set_xlabel("Shared-root coefficient")
+    ax.set_title("(a) By root (same-root pairs)")
+    # (b) by capability
+    ax = axes[1]
+    c = h[h.analysis == "by capability"].reset_index(drop=True)
+    x = np.arange(len(c))
+    ax.errorbar(x, c.estimate, yerr=[c.estimate - c.ci95_low, c.ci95_high - c.estimate],
+                fmt="s", ms=3.5, color=BLUE, lw=1)
+    ax.set_xticks(x, ["<0.30", "0.30–\n0.50", "0.50–\n0.60", "≥0.60"])
+    ax.set_xlabel("Lower accuracy of the pair")
+    ax.set_title("(b) By capability")
+    ax.set_ylim(0, 0.32)
+    # (c) per subject
+    ax = axes[2]
+    x = np.arange(len(sub))
+    ax.errorbar(x, sub.same_root, yerr=Z * sub.same_root_se, fmt="o", ms=2, color=BLUE,
+                lw=0.6, elinewidth=0.6)
+    ax.set_xticks([])
+    ax.set_xlabel(f"{len(sub)} MMLU subjects, sorted")
+    ax.set_title("(c) By subject")
+    ax.set_ylim(0, 0.25)
+    for a in axes:
+        if a is axes[0]:
+            a.axvspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
+            a.axvline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
+            a.set_xlim(0, 0.28)
+        else:
+            a.axhspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
+            a.axhline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
+    fig.tight_layout(pad=0.3, w_pad=0.8)
+    return save(fig, "fig_heterogeneity")
+
+
+# ------------------------------------------------------------------ detection
+def fig_detection():
+    import json
+    info = json.loads((RES / "exp04_heterogeneity/info.json").read_text())["detection"]
+    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.3))
+    for ax, f, xl, title, key in (
+            (axes[0], "agreement_hist.csv", "P(same wrong | both wrong)", "(a) Agreement", "auc_raw"),
+            (axes[1], "residual_hist.csv", "Agreement net of accuracy and gap",
+             "(b) Adjusted", "auc_net_of_accuracy_and_gap")):
+        h = pd.read_csv(RES / "exp04_heterogeneity" / f)
+        w = h.bin_low.diff().iloc[1]
+        for col, c, lab, ls in (("different_root", ORANGE, "different roots", "-"),
+                                ("same_root", BLUE, "same root", "-")):
+            dens = h[col] / h[col].sum() / w
+            ax.step(h.bin_low + w, dens, where="pre", color=c, lw=1.1, label=lab)
+            ax.fill_between(h.bin_low + w, dens, step="pre", color=c, alpha=0.15, lw=0)
+        ax.set_xlabel(xl)
+        ax.set_title(f"{title}, AUC {info[key]:.2f}")
+        ax.set_yticks([])
+    axes[0].set_ylabel("Density")
+    axes[0].legend(frameon=False, loc="upper left", fontsize=7.5, handlelength=1.2)
+    fig.tight_layout(pad=0.3, w_pad=0.6)
+    return save(fig, "fig_detection")
+
+
+# ------------------------------------------------------------------ accuracy over time
+def fig_accuracy():
+    pop = population("primary")
+    v = pd.read_csv(RES / "exp04_validation/per_model.csv").set_index("model")
+    pop = pop.assign(acc=v.loc[pop.model, "accuracy"].to_numpy())
+    per = pd.PeriodIndex(pop.created_month, freq="M")
+    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.3), gridspec_kw=dict(width_ratios=[1, 1.5]))
+    ax = axes[0]
+    ax.hist(pop.acc, bins=np.arange(0.2, 0.85, 0.025), color=LBLUE, edgecolor=BLUE, lw=0.5)
+    ax.axvline(0.25, color=GREY, ls=(0, (3, 2)), lw=0.7)
+    ax.axvline(0.30, color=RED, ls=(0, (3, 2)), lw=0.7)
+    ax.text(0.31, ax.get_ylim()[1] * 0.92, "S2 cut-off", color=RED, fontsize=7.5)
+    ax.set_xlabel("Accuracy")
+    ax.set_ylabel("Models")
+    ax.set_title("(a) Distribution")
+    ax = axes[1]
+    q = pd.PeriodIndex(per.asfreq("Q"))
+    x = (per.year - 2022) * 12 + per.month
+    ax.scatter(x, pop.acc, s=5, color=BLUE, alpha=0.35, lw=0)
+    g = pop.groupby(q).acc
+    med = g.median()[g.size() >= 10]                 # quarters with at least 10 models
+    qx = [(p.year - 2022) * 12 + p.end_time.month - 1 for p in med.index]
+    ax.plot(qx, med.values, "-", color=ORANGE, lw=1.4, label="quarterly median (≥ 10 models)")
+    ax.axhline(0.25, color=GREY, ls=(0, (3, 2)), lw=0.7)
+    ticks = [(y - 2022) * 12 + 1 for y in (2022, 2023, 2024)]
+    ax.set_xticks(ticks, ["2022", "2023", "2024"])
+    ax.set_xlabel("Upload month")
+    ax.set_title("(b) Over time")
+    ax.legend(frameon=False, loc="upper left", fontsize=7.5)
+    fig.tight_layout(pad=0.3, w_pad=0.6)
+    return save(fig, "fig_accuracy")
+
+
 ALL = {"precision": fig_precision, "workflow": fig_workflow, "schematic": fig_schematic,
        "dataflow": fig_dataflow, "gate": fig_gate,
        "forest": fig_forest, "rawadj": fig_rawadj, "inference": fig_inference,
        "outcomes": fig_outcomes, "itemnull": fig_itemnull, "controls": fig_controls,
-       "heatmap": fig_heatmap, "gap": fig_gap}
+       "heatmap": fig_heatmap, "gap": fig_gap, "dose": fig_dose, "timing": fig_timing,
+       "itemnull_main": fig_itemnull_main, "heterogeneity": fig_heterogeneity,
+       "detection": fig_detection, "accuracy": fig_accuracy}
 
 
 def build_all(only=None) -> list[str]:

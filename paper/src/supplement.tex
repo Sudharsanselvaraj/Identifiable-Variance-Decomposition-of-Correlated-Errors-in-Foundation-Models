@@ -45,14 +45,9 @@ Design & Families & Quarters & FE full rank & $\kappa(X^\top X)$ range & Cov.\ b
 \end{tabular}}
 \end{table}
 
-No design reaches an RMSE of 0.10 for both shares (TABLE~\ref{tab:precision}): not the sixteen evaluated models (0.30), not the 47-model candidate frame (0.19), and not the 30-model configuration the earlier version described as sufficient (0.19). Removing the single model responsible for the fixed-effects rank deficiency leaves the RMSE unchanged (0.302). The binding constraint is the number of \emph{levels} of each factor: more models per level help only up to a point (with six families and fourteen quarters, 22 models give 0.256 and 47 give 0.189). In staggered designs (Fig.~\ref{fig:scaling}), bringing both shares within $\pm 0.10$ requires on the order of sixty families and fourteen quarters; with eight quarters the era share never falls below about 0.14. Because release quarters are few by construction, a per-model decomposition is a poor instrument for the paper's research questions in populations like those examined here. Within the designs and scenarios examined, this motivates the pair-level design; it does not show that the shares are inestimable under every design, only that the required numbers of families and quarters exceed those available.
+No design reaches an RMSE of 0.10 for both shares (TABLE~\ref{tab:precision}): not the sixteen evaluated models (0.30), not the 47-model candidate frame (0.19), and not the 30-model configuration the earlier version described as sufficient (0.19). Removing the single model responsible for the fixed-effects rank deficiency leaves the RMSE unchanged (0.302). The binding constraint is the number of \emph{levels} of each factor: more models per level help only up to a point (with six families and fourteen quarters, 22 models give 0.256 and 47 give 0.189). In staggered designs (main paper, Fig.~4), bringing both shares within $\pm 0.10$ requires on the order of sixty families and fourteen quarters; with eight quarters the era share never falls below about 0.14. Because release quarters are few by construction, a per-model decomposition is a poor instrument for the paper's research questions in populations like those examined here. Within the designs and scenarios examined, this motivates the pair-level design; it does not show that the shares are inestimable under every design, only that the required numbers of families and quarters exceed those available.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.7\textwidth]{precision_scaling.pdf}
-\caption{\textbf{Precision of per-model variance shares versus the number of families.} Worst-case Monte Carlo RMSE of the family or era share across four scenarios (300 replicates each) for staggered designs with 8 or 14 release quarters, and for the five candidate designs of TABLE~\ref{tab:precision} (crosses, labelled by number of models; 5--7 families). The RMSE is a Monte Carlo root-mean-square error of the estimated share, not the half-width of a confidence interval. The dashed line marks 0.10; only the largest staggered design with 14 quarters (60 families, 360 models) reaches it.}
-\label{fig:scaling}
-\end{figure}
+
 
 \section*{S2. Changes from the earlier version}\label{app:v1}
 The earlier version of this manuscript (archived in the repository as \texttt{paper/src/archive/}) reported a sixteen-model evaluation and an identifiability gate. TABLE~\ref{tab:v1} lists each finding of that version that is withdrawn or corrected, why, and how it is treated here.
@@ -79,7 +74,7 @@ Sixteen-model population as pre-specified & Four planned models not evaluated, n
 \end{table}
 
 \section*{S3. Simulation check of separability}
-The main paper (Section~IV-E) describes the simulated data and criteria. Table~\ref{tab:pairgate} gives the pre-specified check (20 replicates per scenario) for three caps on the number of models per root; Table~\ref{tab:gateaudit} and Fig.~\ref{fig:gateaudit} give the post-hoc audit with 500 replicates. With 20 replicates the rates move in steps of five points, which explains why the audit ranks the caps differently. Cap 40 remains the primary design because it was the dated choice made before any pair outcome was computed.
+The main paper (Section~IV-F) describes the simulated data and criteria. Table~\ref{tab:pairgate} gives the pre-specified check (20 replicates per scenario) for three caps on the number of models per root; Table~\ref{tab:gateaudit} gives the post-hoc audit with 500 replicates, shown in the main paper's Fig.~6. With 20 replicates the rates move in steps of five points, which explains why the audit ranks the caps differently. Cap 40 remains the primary design because it was the dated choice made before any pair outcome was computed.
 
 \begin{table}[H]
 \caption{\textbf{Pre-specified simulation check} (primary roster, 14{,}042 simulated items, 20 replicates per scenario). Null: largest false-rejection rate. Leakage: largest rejection of the wrong coefficient. Power: rejection of the lineage / same-month coefficient at the stated effect weight.}
@@ -110,12 +105,7 @@ Sample & Cap & $N$ & Null & Leakage & L, $\lambda{=}0.05$ & E, $\lambda{=}0.05$ 
 \end{table}
 
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{fig_gate_audit.pdf}
-\caption{\textbf{Post-hoc audit of the simulation check} (500 replicates per scenario; Wilson 95\% intervals). (a) False rejection of each coefficient under no effect. (b) Leakage: rejection of the lineage coefficient under release-time-only effects ($\lambda_E$), and the larger rejection rate of the 0-month and 1--2-month coefficients under lineage-only effects ($\lambda_L$). (c) Power. Dashed lines: the pre-specified criteria. The primary cap-40 design exceeds the leakage criterion at $\lambda_E = 0.10$ (10.8\%, interval 8.4--13.8\%), as does the expanded design (12.6\%).}
-\label{fig:gateaudit}
-\end{figure}
+
 
 \section*{S4. Detailed robustness results}
 The main paper's robustness table reports the primary sample. The tables below give every sample; figures show the same estimates. ``Same month'' is the 0-month gap bin relative to 12 or more months. S2: models with accuracy $\geq 0.30$.
@@ -148,11 +138,7 @@ Sample & Term & Standard error & Estimate [95\% CI] & $p$ \\
 \end{tabular}}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.6\textwidth]{fig_inference.pdf}
-\caption{\textbf{Inference procedures} (95\% CIs).}
-\end{figure}
+
 
 \begin{table}[H]
 \caption{\textbf{Outcome and weighting variants} (95\% CIs, model-level dyadic SEs). Every pair has at least 1{,}166 jointly wrong items, so the variant restricted to pairs with at least 1{,}000 is identical to the pre-specified fit.}
