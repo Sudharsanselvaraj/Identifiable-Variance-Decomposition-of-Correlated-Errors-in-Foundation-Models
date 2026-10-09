@@ -55,6 +55,23 @@ was read. Supersedes the 16-model empirical arm (see
 `docs/08_Reviews/Revision_2026-10_Precision_Gate.md` for why that arm cannot
 answer the question at any affordable N).
 
+## Amendment 3 (2026-10-09, during download; no pair outcome computed yet)
+
+Seen so far: only the per-model accuracies of validated files (needed to
+validate them). 155 of the first 443 models score below 0.30 on 4-choice MMLU.
+Near-chance models agree on wrong answers partly through shared answer-
+position bias (e.g. both favouring "A"), which neither lineage nor era
+explains and the accuracy controls only partly absorb. Added, before any pair
+outcome is computed:
+
+- **S1 (position bias):** add the total-variation distance between the two
+  models' chosen-option distributions as a pair covariate.
+- **S2 (above chance):** re-run the primary model on models with accuracy
+  ≥ 0.30 only.
+
+The primary analysis is unchanged; S1–S2 are reported next to it for every
+population (primary, expanded, strict).
+
 ## Amendment 2 (2026-10-09, still pre-outcome)
 
 - **Rosters.** Primary = card-declared lineage only; expanded = primary plus
