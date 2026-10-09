@@ -8,12 +8,12 @@
 \graphicspath{{../figures/}}
 \makeatletter\newcommand{\tabinput}[1]{\@@input #1 }\makeatother
 \title{Supplementary Material\\[4pt]\large Lineage and Release Timing in Correlated Errors of Open-Weight Language Models: A Pair-Level Study}
-\author{Sudharsan S, S. Kanaga Suba Raja, Shree Harish V, Chin-Shiuh Shieh, Mong-Fong Horng, Lavanya R}
+\author{Sudharsan S, S. Kanaga Suba Raja, Shree Harish V,\\ Chin-Shiuh Shieh, Mong-Fong Horng, Lavanya R}
 \date{}
 \begin{document}
 \sloppy
 \maketitle
-\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), and the full table of the post-hoc simulation-gate audit (S3). Every table is generated from the committed outputs by \texttt{scripts/make\_exp04\_tables.py}; the figure by \texttt{scripts/make\_exp04\_figures.py}.
+\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), and detailed robustness results for every sample (S4). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
 
 \section*{S1. Why per-model variance decomposition is not enough}\label{sec:precision}
 
@@ -36,13 +36,13 @@ Identification does not imply precision. For each design we compute the expected
 \label{tab:precision}
 \centering
 \footnotesize
-\begin{tabular}{lcccccc}
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{lcccccc}
 \toprule
 Design & Families & Quarters & FE full rank & $\kappa(X^\top X)$ range & Cov.\ basis & Worst RMSE \\
 \midrule
 \tabinput{../tables/tab_precision.tex}
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 No design reaches an RMSE of 0.10 for both shares (TABLE~\ref{tab:precision}): not the sixteen evaluated models (0.30), not the 47-model candidate frame (0.19), and not the 30-model configuration the earlier version described as sufficient (0.19). Removing the single model responsible for the fixed-effects rank deficiency leaves the RMSE unchanged (0.302). The binding constraint is the number of \emph{levels} of each factor: more models per level help only up to a point (with six families and fourteen quarters, 22 models give 0.256 and 47 give 0.189). In staggered designs (Fig.~\ref{fig:scaling}), bringing both shares within $\pm 0.10$ requires on the order of sixty families and fourteen quarters; with eight quarters the era share never falls below about 0.14. Because release quarters are few by construction, a per-model decomposition is a poor instrument for the paper's research questions in populations like those examined here. Within the designs and scenarios examined, this motivates the pair-level design; it does not show that the shares are inestimable under every design, only that the required numbers of families and quarters exceed those available.
@@ -63,26 +63,40 @@ The earlier version of this manuscript (archived in the repository as \texttt{pa
 \centering
 \small
 \setlength{\tabcolsep}{2.5pt}
-\begin{tabular}{p{0.31\textwidth}p{0.36\textwidth}p{0.27\textwidth}}
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{p{0.31\textwidth}p{0.36\textwidth}p{0.27\textwidth}}
 \toprule
 Earlier claim & Reason & Current treatment \\
 \midrule
 Variance components ``not identifiable'' (fixed-effects dummy-design gate) & Random-effects model identified (basis rank 3/3); condition number depends on reference level (115--585) & Withdrawn; imprecision quantified (Section~S1) \\
-Item-level predictions; Qwen-7B accuracy 0.2294 & Code read only option~A's log-likelihood; 0.2294 is the all-A rate & Withdrawn; code fixed; validation against stored correctness (main paper, Section~IV) \\
+Item-level predictions; Qwen-7B accuracy 0.2294 & Code read only option~A's log-likelihood; 0.2294 is the all-A rate & Withdrawn; code fixed; validation against stored correctness (main paper, Section~III) \\
 30-model design ``passes'' at $\kappa \leq 50$ & Its $\kappa$ is 93 & Corrected \\
 Sweep enforced crossing and connectedness & 100 of 105 crossed, 60 connected & Corrected \\
 LPM and GLMM both hit the era boundary in 20--60\% of replicates & Only the GLMM; LPM 0--6.7\% & Corrected \\
 Nested-design detector: ``zero silent coverage'' & Undefined: no replicate went undetected & Corrected \\
 Sixteen-model population as pre-specified & Four planned models not evaluated, no recorded reason; two DeepSeek models imputed & Arm not used for inference \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
-\section*{S3. Post-hoc audit of the simulation gate}
-The main paper summarizes this audit (Section~III-C and Fig.~3). The table gives every design simulated.
+\section*{S3. Simulation check of separability}
+The main paper (Section~IV-E) describes the simulated data and criteria. Table~\ref{tab:pairgate} gives the pre-specified check (20 replicates per scenario) for three caps on the number of models per root; Table~\ref{tab:gateaudit} and Fig.~\ref{fig:gateaudit} give the post-hoc audit with 500 replicates. With 20 replicates the rates move in steps of five points, which explains why the audit ranks the caps differently. Cap 40 remains the primary design because it was the dated choice made before any pair outcome was computed.
 
 \begin{table}[H]
-\caption{\textbf{Post-hoc gate audit} (500 replicates per truth; Wilson 95\% intervals, in percent). Null: largest rejection rate of any term under no effect. Leakage: largest cross-term rejection across $\lambda \in \{0.03, 0.05, 0.10\}$. Power: rejection of the lineage (L) or release-month (E) term. Not pre-specified.}
+\caption{\textbf{Pre-specified simulation check} (primary roster, 14{,}042 simulated items, 20 replicates per scenario). Null: largest false-rejection rate. Leakage: largest rejection of the wrong coefficient. Power: rejection of the lineage / same-month coefficient at the stated effect weight.}
+\label{tab:pairgate}
+\centering
+\small
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{rrcccc}
+\toprule
+Cap & $N$ & Null & Leakage & Power $\lambda{=}0.05$ & Power $\lambda{=}0.03$ \\
+\midrule
+\tabinput{../tables/tab_pairgate.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{table}[H]
+\caption{\textbf{Post-hoc gate audit} (500 replicates per truth; Wilson 95\% intervals, in percent). Null: largest rejection rate of any term under no effect. Leakage: largest cross-term rejection across $\lambda \in \{0.03, 0.05, 0.10\}$. Power: rejection of the lineage (L) or release-month (E) term. Post hoc.}
 \label{tab:gateaudit}
 \centering
 \footnotesize
@@ -93,6 +107,124 @@ Sample & Cap & $N$ & Null & Leakage & L, $\lambda{=}0.05$ & E, $\lambda{=}0.05$ 
 \tabinput{../tables/tab_gateaudit.tex}
 \bottomrule
 \end{tabular}}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{fig_gate_audit.pdf}
+\caption{\textbf{Post-hoc audit of the simulation check} (500 replicates per scenario; Wilson 95\% intervals). (a) False rejection of each coefficient under no effect. (b) Leakage: rejection of the lineage coefficient under release-time-only effects ($\lambda_E$), and the larger rejection rate of the 0-month and 1--2-month coefficients under lineage-only effects ($\lambda_L$). (c) Power. Dashed lines: the pre-specified criteria. The primary cap-40 design exceeds the leakage criterion at $\lambda_E = 0.10$ (10.8\%, interval 8.4--13.8\%), as does the expanded design (12.6\%).}
+\label{fig:gateaudit}
+\end{figure}
+
+\section*{S4. Detailed robustness results}
+The main paper's robustness table reports the primary sample. The tables below give every sample; figures show the same estimates. ``Same month'' is the 0-month gap bin relative to 12 or more months. S2: models with accuracy $\geq 0.30$.
+
+\begin{table}[H]
+\caption{\textbf{Coefficients with and without the accuracy terms} (95\% CIs from the delete-one-root jackknife).}
+\centering
+\small
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{Primary} & \multicolumn{2}{c}{Expanded} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Term & Without & With & Without & With \\
+\midrule
+\tabinput{../tables/tab_rawadj.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{table}[H]
+\caption{\textbf{Inference procedures.} $^\dagger$Pre-specified. Root-level procedures treat lineage roots as the unit of dependence.}
+\centering
+\small
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{lllcc}
+\toprule
+Sample & Term & Standard error & Estimate [95\% CI] & $p$ \\
+\midrule
+\tabinput{../tables/tab_inference.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_inference.pdf}
+\caption{\textbf{Inference procedures} (95\% CIs).}
+\end{figure}
+
+\begin{table}[H]
+\caption{\textbf{Outcome and weighting variants} (95\% CIs, model-level dyadic SEs). Every pair has at least 1{,}166 jointly wrong items, so the variant restricted to pairs with at least 1{,}000 is identical to the pre-specified fit.}
+\centering
+\small
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{llccc}
+\toprule
+Sample & Variant & Shared root & Same month & $p$ (same month) \\
+\midrule
+\tabinput{../tables/tab_outcome.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_outcomes.pdf}
+\caption{\textbf{Outcome and weighting variants} (95\% CIs). Phi is a correlation, on a different scale.}
+\end{figure}
+
+\begin{table}[H]
+\caption{\textbf{Item-difficulty-aware nulls} (post hoc). Mean: average outcome across pairs. 95\% CIs and $p$-values from the delete-one-root jackknife. N1a: observed agreement minus the item-level distractor null computed from all models; N1b: the same with roots weighted equally; N2: co-failure beyond a Rasch model, per item.}
+\centering
+\small
+\resizebox{\textwidth}{!}{
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{llcccccc}
+\toprule
+Sample & Outcome & Mean & Shared root & $p$ & Same month & $p$ \\
+\midrule
+\tabinput{../tables/tab_itemnull.tex}
+\bottomrule
+\end{tabular}}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{fig_item_null.pdf}
+\caption{\textbf{Item-difficulty-aware nulls.} (a) Mean outcome over pairs: the level of agreement depends on the null. (b) Shared-root coefficient: the lineage contrast does not. (c) Co-failure beyond a Rasch model.}
+\end{figure}
+
+\begin{table}[H]
+\caption{\textbf{Size and architecture controls} (exploratory; all include the S1 covariate). Entries: estimate (SE).}
+\centering
+\small
+\resizebox{\textwidth}{!}{
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{lrcccc}
+\toprule
+Sample & Models & Shared root (root-clustered SE) & Shared root (+ size, architecture) & Same month (+ size, architecture) & Same architecture \\
+\midrule
+\tabinput{../tables/tab_exploratory.tex}
+\bottomrule
+\end{tabular}}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_controls.pdf}
+\caption{\textbf{Size and architecture controls} (95\% CIs, model-level dyadic SEs).}
+\end{figure}
+
+\begin{table}[H]
+\caption{\textbf{Further post-hoc analyses} (delete-one-root jackknife 95\% CIs). Equivalence bound: largest absolute same-month coefficient not excluded by the 90\% interval. Root release month: gap bins from the roots' release months. CAPA: chance-adjusted agreement from chosen options. Clean sample: degenerate models removed and identical-prediction clusters collapsed. Config-consistent: models whose configuration file points to another root removed. Tree distance: primary sample only.}
+\centering
+\small
+\resizebox{\textwidth}{!}{
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{lcccc}
+\toprule
+ & Primary & Primary, S2 & Expanded & Expanded, S2 \\
+\midrule
+\tabinput{../tables/tab_revision2.tex}
+\bottomrule
+\end{tabular}}}
 \end{table}
 
 \end{document}

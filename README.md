@@ -2,12 +2,12 @@
 
 **Lineage and Release Timing in Correlated Errors of Open-Weight Language Models: A Pair-Level Study**
 
-*IEEE Access manuscript in preparation (16 pp. + 3 pp. supplement)*
+*IEEE Access manuscript in preparation (10 pp. + 8 pp. supplement)*
 
 Sudharsan S · S. Kanaga Suba Raja · Shree Harish V · Chin-Shiuh Shieh · Mong-Fong Horng · Lavanya R
 SRM Institute of Science and Technology, Tiruchirappalli · National Kaohsiung University of Science and Technology
 
-[![Manuscript](https://img.shields.io/badge/manuscript-16_pages-blue)](paper/build/ieee_access_manuscript.pdf)
+[![Manuscript](https://img.shields.io/badge/manuscript-10_pages-blue)](paper/build/ieee_access_manuscript.pdf)
 [![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
 [![Status](https://img.shields.io/badge/status-in_preparation-orange)]()
 [![Python](https://img.shields.io/badge/python-3.11-blue)](pyproject.toml)
