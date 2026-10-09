@@ -55,6 +55,18 @@ was read. Supersedes the 16-model empirical arm (see
 `docs/08_Reviews/Revision_2026-10_Precision_Gate.md` for why that arm cannot
 answer the question at any affordable N).
 
+## Provenance note (2026-10-09, post-freeze)
+
+The frozen rosters were built from `datasets/ollb/config_lineage.jsonl` as
+committed (rebuilding from it reproduces `frozen/expanded.csv` exactly: 1,295 of
+1,295). A later re-validation pass, kept as `config_lineage.post_freeze.jsonl`,
+resolved the 7 unvalidated candidates and flipped the outcome of 8 links (4 valid
+only at freeze time, 4 only afterwards), consistent with transient Hub lookups.
+None of the 8 affects any analysed model: the 4 frozen-only links belong to models
+outside both samples, and the 4 other models in the samples take their lineage
+from model-card declarations, which take precedence over config links. The frozen
+rosters remain authoritative and unchanged.
+
 ## Amendment 3 (2026-10-09, during download; no pair outcome computed yet)
 
 Seen so far: only the per-model accuracies of validated files (needed to
