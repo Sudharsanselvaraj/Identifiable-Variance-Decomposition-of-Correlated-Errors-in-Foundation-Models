@@ -33,6 +33,23 @@ OUT = ROOT / "datasets" / "ollb" / "v1"
 ORG = "open-llm-leaderboard-old"
 N_SUBJECTS = 57
 COLUMNS = ["predictions", "gold", "acc", "hashes"]
+N_ITEMS = 14042
+SUBJECT_WORKERS = 4
+# Reference model with the legacy layout (gold + item hash stored); supplies
+# gold by (subject, position) for runs whose gold column is empty.
+REFERENCE = OUT / "meta-llama__Llama-2-7b-hf.npz"
+_ref_cache: dict = {}
+
+
+def reference() -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """subject -> (gold, hash) arrays in row order, from the reference model."""
+    if not _ref_cache:
+        z = np.load(REFERENCE)
+        subj = np.array([i.split(":")[0] for i in z["item"]])
+        for s_ in np.unique(subj):
+            m = subj == s_
+            _ref_cache[s_] = (z["gold"][m], z["hash"][m])
+    return _ref_cache
 
 
 def _run_of(path: str) -> str:
@@ -71,34 +88,71 @@ def fetch_model(repo: str, retries: int = 4) -> dict:
                     sizes[r] = pq.ParquetFile(fh).metadata.num_rows
             run = max(complete, key=lambda r: (sizes[r], r))
 
-            items, hashes, pred, gold, n_bad = [], [], [], [], 0
-            nbytes = 0
-            for subj in sorted(complete[run]):
+            def read_subject(subj: str):
                 with fs.open(complete[run][subj], block_size=64 * 1024,
                              cache_type="readahead") as fh:
-                    t = pq.ParquetFile(fh).read(columns=COLUMNS)
-                    nbytes += getattr(fh.cache, "total_requested_bytes", 0)
-                for k, (p, g, a, h) in enumerate(zip(t["predictions"].to_pylist(),
-                                      t["gold"].to_pylist(),
-                                      t["acc"].to_pylist(),
-                                      t["hashes"].to_pylist())):
+                    pf = pq.ParquetFile(fh)
+                    names = set(pf.schema_arrow.names)
+                    cols = (COLUMNS if "acc" in names
+                            else ["predictions", "metrics"])
+                    t = pf.read(columns=cols)
+                    return subj, t, getattr(fh.cache, "total_requested_bytes", 0)
+
+            with ThreadPoolExecutor(SUBJECT_WORKERS) as pool:
+                tables = dict((s_, (t_, b_)) for s_, t_, b_ in
+                              pool.map(read_subject, sorted(complete[run])))
+
+            ref = reference()
+            items, hashes, pred, gold = [], [], [], []
+            n_bad = nbytes = 0
+            schema = "legacy"
+            for subj in sorted(tables):
+                t, b = tables[subj]
+                nbytes += b
+                preds = t["predictions"].to_pylist()
+                if "acc" in t.column_names:
+                    golds = t["gold"].to_pylist()
+                    accs = t["acc"].to_pylist()
+                    hs = [h["example"] for h in t["hashes"].to_pylist()]
+                else:
+                    # Newer lighteval layout: gold is stored empty and there is
+                    # no item hash. Gold comes from the reference model by
+                    # (subject, position); the per-item acc check below then
+                    # validates that alignment (a misaligned gold fails ~75%).
+                    schema = "lighteval"
+                    if subj not in ref or len(ref[subj][0]) != len(preds):
+                        return {"repo": repo, "status": "row_count_mismatch",
+                                "subject": subj, "run": run}
+                    golds = list(ref[subj][0])
+                    accs = [m["acc"] for m in t["metrics"].to_pylist()]
+                    hs = [""] * len(preds)
+                for k, (p, g, a, h) in enumerate(zip(preds, golds, accs, hs)):
                     choice = int(np.argmax(p)) if p else -1
                     n_bad += int(float(choice == g) != float(a))
                     # MMLU has 27 exact-duplicate questions, so the content
                     # hash is not unique; position within subject is the id
                     # and the hash is kept to verify alignment across models.
                     items.append(f"{subj}:{k}")
-                    hashes.append(h["example"])
+                    hashes.append(h)
                     pred.append(choice)
                     gold.append(g)
+            if len(pred) != N_ITEMS:
+                return {"repo": repo, "status": "item_count_mismatch",
+                        "items": len(pred), "run": run, "schema": schema}
             if n_bad:
                 return {"repo": repo, "status": "acc_mismatch", "n_bad": n_bad,
-                        "items": len(pred), "run": run}
+                        "items": len(pred), "run": run, "schema": schema}
             OUT.mkdir(parents=True, exist_ok=True)
-            np.savez_compressed(out, item=np.array(items), hash=np.array(hashes), pred=np.array(pred, np.int8),
-                                gold=np.array(gold, np.int8), run=run)
+            np.savez_compressed(out, item=np.array(items), hash=np.array(hashes),
+                                pred=np.array(pred, np.int8),
+                                gold=np.array(gold, np.int8), run=run, schema=schema)
             return {"repo": repo, "status": "ok", "items": len(pred), "run": run,
-                    "bytes": nbytes}
+                    "schema": schema, "bytes": nbytes,
+                    "acc": round(float(np.mean(np.array(pred) == np.array(gold))), 4)}
+        except (KeyError, ValueError, IndexError) as exc:
+            # Layout problems are deterministic: fail once, do not retry.
+            return {"repo": repo, "status": "schema_error",
+                    "error": f"{type(exc).__name__}: {str(exc)[:160]}"}
         except Exception as exc:  # network / throttling: back off and retry
             err = f"{type(exc).__name__}: {str(exc)[:160]}"
             time.sleep(min(120, 10 * 2 ** attempt))
