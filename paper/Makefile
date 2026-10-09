@@ -24,15 +24,23 @@ export TEXINPUTS   := ../support:
 export TEXFONTS    := ../support:
 export TEXFONTMAPS := ../support:
 
-.PHONY: all pdf clean
+.PHONY: all pdf clean tables
+
 
 all: pdf
 
 pdf: $(PDF)
 
-$(PDF): $(SRC)
+# Rebuild when the source, any generated table or any figure changes.
+DEPS     := $(SRC) $(wildcard tables/*.tex) $(wildcard figures/*.pdf) $(wildcard figures/*.png)
+
+$(PDF): $(DEPS)
 	cd $(dir $(SRC)) && $(TEX) -interaction=nonstopmode -halt-on-error -output-directory=../$(OUTDIR) $(notdir $(SRC))
 	cd $(dir $(SRC)) && $(TEX) -interaction=nonstopmode -halt-on-error -output-directory=../$(OUTDIR) $(notdir $(SRC))
 
 clean:
 	rm -f build/*.aux build/*.log build/*.out build/*.pdf
+
+# Regenerate table rows from the committed analysis outputs.
+tables:
+	cd .. && python3 scripts/make_exp04_tables.py

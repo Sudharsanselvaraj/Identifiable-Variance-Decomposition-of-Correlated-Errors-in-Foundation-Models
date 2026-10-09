@@ -209,3 +209,21 @@ and pinned commit in `docs/REPRODUCIBILITY_CHECKLIST.md`.
   agreement per model pair, as in Kim et al.) carries far more information
   per model than one accuracy number and is the quantity the introduction is
   actually about.
+
+## Manuscript rewrite (2026-10-09)
+
+The manuscript was rewritten around Exp04 (Option B). The earlier version is
+archived (`paper/src/archive/ieee_access_manuscript_v1_16model.{tex,pdf}`, git tag
+`manuscript-v1-16model`); its withdrawn and corrected claims are listed in the new
+manuscript's Appendix A. All results tables are generated from committed outputs
+(`scripts/make_exp04_tables.py`); `scripts/run_exp04_final.py` reproduces every
+reported number (12 pre-registered analyses to < 1e-16; exploratory E1/E2 exact).
+Open items before submission are listed in the session change summary and below:
+
+- Verify every reference, in particular the 2026 preprints (chen2026, kuai2026,
+  messing2026, jo2026, li2026roots) and the references added in this rewrite
+  (goel2025, fafchamps2007, cameron2011, aronow2015, efron1982, beeching2023,
+  gao2021).
+- Repository URL, licence and pinned commit in `docs/REPRODUCIBILITY_CHECKLIST.md`.
+- Author review of framing, biographies and the AI-use disclosure.
+- Optional: a second benchmark or the v2 leaderboard (MMLU-Pro) as replication.

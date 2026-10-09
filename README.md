@@ -91,13 +91,18 @@ Top-level package modules are re-export shims for compatibility; the real code l
 
 ## Status
 
-- **Phase 0** (population) — done.
-- **Phase 1** (simulation) — complete.
-- **Phase 2** (instrument + empirical) — built and verified; intake validator and
-  shape-exact simulated dry-run (`results/phase2_sim_dryrun/`) pass. Empirical analysis
-  runs on the 16-model `datasets/phase2_eval_results.csv` set.
-- **Manuscript** — IEEE Access submission at 19 pages, final read state; rebuild from
-  `paper/` via `make`.
+- **Phase 0–1** (population, simulation) — done.
+- **Phase 2, 16-model arm** — superseded. Its gate tested the wrong model and its
+  per-question outputs came from an extraction bug (fixed); see
+  `docs/08_Reviews/Revision_2026-10_Precision_Gate.md`. Not used for inference.
+- **Exp04 (current study)** — pre-registered pair-level analysis of 977 validated
+  Open LLM Leaderboard (v1) models; plan and dated amendments in
+  `docs/05_Experiments/Exp04_Leaderboard_Lineage_Era.md`. Reproduce everything with
+  `python scripts/run_exp04_final.py` (verifies roster hashes and diffs against the
+  committed outputs), then `make -C paper tables && make -C paper`.
+- **Manuscript** — rewritten around Exp04 (8 pages). Not submission-ready: see the
+  open items in the revision document. The earlier 16-model version is archived in
+  `paper/src/archive/` and tagged `manuscript-v1-16model`.
 
 ## Contributing
 
