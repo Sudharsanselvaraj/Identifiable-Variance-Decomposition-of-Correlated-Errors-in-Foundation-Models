@@ -55,6 +55,30 @@ was read. Supersedes the 16-model empirical arm (see
 `docs/08_Reviews/Revision_2026-10_Precision_Gate.md` for why that arm cannot
 answer the question at any affordable N).
 
+## Amendment 2 (2026-10-09, still pre-outcome)
+
+- **Rosters.** Primary = card-declared lineage only; expanded = primary plus
+  validated `config.json` `_name_or_path` first hops (outcome-coded, see
+  `lineage_era/ollb/config_lineage.py`). Additional rules found while building
+  the primary roster: chains that end at a leaderboard fine-tune
+  (`root_is_finetune`) or at a deleted / invalid ancestor (`ancestor_missing`)
+  are unresolved; a curated mirror map collapses straight re-uploads and
+  quantisations (`unsloth/*`, `NousResearch/Meta-Llama-3-8B`, …) onto the
+  checkpoint they copy. Strict variant: root listed as pretrained on the
+  leaderboard (`root_verified`, 94% of primary).
+- **Per-root cap set to 40 (was 15), chosen by the pair gate, not by outcomes.**
+  Primary roster, simulated with the real item count (14,042):
+
+  | cap | N | null rejection | cross-term leakage | power λ=0.05 (L / E) |
+  |---|---|---|---|---|
+  | 15 | 561 | ≤ 15% | ≤ 20% | 100% / 100% |
+  | **40** | **613** | **≤ 5%** | **≤ 10%** | **100% / 100%** |
+  | none | 721 | ≤ 10% | ≤ 15% | 100% / 100% |
+
+  The earlier lineage shortfall (power 20% at λ = 0.05) came from simulating
+  1,500 items; the gate now uses the real item count. Cap 40 is the only
+  setting meeting every pre-registered criterion.
+
 ## Question
 
 Across public open-weight models, how much of the **pairwise agreement in

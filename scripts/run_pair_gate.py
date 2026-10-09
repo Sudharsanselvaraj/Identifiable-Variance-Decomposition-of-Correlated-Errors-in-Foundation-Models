@@ -45,10 +45,10 @@ def main() -> int:
     ap.add_argument("--roster", default="datasets/ollb/v1_roster.csv")
     ap.add_argument("--population", choices=["primary", "expanded"], default="primary")
     ap.add_argument("--sizes", default="200,400,800,1200")
-    ap.add_argument("--cap", type=int, default=15, help="max models per root")
+    ap.add_argument("--cap", type=int, default=40, help="max models per root (Amendment 2)")
     ap.add_argument("--reps", type=int, default=20)
-    ap.add_argument("--items", type=int, default=1500,
-                    help="simulated items (real: 14042; fewer is conservative)")
+    ap.add_argument("--items", type=int, default=14042,
+                    help="simulated items (= real MMLU item count)")
     args = ap.parse_args()
     pop = population(pd.read_csv(ROOT / args.roster), args.population)
     out = OUT / args.population
