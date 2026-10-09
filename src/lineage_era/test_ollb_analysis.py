@@ -45,3 +45,10 @@ def test_recovers_simulated_lineage_effect():
     b = dict(zip(names, beta))
     assert b["same_root"] / se[names.index("same_root")] > 4
     assert abs(b["gap0"]) / se[names.index("gap0")] < 3
+
+
+def test_position_tv_bounds():
+    from lineage_era.ollb.analysis import position_tv
+    pred = np.array([[0, 0, 0, 0], [0, 0, 0, 0], [1, 2, 3, 1]], np.int8)
+    tv = position_tv(pred, np.array([0, 0]), np.array([1, 2]))
+    assert tv[0] == 0.0 and tv[1] == 1.0

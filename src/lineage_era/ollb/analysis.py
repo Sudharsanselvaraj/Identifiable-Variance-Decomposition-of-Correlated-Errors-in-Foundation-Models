@@ -84,18 +84,35 @@ def pair_outcomes(pred: np.ndarray, gold: np.ndarray):
     return i[ok], j[ok], (same[i, j] / both[i, j])[ok], both[i, j][ok]
 
 
-def run(name: str, strict: bool = False) -> dict:
+def position_tv(pred: np.ndarray, i: np.ndarray, j: np.ndarray) -> np.ndarray:
+    """Total-variation distance between two models' chosen-option distributions."""
+    dist = np.stack([(pred == o).mean(1) for o in range(4)], axis=1)
+    return 0.5 * np.abs(dist[i] - dist[j]).sum(1)
+
+
+def run(name: str, strict: bool = False, position: bool = False,
+        min_acc: float | None = None) -> dict:
+    """Primary model; position=True adds S1, min_acc adds S2 (Amendment 3)."""
     pop, info = load_population(name, strict)
     pred, gold, checks = choice_matrix(pop.model)
     acc = (pred == gold[None, :]).mean(1)
+    if min_acc is not None:
+        keep = acc >= min_acc
+        info["dropped_below_min_acc"] = int((~keep).sum())
+        pop, pred, acc = pop[keep].reset_index(drop=True), pred[keep], acc[keep]
     root_id = pd.factorize(pop.root)[0]
     month = month_index(pop.created_month)
     i, j, y, n_both = pair_outcomes(pred, gold)
     X, names = design(i, j, root_id, month, acc)
+    if position:
+        X = np.column_stack([X, position_tv(pred, i, j)])
+        names = [*names, "position_tv"]
     beta, se = ols_twoway(X, y, i, j, len(pop))
     coef = pd.DataFrame({"term": names, "estimate": beta, "se": se})
     coef["z"] = coef.estimate / coef.se
-    label = f"{name}{'_strict' if strict else ''}"
+    label = (f"{name}{'_strict' if strict else ''}"
+             f"{'_S1position' if position else ''}"
+             f"{f'_S2acc{min_acc:g}' if min_acc is not None else ''}")
     out = OUT / label
     out.mkdir(parents=True, exist_ok=True)
     coef.to_csv(out / "coefficients.csv", index=False)
@@ -115,8 +132,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--population", choices=["primary", "expanded"], required=True)
     ap.add_argument("--strict", action="store_true",
                     help="restrict to roots verified as pretrained")
+    ap.add_argument("--position", action="store_true",
+                    help="S1: add answer-position-bias covariate")
+    ap.add_argument("--min-acc", type=float, default=None,
+                    help="S2: keep models with accuracy >= this (0.30)")
     args = ap.parse_args(argv)
-    res = run(args.population, args.strict)
+    res = run(args.population, args.strict, args.position, args.min_acc)
     print(json.dumps(res["summary"], indent=1))
     print(res["coefficients"].to_string(index=False))
     return 0
