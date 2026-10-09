@@ -1,111 +1,95 @@
 # Lineage or Era?
 
-An identifiability-gated variance decomposition of correlated errors in public language
-models.
+**Lineage and Release Timing in Correlated Errors of Open-Weight Language Models: A Pre-Registered Pair-Level Study**
 
-**One-sentence core question:** Determine whether the observed error-correlation
-structure across public LLMs is separably explained by lineage vs. release-era, restricted
-to whatever connected subset of the population makes that separation identifiable — and
-what that implies for diversification-as-mitigation.
+*IEEE Access manuscript in preparation (17 pp.)*
+
+Sudharsan S · S. Kanaga Suba Raja · Shree Harish V · Chin-Shiuh Shieh · Mong-Fong Horng · Lavanya R
+SRM Institute of Science and Technology, Tiruchirappalli · National Kaohsiung University of Science and Technology
+
+[![Manuscript](https://img.shields.io/badge/manuscript-17_pages-blue)](paper/build/ieee_access_manuscript.pdf)
+[![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
+[![Status](https://img.shields.io/badge/status-in_preparation-orange)]()
+[![Python](https://img.shields.io/badge/python-3.11-blue)](pyproject.toml)
+[![License](https://img.shields.io/badge/license-not_yet_specified-lightgrey)](docs/release/LICENSING_NOTES.md)
 
 ---
 
-## Manuscript / publication (current focus)
+## The question
 
-The project's primary deliverable is an **IEEE Access** manuscript, now at **19 pages** and
-at final submission read state. It is organized under `paper/` into a clean, rebuildable
-layout:
+When two public language models are both wrong on a question, they often choose the same
+wrong answer. Is that associated more with shared **lineage** (one is fine-tuned from the
+same base model as the other) or with **release timing** (they were published at about the
+same time)? The two are entangled, because fine-tunes always appear after their bases.
 
-| Path | Purpose |
+## What we did
+
+1. **Design diagnosis.** A per-model variance decomposition (family vs. release-era
+   components) is identified but far too imprecise with the 5–7 families and ≤ 14 quarters
+   real populations offer: worst-case share RMSE ≥ 0.18 in every design examined.
+2. **Pair-level design.** For every pair of models we measure
+   `a_ij = P(same wrong option | both wrong)` on MMLU (14,042 items) and regress it on a
+   shared-lineage indicator, release-month-gap bins and both models' accuracies, with
+   dyadic cluster-robust inference. Analysis, sample rules and a simulation gate were fixed
+   in a dated pre-registration before any pair outcome was computed.
+3. **Data.** Item-level predictions from the first Open LLM Leaderboard, validated item by
+   item against the leaderboard's stored correctness: 977 accepted models in two
+   overlapping populations (primary 590, expanded 928), lineage resolved from Hugging Face
+   `base_model` declarations.
+
+## What we found
+
+| | Primary sample (590 models, 173,755 pairs) |
 |---|---|
-| `paper/` | Submission package |
-| `paper/src/` | `ieee_access_manuscript.tex` — the manuscript source |
-| `paper/figures/` | 25 figure assets (`.pdf` / `.png`) referenced by the manuscript |
-| `paper/support/` | IEEE Access class (`.cls`, `.bst`, `.sty`), embedded fonts (`.pfb/.tfm/.map/.fd`), header logos |
-| `paper/tables/` | (reserved) data tables |
-| `paper/build/` | Generated build artifacts: `.aux`, `.log`, and the compiled `.pdf` |
-| `paper/Makefile` | One-command build: `make` (in `paper/`) → `build/ieee_access_manuscript.pdf` |
+| Shared lineage root | **+13.3 points** (95% CI 11.8–14.8; delete-one-root jackknife 10.8–15.8); 11.7–13.4 across all 12 pre-registered analyses |
+| Same release month vs. 12+ months, net of accuracy | +0.4 points (CI −0.3 to +1.1); not stable in sign or magnitude across specifications |
+| Same release month, unadjusted | +8.7 points, accounted for by accuracy similarity |
+| Item-difficulty-aware nulls | average excess agreement ≈ 0; lineage contrast unchanged |
 
-The Makefile wires up `TEXINPUTS` / `TEXFONTS` / `TEXFONTMAPS` so the class and embedded
-fonts resolve from `support/` during compilation. Rebuild anytime with:
+The associations are observational, come from one benchmark and a population dominated by
+community fine-tunes, and a post-hoc audit shows the simulation gate narrowly missed its
+cross-leakage criterion (10.8% vs. 10%) at the largest simulated release-time effect.
+See the manuscript's limitations section.
+
+## Repository
+
+| Path | Contents |
+|---|---|
+| `paper/` | Manuscript source (`src/`), 14 figures, generated tables, IEEE class files, `Makefile`; compiled PDF in `paper/build/` |
+| `src/lineage_era/ollb/` | Leaderboard pipeline: Hub metadata, lineage rosters, extraction and validation, pair gate, analysis |
+| `src/lineage_era/analysis/` | Per-model precision analysis (crossed REML, expected information, Monte Carlo) |
+| `scripts/` | Entry points: `run_exp04_final.py`, `run_exp04_item_null.py`, `run_pair_gate_audit.py`, `make_exp04_tables.py`, `make_exp04_figures.py`, … |
+| `results/` | Committed analysis outputs that every reported number and table is generated from |
+| `datasets/ollb/frozen/` | Frozen model lists (public versions; see licensing below) |
+| `docs/05_Experiments/Exp04_Leaderboard_Lineage_Era.md` | Pre-registration and its three dated amendments |
+| `docs/REPRODUCIBILITY_CHECKLIST.md` | Environment, data sources, seeds and the full reproduction sequence |
+| `docs/08_Reviews/` | Revision log, including errata |
+| `paper/src/archive/`, `master/` | Superseded 16-model version (not used for inference) |
+
+## Reproducing
 
 ```sh
-make -C paper          # builds paper/build/ieee_access_manuscript.pdf
-make -C paper clean    # removes generated artifacts
+python -m pip install -e ".[test,ollb]"
+python -m pytest
 ```
 
-## Running the code
+The full sequence (regenerating the leaderboard metadata and answer files, rebuilding the
+frozen lists against their recorded SHA-256 hashes, re-running every analysis, then
+`make -C paper tables figures && make -C paper`) is in
+[`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md).
 
-One supported setup: install the package in editable mode from the repo root,
-then run modules with `python -m` and scripts from the repo root.
+## Data and licensing
 
-```sh
-python -m pip install -e ".[test]"          # analysis + tests (CPU)
-python -m pip install -e ".[test,ollb]"     # + leaderboard data tools (Exp04)
-python -m pytest                            # full suite
-python scripts/run_precision_gate.py        # random-effects precision gate
-python scripts/run_design_space_sweep.py    # exits non-zero if counts drift
-```
+The Open LLM Leaderboard's per-item details and metadata declare no licence. The derived
+item-level answer files and three copied metadata fields are therefore **not** in this
+repository; scripts regenerate them from the public source and verify them byte for byte.
+A licence for the code has not yet been chosen; see
+[`docs/release/LICENSING_NOTES.md`](docs/release/LICENSING_NOTES.md).
 
-Without installing, prefix commands with `PYTHONPATH=src`.
+## Earlier version
 
-## Repo layout
-
-| Path | Purpose |
-|---|---|
-| `docs/` | Research knowledge base — source of truth for the project (structure under `docs/00_Project` … `docs/09_Roadmap`; see `RESEARCH_PROTOCOL.md`) |
-| `paper/` | IEEE Access submission package (see above) |
-| `scripts/` | Figure / analysis regeneration scripts (e.g. `regen_figs_8_9.py`, `run_design_space_sweep.py`) |
-| `src/lineage_era/` | Simulation / decomposition code (Phase 0–2) |
-| `src/lineage_era/analysis/` | Phase 2 analysis package (trait, metadata, population, identifiability, reml, bootstrap, plots, report) |
-| `results/` | Phase 2 engine outputs: `phase2_empirical/`, `phase2_sim_dryrun/`, `design_space/` |
-| `datasets/` | Item-level data; `phase2_eval_results.csv` (16-model empirical set) and `.sim` dry-run set |
-| `notebooks/` | Analysis notebooks (empty at present) |
-| `supplement/` | Supplementary material (reserved) |
-| `requirements.txt` | Python dependencies |
-
-## Analysis package (module map)
-
-Top-level package modules are re-export shims for compatibility; the real code lives in
-`src/lineage_era/analysis/`:
-
-| Module | Purpose |
-|---|---|
-| `trait.py` | Aggregate per-question responses into a continuous per-model trait |
-| `eval_check.py` | Eval intake validator — fails fast if the GPU-runbook CSV/samples are mis-shaped |
-| `eval_simulate.py` | Shape-exact simulated eval output for GPU-free pipeline dry-runs |
-| `metadata.py` | Family/era design matrix from the Phase 0 table + verified `base_model` edges |
-| `population.py` | Connected-subset population construction (erosion, gating, membership) |
-| `identifiability.py` | Identifiability pre-checks (κ, rank, VIF, profile flatness) before any fit |
-| `reml.py` | CrossedREML estimator (σ²_L, σ²_E, σ²_U) + θ_P/θ_M decomposition layer |
-| `bootstrap.py` | Bootstrap CIs over models; sensitivity grid |
-| `plots.py` | Partition, era-convergence, and diagnostics figures |
-| `report.py` | Report generation + partition/summary tables |
-
-## Standing rules
-
-- No analysis code or data pulls before the plan for that step is approved.
-- Every citation is independently verified before it enters any document.
-- Lead with the decomposition instrument and the identifiability gate; quantitative-genetics
-  language is Phase 3 scaffolding only.
-
-## Status
-
-- **Phase 0–1** (population, simulation) — done.
-- **Phase 2, 16-model arm** — superseded. Its gate tested the wrong model and its
-  per-question outputs came from an extraction bug (fixed); see
-  `docs/08_Reviews/Revision_2026-10_Precision_Gate.md`. Not used for inference.
-- **Exp04 (current study)** — pre-registered pair-level analysis of 977 validated
-  Open LLM Leaderboard (v1) models; plan and dated amendments in
-  `docs/05_Experiments/Exp04_Leaderboard_Lineage_Era.md`. Reproduce everything with
-  `python scripts/run_exp04_final.py` (verifies roster hashes and diffs against the
-  committed outputs), then `make -C paper tables && make -C paper`.
-- **Manuscript** — rewritten around Exp04 (8 pages). Not submission-ready: see the
-  open items in the revision document. The earlier 16-model version is archived in
-  `paper/src/archive/` and tagged `manuscript-v1-16model`.
-
-## Contributing
-
-This repository is shared; please coordinate changes to `paper/`, `docs/`, and `results/`
-to avoid conflicting edits. Commit with clear, single-purpose messages and run
-`make -C paper` after any manuscript change to confirm the PDF still builds.
+An earlier 16-model version of this project reported an identifiability gate and
+item-level results that are withdrawn: the gate tested the wrong model, and an extraction
+bug made every item-level prediction constant. Appendix A of the manuscript and
+`docs/08_Reviews/Revision_2026-10_Precision_Gate.md` record what changed. That version's
+source and PDF are kept in `paper/src/archive/` and in the earlier history of `main`.
