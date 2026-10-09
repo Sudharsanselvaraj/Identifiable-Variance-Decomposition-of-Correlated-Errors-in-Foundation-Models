@@ -34,6 +34,7 @@ from lineage_era.ollb.roster_v1 import build  # noqa: E402
 
 OUT = ROOT / "results" / "exp04_rosters"
 FROZEN = ROOT / "datasets" / "ollb" / "frozen"
+CAP = 40
 
 
 def largest_component_share(df: pd.DataFrame) -> float:
@@ -108,6 +109,14 @@ def main() -> int:
         path = FROZEN / f"{name}.csv"
         frozen.to_csv(path, index=False)
         hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        # Download sample: same rule as scripts/run_pair_gate.py (seed 0,
+        # at most CAP models per root), Amendment 2.
+        samp = (frozen.sample(frac=1, random_state=0).groupby("root").head(CAP)
+                .sort_values("model").reset_index(drop=True))
+        spath = FROZEN / f"{name}_sample_cap{CAP}.csv"
+        samp.to_csv(spath, index=False)
+        hashes[f"{name}_sample_cap{CAP}"] = hashlib.sha256(spath.read_bytes()).hexdigest()
+        rows.append(describe(pop[pop.model.isin(samp.model)], f"{name}_sample_cap{CAP}"))
         rows.append(describe(pop, name))
         rows.append(describe(pop[pop.root_verified], f"{name}_strict"))
     comp = pd.DataFrame(rows)
@@ -116,6 +125,7 @@ def main() -> int:
     # How many of the undeclared-parent exclusions were actually recovered.
     cfg = pd.DataFrame(map(json.loads, (ROOT / "datasets/ollb/config_lineage.jsonl")
                            .read_text().splitlines()))
+    cfg = cfg.drop_duplicates("model", keep="last")     # resumed runs append
     rec = roster[roster.exclusion_primary == "undeclared_parent"]
     recovered = int(rec.eligible_expanded.sum())
     still = rec.loc[~rec.eligible_expanded, "exclusion_expanded"].value_counts()
@@ -129,7 +139,7 @@ def main() -> int:
         + still.to_frame("models").to_markdown() + "\n")
     (OUT / "comparison.md").write_text(
         "# Exp04 roster comparison (frozen, metadata only)\n\n"
-        + comp.T.to_markdown(header=False) + "\n\n## Frozen roster hashes (SHA-256)\n\n"
+        + comp.set_index("population").T.to_markdown() + "\n\n## Frozen roster hashes (SHA-256)\n\n"
         + "\n".join(f"- `{k}.csv`: `{v}`" for k, v in hashes.items()) + "\n")
     print(comp.T.to_string(header=False))
     print(json.dumps(hashes, indent=1))
