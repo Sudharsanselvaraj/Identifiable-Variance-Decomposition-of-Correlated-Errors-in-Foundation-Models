@@ -12,3 +12,4 @@ __pycache__/
 # Exp04 leaderboard data (large / regenerable)
 datasets/ollb/v1/
 datasets/ollb/*.log
+*.egg-info/
