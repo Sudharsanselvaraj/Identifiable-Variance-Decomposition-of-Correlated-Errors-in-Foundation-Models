@@ -263,24 +263,20 @@ def _samples_to_rows(full_name: str, repo: str, samples: dict) -> list[dict]:
     without re-running the GPU evals.
     """
     rows = []
+    n_checked = n_mismatch = 0
     for task, task_samples in samples.items():
         subject = task.removeprefix("mmlu_").replace("_", " ")
         for s in task_samples:
             doc = s.get("doc", {})
-            resps = s.get("resps")
-            logprobs = []
-            if resps:
-                flat = resps[0] if isinstance(resps[0], (list, tuple)) else resps
-                logprobs = []
-                for x in flat:
-                    try:
-                        logprobs.append(float(x))
-                    except (TypeError, ValueError):
-                        logprobs.append(float(x[0]))
+            logprobs = _choice_logprobs(s)
             predicted = None
             if logprobs:
                 predicted = int(max(range(len(logprobs)), key=logprobs.__getitem__))
             answer = doc.get("answer")
+            # lm_eval records its own per-sample accuracy; ours must agree.
+            if "acc" in s and predicted is not None and answer is not None:
+                n_checked += 1
+                n_mismatch += int(float(s["acc"]) != float(predicted == answer))
             rows.append({
                 "full_name": full_name,
                 "hf_repo": repo,
@@ -292,7 +288,31 @@ def _samples_to_rows(full_name: str, repo: str, samples: dict) -> list[dict]:
                 "correct": int(predicted == answer) if answer is not None else None,
                 "choice_logprobs": json.dumps(logprobs),
             })
+    if n_mismatch:
+        raise ValueError(
+            f"{full_name}: extracted predictions disagree with lm_eval's per-sample "
+            f"acc on {n_mismatch}/{n_checked} items; refusing to write samples.")
     return rows
+
+
+def _choice_logprobs(sample: dict) -> list[float]:
+    """One log-likelihood per answer choice from an lm_eval sample.
+
+    For multiple-choice tasks lm_eval stores one response per choice:
+    ``resps = [[(ll, is_greedy)], [(ll, is_greedy)], ...]`` and
+    ``filtered_resps = [(ll, is_greedy), ...]`` (values may be strings after
+    JSON round-trips). Taking ``resps[0]`` alone keeps only choice A, which
+    made every prediction 0 in the original 16-model artifacts.
+    """
+    per_choice = sample.get("filtered_resps")
+    if not per_choice:
+        per_choice = [r[0] if r and isinstance(r[0], (list, tuple)) else r
+                      for r in sample.get("resps") or []]
+    out = []
+    for r in per_choice:
+        ll = r[0] if isinstance(r, (list, tuple)) else r
+        out.append(float(ll))
+    return out
 
 
 def write_samples(full_name: str, repo: str, samples: dict) -> Path | None:

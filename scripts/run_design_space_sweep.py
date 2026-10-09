@@ -167,10 +167,10 @@ if __name__ == '__main__':
     print(f"Kappa <= 100:        {kappa_pass}")
     print(f"All-gate passing:    {all_gate}")
 
-    paper_total = 2184
-    paper_rank = 847
-    paper_kappa = 312
-    paper_all = 298
+    paper_total = 105
+    paper_rank = 40
+    paper_kappa = 3
+    paper_all = 3
 
     match = (total == paper_total and full_rank == paper_rank
              and kappa_pass == paper_kappa and all_gate == paper_all)

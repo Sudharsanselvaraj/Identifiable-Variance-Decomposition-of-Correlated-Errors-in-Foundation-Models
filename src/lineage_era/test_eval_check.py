@@ -49,10 +49,10 @@ def test_validator_passes_wellformed() -> None:
 
 
 def test_validator_missing_model_fails() -> None:
-    csv_path, samp = _gen(drop=["Llama-1"])
+    csv_path, samp = _gen(drop=["Llama-2"])
     report = eval_check.validate_eval(csv_path, samp)
     assert not report["ok"]
-    assert any("missing from the eval CSV" in e and "Llama-1" in e
+    assert any("missing from the eval CSV" in e and "Llama-2" in e
                for e in report["errors"])
     assert any("gated" in e for e in report["errors"])
 

@@ -167,6 +167,19 @@ def _samples_summary(samples_dir: Path, full_names: list[str],
                 f"{fn}: {n_rows} JSONL rows but CSV samples={samples_col.get(fn)}")
         if not per_model[fn]["correct_ok"]:
             errors.append(f"{fn}: correct values outside {{0, 1}}: {bad_correct}")
+        # Degenerate-extraction guard: a model that always picks the same
+        # choice, or a file with < 2 logprobs per item, means the per-choice
+        # scores were not extracted (the original 16-model failure mode).
+        preds = {r.get("predicted") for r in rows if r.get("predicted") is not None}
+        if n_rows > 100 and len(preds) == 1:
+            errors.append(f"{fn}: every item predicts choice {preds.pop()} — "
+                          "per-choice logprobs were not extracted")
+        if "choice_logprobs" in cols:
+            n_lp = {len(json.loads(r["choice_logprobs"])) for r in rows[:50]
+                    if isinstance(r.get("choice_logprobs"), str)}
+            if n_lp and max(n_lp) < 2:
+                errors.append(f"{fn}: only {max(n_lp)} logprob per item; "
+                              "expected one per answer choice")
 
     # Common-item-set check (register A15): all models share the same questions.
     item_sets = {fn: d["item_set"] for fn, d in per_model.items() if d["item_set"]}
