@@ -175,6 +175,24 @@ Not yet edited; the rewrite depends on the decision below.
 | 583, 935, 1012 | JSONL "corrupted" | Extraction bug, now fixed; say so. |
 | 600, Table | Qwen-7B accuracy 22.9% | Equals the bug's all-A rate; artifact. |
 | 1068+ | six 2026 references, two truncated titles | Verify each before submission. |
+| 540 | LPM and GLMM both hit the era boundary in 20–60% of reps | `liability_summary.csv`: LPM 0 / 3.3 / 6.7%, GLMM 60 / 20 / 53.3%. Only the GLMM does. |
+| 466, 483, 491 | D3 "zero silent coverage" | `silent_ci_covers_pct` is NaN: it is coverage among undetected reps, and there are none (300/300 detected). Report "0 undetected of 300; conditional coverage undefined". |
+| 552, 824 | 22-model selection described as passing the structural requirements | It passes rank/VIF/crossing and the recovery screen but fails N1 (κ = 1100); Algorithm 1 does not check κ. Say so wherever it is called "selected". |
+| 306–336 vs code | five-condition hard gate | `identifiability.AuditResult.hard_fail` treats κ as a warning and uses BLUP collinearity + convergence; the sweep treats κ, crossing and connectedness as hard. The paper describes neither exactly. Superseded by the precision gate. |
+
+## Second external audit (2026-10-09) — status
+
+Ran on a pre-revision snapshot. Items already fixed on this branch: stale
+sweep counts, the two failing tests, the resps[0] parser, intake checks,
+requirements versions. Fixed after the audit: `structural_checks` occupancy
+and family span now describe the audited design (were global 47-model
+values; rank/κ/VIF were unaffected), the sweep exits non-zero on a count
+mismatch, `df_log["unique"]` is n − (F + E − 1) floored at 0 (was n − F·E,
+e.g. −39; the field is never read), and `pyproject.toml` gives one supported
+run path (`pip install -e .`). Confirmed and queued for the manuscript
+rewrite: the liability, D3 and 22-model rows above. Open: one canonical
+figure build with the PDF depending on figure files; repository URL, licence
+and pinned commit in `docs/REPRODUCIBILITY_CHECKLIST.md`.
 
 ## Decision needed
 

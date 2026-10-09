@@ -196,3 +196,4 @@ if __name__ == '__main__':
         writer.writeheader()
         writer.writerows(results)
     print(f"\nSaved {len(results)} rows to {outpath}")
+    sys.exit(0 if match else 1)

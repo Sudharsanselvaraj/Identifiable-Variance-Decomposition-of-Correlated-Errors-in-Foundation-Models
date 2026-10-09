@@ -72,9 +72,12 @@ def build() -> pd.DataFrame:
             reasons.append("hub_not_fetched")
         elif rec["status"] != "ok":
             reasons.append("hub_missing")
-        if bool(r.Merged) or "merge" in typ or (rec and node(repo) in multi):
+        # The v1 contents booleans are leaderboard display filters and are
+        # INVERTED: True means "not merged" / "not flagged" (Flagged is True on
+        # all 7,260 rows; 746 of 1,029 merge-type rows have Merged == False).
+        if (not bool(r.Merged)) or "merge" in typ or (rec and node(repo) in multi):
             reasons.append("merge")
-        if bool(r.Flagged):
+        if not bool(r.Flagged):
             reasons.append("flagged")
         if r.weight_type != "Original":         # Adapter / Delta weights
             reasons.append("adapter_or_delta")

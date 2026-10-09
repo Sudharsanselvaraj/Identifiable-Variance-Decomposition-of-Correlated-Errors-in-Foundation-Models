@@ -34,6 +34,21 @@ make -C paper          # builds paper/build/ieee_access_manuscript.pdf
 make -C paper clean    # removes generated artifacts
 ```
 
+## Running the code
+
+One supported setup: install the package in editable mode from the repo root,
+then run modules with `python -m` and scripts from the repo root.
+
+```sh
+python -m pip install -e ".[test]"          # analysis + tests (CPU)
+python -m pip install -e ".[test,ollb]"     # + leaderboard data tools (Exp04)
+python -m pytest                            # full suite
+python scripts/run_precision_gate.py        # random-effects precision gate
+python scripts/run_design_space_sweep.py    # exits non-zero if counts drift
+```
+
+Without installing, prefix commands with `PYTHONPATH=src`.
+
 ## Repo layout
 
 | Path | Purpose |

@@ -42,7 +42,7 @@ import pandas as pd
 from . import reml
 from ..metrics import (collinearity_detected, profile_flatness_detected,
                        se_inflation_detected)
-from ..occupancy import design_counts, family_span
+
 
 # Thresholds (pinned by the S4/S6 battery requirements).
 KAPPA_MAX = 100.0          # Belsley: >100 = severe multicollinearity
@@ -110,10 +110,12 @@ def structural_checks(df: pd.DataFrame) -> dict:
     vif_fam = vif_block(A, B, n_fam)
     vif_era = vif_block(B, A, n_era)
 
-    counts = design_counts()
+    # Occupancy and span of THIS design (previously read from the global
+    # 47-model table regardless of df).
+    counts = pd.crosstab(df[FAMILY], df[ERA])
     occupied = int((counts > 0).sum().sum())
     total_cells = int(counts.size)
-    span = family_span()
+    span = (counts > 0).sum(axis=1).to_dict()
 
     return {
         "n_models": int(len(df)),
