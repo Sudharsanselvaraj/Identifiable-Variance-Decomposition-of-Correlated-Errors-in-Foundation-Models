@@ -131,11 +131,25 @@ def fig_precision():
         c, mk, ls = styles[E]
         ax.plot(g.F, g[["worst_family", "worst_era"]].max(axis=1), marker=mk, ms=3.2, color=c,
                 ls=ls, label=f"{E} release quarters, {M} models per family")
+    obs = pd.read_csv(RES / "precision_gate/summary.csv").set_index("design")
+    tab = {"obs16": "16", "sel22": "22", "cand47": "47", "sweep_F6_E8_M5": "30",
+           "sweep_F7_E8_M6": "42"}                        # Table I rows (models)
+    o = obs.loc[list(tab)]
+    ax.scatter(o.families, o.worst_share_rmse_mc, marker="x", s=16, color=ORANGE, lw=0.9,
+               zorder=4, label="Table I designs (label: models)")
+    offs = {"obs16": (-7, 0), "sel22": (7, 0), "sweep_F6_E8_M5": (-9, 6),
+            "cand47": (-10, -3), "sweep_F7_E8_M6": (8, -5)}           # points, avoid overlap
+    for k, r in o.iterrows():
+        ax.annotate(tab[k], (r.families, r.worst_share_rmse_mc), xytext=offs[k],
+                    textcoords="offset points", fontsize=5.5, color=ORANGE, va="center",
+                    ha="right" if offs[k][0] < 0 else "left",
+                    arrowprops=dict(arrowstyle="-", color=ORANGE, lw=0.4, shrinkA=0,
+                                    shrinkB=2))
     ax.axhline(0.10, color=RED, ls=(0, (3, 2)), lw=0.7)
-    ax.text(sc.F.min(), 0.096, "target RMSE 0.10", color=RED, ha="left", va="top", fontsize=6)
+    ax.text(sc.F.max(), 0.096, "target RMSE 0.10", color=RED, ha="right", va="top", fontsize=6)
     ax.set_xlabel("Number of families (lineage levels)")
     ax.set_ylabel("Worst-case RMSE of a variance share")
-    ax.set_ylim(0, None)
+    ax.set_ylim(0, 0.33); ax.set_xlim(2, None)
     ax.legend(frameon=False, loc="upper right")
     fig.tight_layout(pad=0.3)
     return save(fig, "precision_scaling")
@@ -148,38 +162,35 @@ def fig_workflow():
     fig, ax = blank(FULL, 2.75)
     ax.set_xlim(0, 1); ax.set_ylim(0, 1)
     row1 = [
-        ("1  Source", f"Open LLM Leaderboard, version 1\n{fmt(d['total'])} models; MMLU, "
-                      "14,042 items\nper-item details with option scores"),
-        ("2  Lineage", f"declared base_model chain → root\neligible: {fmt(d['elig_p'])} primary"
-                       f" (card links),\n{fmt(d['elig_x'])} expanded (+ config paths)"),
-        ("3  Freeze", f"≤ 40 models per root, seed 0\n{fmt(d['frozen_p'])} primary + "
-                      f"{fmt(d['frozen_x'])} expanded\n({fmt(d['union'])} unique; SHA-256 "
-                      "recorded)"),
-        ("4  Validate", f"argmax of option scores must match\nstored correctness on every item"
-                        f"\n{fmt(c['validated'])} accepted, "
-                        f"{fmt(d['union'] - c['validated'])} excluded (logged)"),
+        ("1  Source", f"Open LLM Leaderboard v1\n{fmt(d['total'])} models\nMMLU, 14,042 items"),
+        ("2  Lineage", f"declared base_model chain → root\n{fmt(d['elig_p'])} primary (card links)\n"
+                       f"{fmt(d['elig_x'])} expanded (+ config paths)"),
+        ("3  Freeze", f"≤ 40 per root, seed 0, SHA-256\n{fmt(d['frozen_p'])} primary, "
+                      f"{fmt(d['frozen_x'])} expanded\n(overlapping: {fmt(d['union'])} unique)"),
+        ("4  Validate", f"argmax must match stored\ncorrectness on every item"
+                        f"\n{fmt(c['validated'])} accepted (union of both),\n"
+                        f"{fmt(d['union'] - c['validated'])} excluded and logged"),
     ]
     row2 = [
-        ("5  Pairs", f"$a_{{ij}}$ = P(same wrong | both wrong)\n{fmt(d['pairs_p'])} primary, "
-                     f"{fmt(d['pairs_x'])} expanded\n≥ {fmt(d['den'].jointly_wrong_min.min())}"
-                     " jointly wrong items per pair"),
-        ("6  Estimate", f"shared root + release-gap bins\n+ accuracy sum and difference\n"
+        ("5  Pairs", f"$a_{{ij}}$ = P(same wrong | both wrong)\n{fmt(d['pairs_p'])} primary pairs\n"
+                     f"{fmt(d['pairs_x'])} expanded pairs"),
+        ("6  Estimate", f"shared root + gap bins\n+ accuracy terms\n"
                         f"{d['n_prereg']} pre-registered analyses"),
-        ("7  Audit (partly post hoc)", "root-level inference, outcomes,\nitem-difficulty "
-                                       "nulls, gate audit,\nsize & architecture controls"),
+        ("7  Audit (partly post hoc)", "root-level inference, outcomes,\nitem-difficulty nulls,"
+                                       "\ngate audit, size controls"),
     ]
     gap, w, h = 0.035, 0.2165, 0.30
     y1, y2 = 0.56, 0.12
     for k, (t, body) in enumerate(row1):
         x = 0.01 + k * (w + gap)
-        box(ax, x, y1, w, h, f"{t}\n{body}", size=6.3)
+        box(ax, x, y1, w, h, f"{t}\n{body}", size=6.6)
         if k:
             arrow(ax, (x - gap + 0.003, y1 + h / 2), (x - 0.003, y1 + h / 2))
     x0 = 0.01 + (4 * (w + gap) - gap - (3 * w + 2 * gap)) / 2
     for k, (t, body) in enumerate(row2):
         x = x0 + k * (w + gap)
         last = k == 2
-        box(ax, x, y2, w, h, f"{t}\n{body}", size=6.3, face="#f6f6f6" if last else BOX_FACE,
+        box(ax, x, y2, w, h, f"{t}\n{body}", size=6.6, face="#f6f6f6" if last else BOX_FACE,
             edge=GREY if last else BOX_EDGE, ls="--" if last else "-")
         if k:
             arrow(ax, (x - gap + 0.003, y2 + h / 2), (x - 0.003, y2 + h / 2))
@@ -189,8 +200,9 @@ def fig_workflow():
             transform=ax.transAxes)
     arrow(ax, (x0 + w / 2, ym), (x0 + w / 2, y2 + h + 0.005))
     # pre-registration band over steps 2-6
-    ax.text(0.5, 0.955, "Fixed before any outcome was computed: lineage rules, caps and seed, "
-            "pair model, simulation gate (three dated amendments)", ha="center", va="center",
+    ax.text(0.5, 0.945, "Fixed before any pair outcome was computed: lineage rules, caps and seed, "
+            "pair model, simulation gate\n(three dated amendments; the third after per-model "
+            "accuracies were seen)", ha="center", va="center",
             fontsize=6.4, color=BLUE, transform=ax.transAxes,
             bbox=dict(boxstyle="round,pad=0.25", fc="white", ec=BLUE, lw=0.6))
     return save(fig, "fig_workflow")
@@ -198,7 +210,7 @@ def fig_workflow():
 
 # ------------------------------------------------------------------ 3 schematic
 def fig_schematic():
-    fig, ax = plt.subplots(figsize=(COL, 2.05))
+    fig, ax = plt.subplots(figsize=(COL, 2.25))
     ax.set_xlim(-0.8, 12.4); ax.set_ylim(0.0, 3.3)
     for sp in ("left", "right", "top"):
         ax.spines[sp].set_visible(False)
@@ -211,25 +223,25 @@ def fig_schematic():
     for r, (y, m0, kids, c, lc) in lanes.items():
         ax.plot([m0, 11.6], [y, y], color="#e3e3e3", lw=0.8, zorder=0)
         ax.scatter(m0, y, s=48, marker="s", color=c, zorder=3)
-        ax.text(m0, y + 0.28, f"root {r}", ha="center", fontsize=6.2, weight="bold", color=c)
+        ax.text(m0, y + 0.28, f"root {r}", ha="center", fontsize=7, weight="bold", color=c)
         for name, m in kids:
             ax.annotate("", (m, y), (m0, y), arrowprops=dict(
                 arrowstyle="-|>", color=LGREY, lw=0.6, mutation_scale=5, shrinkA=3, shrinkB=3,
                 connectionstyle="arc3,rad=-0.28"))
             ax.scatter(m, y, s=24, color=lc, ec=c, lw=0.6, zorder=3)
-            ax.text(m, y - 0.3, name, ha="center", fontsize=6)
+            ax.text(m, y - 0.3, name, ha="center", fontsize=6.8)
             pos[name] = (m, y)
     def bracket(a, b, y, txt, c):
         x1, x2 = pos[a][0], pos[b][0]
         ax.plot([x1, x1, x2, x2], [y + 0.1, y, y, y + 0.1], color=c, lw=0.8)
-        ax.text((x1 + x2) / 2, y - 0.08, txt, color=c, ha="center", va="top", fontsize=5.6)
+        ax.text((x1 + x2) / 2, y - 0.08, txt, color=c, ha="center", va="top", fontsize=6.4)
     bracket("A1", "A2", 1.72, "shared root,\ngap 1 (bin 1–2)", BLUE)
     (xa, ya), (xb, yb) = pos["A3"], pos["B2"]
     ax.annotate("", (xb + 0.05, yb + 0.12), (xa + 0.05, ya - 0.42), arrowprops=dict(
         arrowstyle="<->", color=ORANGE, lw=0.9, mutation_scale=6))
     ax.text(xa + 0.35, (ya + yb) / 2 - 0.1, "different roots,\nsame month\n(bin 0)",
-            color=ORANGE, fontsize=5.6, va="center")
-    ax.text(-0.6, 0.12, "arcs: declared fine-tune ancestry", fontsize=5.4, color=GREY,
+            color=ORANGE, fontsize=6.4, va="center")
+    ax.text(-0.6, 0.12, "arcs: declared fine-tune ancestry", fontsize=6, color=GREY,
             ha="left")
     fig.tight_layout(pad=0.3)
     return save(fig, "fig_schematic")
@@ -254,7 +266,10 @@ def fig_validation():
     ys = [0.86 - k * 0.15 for k in range(len(steps))]
     hs = [H + (0.035 if "\n" in b else 0) for _, b in steps]
     for k, ((t, b), y) in enumerate(zip(steps, ys)):
-        box(ax, X0, y - hs[k] / 2, W, hs[k], f"{t}\n{b}", size=6.0)
+        key = t.startswith("Item-level")
+        box(ax, X0, y - hs[k] / 2, W, hs[k], f"{t}\n{b}", size=6.2,
+            face="#dce8f4" if key else BOX_FACE, edge=BLUE if key else BOX_EDGE,
+            lw=1.4 if key else 0.7)
         if k:
             arrow(ax, (X0 + W / 2, ys[k - 1] - hs[k - 1] / 2), (X0 + W / 2, y + hs[k] / 2))
     rej = [(1, f"no complete run: {c.get('no_complete_run', 0)}"),
@@ -282,7 +297,7 @@ def fig_validation():
 def fig_population():
     d = flow()
     e = d["excl"]
-    fig, ax = blank(COL, 3.25)
+    fig, ax = blank(COL, 3.45)
     ax.set_xlim(0, 1); ax.set_ylim(0, 1)
     box(ax, 0.18, 0.885, 0.64, 0.09,
         f"Leaderboard v1 models\n{fmt(d['total'])} (de-duplicated)", size=6.2)
@@ -311,9 +326,14 @@ def fig_population():
         arrow(ax, (xa, 0.4075), (x + 0.165, 0.4075), color=RED)
         box(ax, x, 0.17, w, 0.13, f"Analysed\n{fmt(va)} models\n({fmt(sm[key + '_strict'])} "
             "with verified pretrained root)", face="#e3ecf5", size=6.0)
-    ax.text(0.5, 0.075, f"The two frozen samples overlap in {fmt(d['overlap'])} models "
-            f"({fmt(d['union'])} unique);\n{fmt(d['cats']['validated'])} validated, no excluded "
-            "model replaced.", ha="center", va="center", fontsize=5.8, color=GREY)
+    v = pd.read_csv(RES / "exp04_validation/per_model.csv")
+    a = v[v.category == "validated"]
+    both = int((a.in_primary_sample & a.in_expanded_sample).sum())
+    for x in (0.03 + 0.22, 0.53 + 0.22):
+        arrow(ax, (x, 0.17), (x, 0.115))
+    box(ax, 0.14, 0.015, 0.72, 0.10, f"Accepted models, union of both populations\n"
+        f"{fmt(len(a))} unique ({both} in both; frozen union {fmt(d['union'])}, none replaced)",
+        face="#e3ecf5", edge=BLUE, size=6.0)
     return save(fig, "fig_population")
 
 
@@ -342,6 +362,7 @@ def fig_gate():
         r = a[a.truth == "null"].set_index("term").loc[terms]
         pts(ax, r, np.arange(3), k, lab)
     ax.axhline(10, color=RED, ls=(0, (3, 2)), lw=0.7); ax.axhline(5, color=LGREY, lw=0.5)
+    ax.text(2.45, 10.3, "10% criterion", color=RED, fontsize=5.8, ha="right", va="bottom")
     ax.set_xticks(range(3), ["root", "0 mo", "1–2 mo"])
     ax.set_ylabel("Rejection rate (%)"); ax.set_ylim(0, 16)
     ax.set_title("(a) Null: false rejection")
@@ -378,6 +399,8 @@ def fig_gate():
             labs.append(f"{lab} | λ={float(lam):.2f}"); xs += 1
     ax.axhline(80, color=RED, ls=(0, (3, 2)), lw=0.7)
     ax.set_xticks(range(xs), labs, rotation=30, ha="right")
+    ax.text(3.45, 81.5, "80% criterion (λ = 0.05)", color=RED, fontsize=5.8, ha="right",
+            va="bottom")
     ax.set_ylim(0, 105); ax.set_title("(c) Power")
     for ax in axes:
         ax.set_xlim(-0.5, len(ax.get_xticks()) - 0.5)
@@ -428,7 +451,13 @@ def fig_forest():
     axes[0].text(0.004, yy[6] + 0.5, "EXPANDED", fontsize=5.6, weight="bold", color=GREY,
                  va="center")
     axes[0].set_ylim(yy[-1] - 0.6, yy[0] + 0.9)
-    fig.tight_layout(pad=0.3, w_pad=0.6)
+    from matplotlib.lines import Line2D
+    h = [Line2D([], [], marker="D", color=GREY, ls="", ms=3.4, label="primary specification"),
+         Line2D([], [], marker="o", color=GREY, mfc="white", ls="", ms=2.8,
+                label="sensitivity analysis")]
+    fig.legend(handles=h, loc="upper center", ncol=2, frameon=False, fontsize=5.8,
+               bbox_to_anchor=(0.6, 1.0))
+    fig.tight_layout(pad=0.3, w_pad=0.6, rect=(0, 0, 1, 0.95))
     return save(fig, "exp04_forest")
 
 
@@ -456,6 +485,7 @@ def fig_rawadj():
         ax.set_xlabel("Coefficient")
         ax.axhline(3.5, color=LGREY, lw=0.5)
     axes[0].set_yticks(y, [g for _, g in GAPS])
+    axes[0].set_ylabel("Release gap (reference: 12+ months)", fontsize=6.2)
     fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2,
                frameon=False, fontsize=5.8, handletextpad=0.2, bbox_to_anchor=(0.55, 1.0))
     fig.tight_layout(pad=0.3, w_pad=0.5, rect=(0, 0, 1, 0.9))
@@ -602,7 +632,7 @@ def fig_controls():
 
 
 # ------------------------------------------------------------------ 13 lineage x month map
-def fig_heatmap(top: int = 14):
+def fig_heatmap(top: int = 10):
     pop = population("primary")
     months = pd.period_range(pop.created_month.min(), pop.created_month.max(), freq="M")
     vc = pop.root.value_counts()
@@ -612,7 +642,7 @@ def fig_heatmap(top: int = 14):
         .reindex(columns=months, fill_value=0)
     n_other_roots = pop.root.nunique() - len(keep)
     tab = tab.loc[keep + ["other"]]
-    fig, ax = plt.subplots(figsize=(FULL, 2.9))
+    fig, ax = plt.subplots(figsize=(FULL, 2.5))
     data = tab.to_numpy().astype(float)
     masked = np.ma.masked_equal(data, 0)
     from matplotlib.colors import LogNorm
@@ -621,14 +651,14 @@ def fig_heatmap(top: int = 14):
                    interpolation="none")
     for (r, c), v in np.ndenumerate(data):
         if v:
-            ax.text(c, r, int(v), ha="center", va="center", fontsize=4.8,
+            ax.text(c, r, int(v), ha="center", va="center", fontsize=5.6,
                     color="white" if v > data.max() ** 0.6 else "black")
     ax.set_xticks(range(len(months)), [m.strftime("%b %y") if m.month in (1, 4, 7, 10)
-                                       else "" for m in months], fontsize=5.8)
+                                       else "" for m in months], fontsize=6.4)
     short = lambda k: (k if len(k) <= 24 else k[:21] + "…")  # noqa: E731
     names = [f"{short(k.split('/')[-1])} (n={vc[k]})" for k in keep]
     names.append(f"{n_other_roots} other roots (n={int(data[-1].sum())})")
-    ax.set_yticks(range(len(names)), names, fontsize=5.8)
+    ax.set_yticks(range(len(names)), names, fontsize=6.4)
     ax.set_xticks(np.arange(-0.5, len(months)), minor=True)
     ax.set_yticks(np.arange(-0.5, len(names)), minor=True)
     ax.grid(which="minor", color="#e6e6e6", lw=0.3)

@@ -1,7 +1,8 @@
 # Reproducibility Checklist (Exp04 manuscript)
 
 **Paper:** Lineage and Release Timing in Correlated Errors of Open-Weight Language
-Models: A Precision-Gated, Pre-Registered Study of 977 Models
+Models: A Pre-Registered Pair-Level Study (manuscript-v3 carried the earlier title
+"... A Precision-Gated, Pre-Registered Study of 977 Models")
 
 The checklist for the superseded 16-model study is archived in
 `docs/archive/REPRODUCIBILITY_CHECKLIST_v1_16model.md`.
