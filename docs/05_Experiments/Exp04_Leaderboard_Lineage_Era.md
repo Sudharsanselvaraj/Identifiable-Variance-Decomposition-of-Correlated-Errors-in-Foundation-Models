@@ -1,0 +1,204 @@
+# Exp04 — Lineage vs era on the Open LLM Leaderboard population (Option B)
+
+## Amendment 1 (2026-10-09, still pre-outcome)
+
+- **Primary arm switched to the v1 leaderboard** (`open-llm-leaderboard-old`,
+  7,055 details repos, MMLU 5-shot, 4 options, not gated). The v2 details repos
+  are each individually gated and could not be read (403); v2 becomes an
+  optional replication if access is obtained.
+- **Metadata:** `open-llm-leaderboard-old/contents` read with metadata columns
+  only (scores never saved): `datasets/ollb/v1_contents_meta.csv` (7,260 rows,
+  6,896 models). It has no `base_model`, so lineage and creation month come
+  from the Hub (`lineage_era/ollb/hub_meta.py`, cache
+  `datasets/ollb/hub_meta.jsonl`; API limit 1,000 requests / 5 min).
+- **Fetcher validated on one model** (`lineage_era/ollb/fetch_v1.py`,
+  Llama-2-7b-hf): 14,042 items; argmax(predictions) reproduces stored `acc` on
+  every item; macro accuracy 43.80 equals the official results file for the same
+  run. Partial (`--limit`) runs exist and are skipped by choosing the complete
+  run with most rows; items are keyed by subject and position because 27 MMLU
+  questions are exact duplicates. Cost ≈ 13 MB and ≈ 3.4 min per model.
+- **Roster rules (v1):** exclude merges (flag, type, or multi-parent card),
+  flagged, adapter/delta weights, Hub-missing, unresolved lineage, and fine-tunes
+  with no declared parent (depth 0 but not pretrained). Lineage root = end of
+  the single-parent `base_model` walk with renames collapsed.
+- **Sample:** shuffle eligible models with a fixed seed, cap at 15 models per
+  root (so a few popular bases do not dominate), take the first N. N is the
+  smallest size at which the pair gate passes (below).
+
+### Primary analysis (fixed before data)
+
+Unit: unordered model pair (i, j). Outcome: agree_ij = P(same wrong option |
+both wrong) over the common MMLU items. Model:
+
+    agree_ij = b0 + bL·same_root_ij + Σ_g bE_g·[|Δmonth_ij| ∈ g]
+               + c1·(acc_i + acc_j) + c2·|acc_i − acc_j| + e_ij
+
+gap bins g ∈ {0, 1–2, 3–5, 6–11} months, reference 12+. Inference: two-way
+(model i, model j) cluster-robust SEs (Cameron–Gelbach–Miller). Estimands:
+bL = lineage effect at equal time gap; bE_0 = contemporaneity effect at equal
+lineage status. Secondary: tree distance instead of same_root; phi of error
+indicators as the outcome; v2 replication.
+
+### Pair gate (`lineage_era/ollb/pair_gate.py`, `scripts/run_pair_gate.py`)
+
+Item-level simulation on the sampled design (roots and months only): wrong
+answers come from a root attractor (λ_L), a month attractor that drifts over
+time (λ_E, AR(1) ρ = 0.8), a global attractor, or uniform noise. Pass criteria:
+(1) separation — under lineage-only truth the gap terms reject at ≤ 10% and
+under era-only truth the same-root term rejects at ≤ 10%; (2) calibration —
+null rejection ≤ 10%; (3) power ≥ 80% for λ = 0.05 for both terms.
+Trial on 400 models from the v2 roster: separation and calibration hold, SE
+matches the simulated spread (0.0011 vs 0.0013), power 100% at λ = 0.10.
+
+Status: **plan, pre-data.** Written 2026-10-09 before any per-question outcome
+was read. Supersedes the 16-model empirical arm (see
+`docs/08_Reviews/Revision_2026-10_Precision_Gate.md` for why that arm cannot
+answer the question at any affordable N).
+
+## Provenance note (2026-10-09, post-freeze)
+
+The frozen rosters were built from `datasets/ollb/config_lineage.jsonl` as
+committed (rebuilding from it reproduces `frozen/expanded.csv` exactly: 1,295 of
+1,295). A later re-validation pass, kept as `config_lineage.post_freeze.jsonl`,
+resolved the 7 unvalidated candidates and flipped the outcome of 8 links (4 valid
+only at freeze time, 4 only afterwards), consistent with transient Hub lookups.
+None of the 8 affects any analysed model: the 4 frozen-only links belong to models
+outside both samples, and the 4 other models in the samples take their lineage
+from model-card declarations, which take precedence over config links. The frozen
+rosters remain authoritative and unchanged.
+
+## Amendment 3 (2026-10-09, during download; no pair outcome computed yet)
+
+Seen so far: only the per-model accuracies of validated files (needed to
+validate them). 155 of the first 443 models score below 0.30 on 4-choice MMLU.
+Near-chance models agree on wrong answers partly through shared answer-
+position bias (e.g. both favouring "A"), which neither lineage nor era
+explains and the accuracy controls only partly absorb. Added, before any pair
+outcome is computed:
+
+- **S1 (position bias):** add the total-variation distance between the two
+  models' chosen-option distributions as a pair covariate.
+- **S2 (above chance):** re-run the primary model on models with accuracy
+  ≥ 0.30 only.
+
+The primary analysis is unchanged; S1–S2 are reported next to it for every
+population (primary, expanded, strict).
+
+## Amendment 2 (2026-10-09, still pre-outcome)
+
+- **Rosters.** Primary = card-declared lineage only; expanded = primary plus
+  validated `config.json` `_name_or_path` first hops (outcome-coded, see
+  `lineage_era/ollb/config_lineage.py`). Additional rules found while building
+  the primary roster: chains that end at a leaderboard fine-tune
+  (`root_is_finetune`) or at a deleted / invalid ancestor (`ancestor_missing`)
+  are unresolved; a curated mirror map collapses straight re-uploads and
+  quantisations (`unsloth/*`, `NousResearch/Meta-Llama-3-8B`, …) onto the
+  checkpoint they copy. Strict variant: root listed as pretrained on the
+  leaderboard (`root_verified`, 94% of primary).
+- **Per-root cap set to 40 (was 15), chosen by the pair gate, not by outcomes.**
+  Primary roster, simulated with the real item count (14,042):
+
+  | cap | N | null rejection | cross-term leakage | power λ=0.05 (L / E) |
+  |---|---|---|---|---|
+  | 15 | 561 | ≤ 15% | ≤ 20% | 100% / 100% |
+  | **40** | **613** | **≤ 5%** | **≤ 10%** | **100% / 100%** |
+  | none | 721 | ≤ 10% | ≤ 15% | 100% / 100% |
+
+  The earlier lineage shortfall (power 20% at λ = 0.05) came from simulating
+  1,500 items; the gate now uses the real item count. Cap 40 is the only
+  setting meeting every pre-registered criterion.
+
+## Question
+
+Across public open-weight models, how much of the **pairwise agreement in
+errors** is explained by shared lineage (position in the `base_model`
+ancestry tree) versus temporal proximity (release era), and is that split
+estimable to a pre-specified precision on the available population?
+
+## Why this design, given the precision result
+
+The precision gate showed that a per-model trait decomposed into family and
+quarter random effects needs ~60 family levels and ≥14 era levels to pin
+either share within ±10pp. Two changes remove that ceiling:
+
+1. **Many lineage levels.** The leaderboard has thousands of fine-tunes with a
+   declared `base_model`, i.e. real ancestry trees, not 5–6 hand-labelled
+   families.
+2. **Pair-level outcome with continuous time.** The outcome is error agreement
+   for each model pair, modelled with crossed (multi-membership) random effects
+   for the two models plus pair covariates: lineage relation (same root, tree
+   distance, parent–child) and |Δ upload date| in months. Time enters as a
+   continuous distance, so precision no longer depends on how many quarters
+   exist. This is also the quantity the paper's introduction is about.
+
+## Data sources (verified reachable 2026-10-09)
+
+| source | content | access | notes |
+|---|---|---|---|
+| `datasets/kim/hugging_face.csv` (in repo) | OLLB v2 contents snapshot: 4,576 rows / 4,497 models; `base_model`, `upload_date`, `type`, `is_merged`, params | local | metadata only; frozen at 2025-03-13 |
+| `open-llm-leaderboard/<model>-details` (≈4,500 repos) | v2 per-question MMLU-Pro (12,032 items, 10 options) | HF, `gated=auto` | raw JSONL is ~327 MB/model; the auto-converted parquet (`refs/convert/parquet`) allows reading only `doc_id`, `acc`, per-choice scores |
+| `open-llm-leaderboard-old/details_<model>` | v1 per-question MMLU 5-shot (57 subjects, 4 options) | HF, not gated | parquet; per-choice log-likelihoods + `gold` + item hash; replication on an earlier era and a different benchmark |
+
+## Population construction (outcome-independent)
+
+Built only from metadata; score columns (`mmlu_pro`, `average_score`, …) are
+never read by the builder.
+
+1. One row per model name (drop duplicate precision variants).
+2. Exclude: flagged, `base_model == "Removed"`, merges (`is_merged` **or**
+   `type == basemergesandmoerges` — 1,112 merge-type rows are not flagged
+   `is_merged`; multi-parent lineage is a sensitivity analysis, not primary).
+3. Resolve ancestry to a root by walking `base_model`; 2,073 parents are not
+   on the leaderboard and must be resolved through the Hub model API
+   (`cardData.base_model`), cached to `datasets/ollb/lineage_cache.json`.
+4. Lineage variables per pair: same root; tree distance; parent–child; same
+   root organisation.
+5. Era: upload date (month). Root release date kept separately: for a
+   fine-tune, pretraining era is a property of its root and therefore nested in
+   lineage — only the post-training era is separable. This is stated as a
+   scope limit, not hidden.
+6. Freeze the roster (`datasets/ollb/roster.csv`) and run the precision gate on
+   the frozen design **before** downloading any outcomes.
+
+Initial metadata profile (no outcomes read): 3,229 eligible non-merge models;
+upload quarters concentrated in 2024Q2–2025Q1 (465 / 663 / 1,116 / 1,472).
+Lineage roots are under-resolved until step 3 runs.
+
+## Outcomes and models
+
+- Per model: correctness vector and chosen option per item (argmax of the
+  per-choice scores, cross-checked against the stored `acc`, same guard as the
+  fixed `phase2_eval._choice_logprobs`).
+- Per pair: P(same wrong answer | both wrong) (Kim et al.'s measure) and the
+  phi coefficient of error indicators.
+- Primary model: pair outcome ~ lineage relation + f(|Δt|) + size/accuracy
+  controls + (1 | model_i) + (1 | model_j) (multi-membership); variance and
+  effect-size partition reported with precision-gate bounds.
+- Secondary: per-model accuracy decomposition (the original estimand) on the
+  large population, for comparison with the 16-model result.
+- Replication: the same pipeline on v1 MMLU.
+
+## Data volume (estimates, to confirm with a 1-model test)
+
+- v2 projected columns: expected ~1–3 MB per model → roughly 5–13 GB transfer
+  for all ~4,500; stored compactly as an int8 model × item matrix
+  (~4,500 × 12,032 ≈ 55 MB).
+- Hub metadata calls: ~2,000–4,000 `model_info` requests for lineage.
+
+## Permissions needed before execution
+
+1. Hub metadata calls using the stored HF login (read-only).
+2. The v2 details repos are `gated=auto`: access must be requested/accepted by
+   the account holder on Hugging Face.
+3. A one-model test read (≈ 1–3 MB) to confirm schema and size, then the bulk
+   download.
+
+## Out of scope / threats
+
+- Causal lineage effects (observational).
+- Leaderboard population is dominated by community fine-tunes of a few large
+  bases; results describe that population, not frontier releases.
+- Contamination and self-selection into the leaderboard: disclosed.
+- Overlap with Kim et al. (same v2 source): our contribution is the lineage
+  tree + continuous-time separation + pre-specified precision gate; their
+  pairwise regression used provider/architecture indicators only.

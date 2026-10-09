@@ -77,7 +77,7 @@ def test_cost_covers_manifest() -> None:
     assert len(df) == 47
     assert set(df["full_name"]) == set(EVAL_MANIFEST)
     s = gpu_cost.cost_summary(df)
-    assert s["n_models"] == 47 and s["n_public"] == 23 and s["n_gated"] == 24
+    assert s["n_models"] == 47 and s["n_public"] == 28 and s["n_gated"] == 19
 
 
 def test_cost_gpu_class_buckets() -> None:

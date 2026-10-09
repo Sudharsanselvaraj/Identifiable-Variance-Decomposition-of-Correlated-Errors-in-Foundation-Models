@@ -1,0 +1,43 @@
+{
+ "population": "expanded_strict",
+ "frozen_sample": 814,
+ "with_answers": 789,
+ "missing_answers": [
+  "01-ai/Yi-6B-200K",
+  "Andron00e/YetAnother_Open-Llama-3B-LoRA-OpenOrca",
+  "FabbriSimo01/Facebook_opt_1.3b_Quantized",
+  "KoboldAI/OPT-350M-Nerys-v2",
+  "MayaPH/opt-flan-iml-6.7b",
+  "NousResearch/Nous-Hermes-2-Mixtral-8x7B-SFT",
+  "QueryloopAI/gemma-7b-openhermes",
+  "RoversX/llama-2-7b-hf-small-shards-Samantha-V1-SFT",
+  "TheBloke/orca_mini_13B-GPTQ",
+  "amazingvince/zephyr-smol_llama-100m-dpo-full",
+  "bofenghuang/vigogne-2-13b-instruct",
+  "chargoddard/Yi-34B-Llama",
+  "edor/Platypus2-mini-7B",
+  "harborwater/open-llama-3b-claude-30k",
+  "internlm/internlm-20b",
+  "internlm/internlm2-20b",
+  "internlm/internlm2-7b",
+  "psmathur/model_007_13b_v2",
+  "pszemraj/pythia-6.9b-HC3",
+  "rinna/bilingual-gpt-neox-4b",
+  "rinna/bilingual-gpt-neox-4b-8k",
+  "rinna/youri-7b",
+  "rinna/youri-7b-chat",
+  "tianlinliu0121/zephyr-7b-dpo-full-beta-0.2",
+  "yec019/fbopt-350m-8bit"
+ ],
+ "models_analysed": 789,
+ "pairs": 310866,
+ "roots": 322,
+ "same_root_pairs": 4742,
+ "mean_agreement": 0.42890772223472595,
+ "mean_accuracy": 0.4475211880202232,
+ "alignment_checks": {
+  "item_order_mismatch": 0,
+  "gold_mismatch": 0,
+  "hash_mismatch": 0
+ }
+}

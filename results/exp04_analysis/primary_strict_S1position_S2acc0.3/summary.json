@@ -1,0 +1,37 @@
+{
+ "population": "primary_strict_S1position_S2acc0.3",
+ "frozen_sample": 572,
+ "with_answers": 554,
+ "missing_answers": [
+  "01-ai/Yi-6B-200K",
+  "FabbriSimo01/Facebook_opt_1.3b_Quantized",
+  "NousResearch/Nous-Hermes-2-Mixtral-8x7B-SFT",
+  "QueryloopAI/gemma-7b-openhermes",
+  "ajibawa-2023/Young-Children-Storyteller-Mistral-7B",
+  "amazingvince/zephyr-smol_llama-100m-dpo-full",
+  "chargoddard/Yi-34B-Llama",
+  "internlm/internlm-20b",
+  "internlm/internlm2-20b",
+  "internlm/internlm2-7b",
+  "openaccess-ai-collective/openhermes-2_5-dpo-no-robots",
+  "pszemraj/pythia-6.9b-HC3",
+  "rinna/bilingual-gpt-neox-4b",
+  "rinna/bilingual-gpt-neox-4b-8k",
+  "rinna/youri-7b",
+  "rinna/youri-7b-chat",
+  "tianlinliu0121/zephyr-7b-dpo-full-beta-0.2",
+  "yec019/fbopt-350m-8bit"
+ ],
+ "dropped_below_min_acc": 235,
+ "models_analysed": 319,
+ "pairs": 50721,
+ "roots": 144,
+ "same_root_pairs": 1891,
+ "mean_agreement": 0.5505855679512024,
+ "mean_accuracy": 0.5774709012237805,
+ "alignment_checks": {
+  "item_order_mismatch": 0,
+  "gold_mismatch": 0,
+  "hash_mismatch": 0
+ }
+}

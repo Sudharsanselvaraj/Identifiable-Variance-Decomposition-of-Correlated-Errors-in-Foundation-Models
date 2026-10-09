@@ -221,7 +221,11 @@ def fit_lpm_vcomp(df, reml: bool = True) -> FitResult:
         hessian=hess,
         blups={"family": b[0][fam_idx], "era": b[1][era_idx]},
         llf=-float(opt.fun),
-        df_log={"family": f_lv - 1, "era": e_lv - 1, "unique": n - f_lv * e_lv},
+        # Informational only (never read by the estimator): residual df of the
+        # additive crossed design, n - (F + E - 1), floored at 0. The previous
+        # n - F*E went negative on sparse designs (16 - 55 = -39).
+        df_log={"family": f_lv - 1, "era": e_lv - 1,
+                "unique": max(n - (f_lv + e_lv - 1), 0)},
         solver=solver,
     )
 

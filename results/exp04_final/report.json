@@ -1,0 +1,18 @@
+{
+ "A_integrity": {
+  "hashes_match": true,
+  "hashes": {
+   "primary": "3f6147f5ce50923428dce812f53157166c0038ed777009b0d9d967b7010f61f8",
+   "primary_sample_cap40": "edf3381a6b03554d45c2c323903915ba9bc01ab204a78a9bff2267bd644e3068",
+   "expanded": "c709130c3bdd24e4cd83d58b14ccadf66c5e94c11e30eada3db6851b392d6955",
+   "expanded_sample_cap40": "45f62a197dde6905ae65dedbbd64047d5f4c2843aa30cd96f7e0ba77a6d6660e"
+  }
+ },
+ "C_prereg_max_abs_diff": 9.8879238130678e-17,
+ "F_exploratory_all_match": true,
+ "G_figures": [
+  "exp04_forest.pdf",
+  "exp04_agreement_by_gap.pdf",
+  "precision_scaling.pdf"
+ ]
+}
