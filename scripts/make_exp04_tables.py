@@ -19,12 +19,12 @@ T = ROOT / "paper" / "tables"
 
 NICE = {
     "primary": "Primary", "primary_strict": "Primary, verified roots",
-    "primary_S1position": "Primary + S1 (position)",
+    "primary_S1position": "Primary + S1 (option distribution)",
     "primary_S2acc0.3": "Primary, S2 (acc $\\geq$ 0.30)",
     "primary_S1position_S2acc0.3": "Primary + S1, S2",
     "primary_strict_S1position_S2acc0.3": "Primary, verified + S1, S2",
     "expanded": "Expanded", "expanded_strict": "Expanded, verified roots",
-    "expanded_S1position": "Expanded + S1 (position)",
+    "expanded_S1position": "Expanded + S1 (option distribution)",
     "expanded_S2acc0.3": "Expanded, S2 (acc $\\geq$ 0.30)",
     "expanded_S1position_S2acc0.3": "Expanded + S1, S2",
     "expanded_strict_S1position_S2acc0.3": "Expanded, verified + S1, S2",
@@ -58,7 +58,7 @@ def tab_prereg():
         g = d[(d.analysis == a) & (d.term == "gap0")].iloc[0]
         lines.append(f"{NICE[a]} & {int(s.models)} & {int(s.pairs):,} & "
                      f"{fmt_ci(s.estimate, s.ci_low, s.ci_high)} & "
-                     f"{fmt_ci(g.estimate, g.ci_low, g.ci_high)} & {pval(g.p)} \\\\")
+                     f"{fmt_ci(g.estimate, g.ci_low, g.ci_high, 4)} & {pval(g.p)} \\\\")
         if a == "primary_strict_S1position_S2acc0.3":
             lines.append("\\hline")
     write("tab_prereg.tex", "\n".join(lines) + "\n")
@@ -71,8 +71,9 @@ def tab_inference():
         for r in g.itertuples():
             label = r.inference.replace(" (pre-registered)", DAGGER)
             who = "same root" if term == "same_root" else "same month"
+            dig = 3 if term == "same_root" else 4
             lines.append(f"{pop.replace('_S2', ', S2')} & {who} & {label} & "
-                         f"{fmt_ci(r.estimate, r.ci_low, r.ci_high)} & {pval(r.p)} \\\\")
+                         f"{fmt_ci(r.estimate, r.ci_low, r.ci_high, dig)} & {pval(r.p)} \\\\")
         lines.append("\\hline")
     write("tab_inference.tex", "\n".join(lines[:-1]) + "\n")
 
@@ -84,10 +85,11 @@ def tab_outcome():
         for v, h in g.groupby("variant", sort=False):
             s = h[h.term == "same_root"].iloc[0]
             m = h[h.term == "gap0"].iloc[0]
-            vlab = v.replace(">=", GEQ)
+            vlab = (v.replace(">=", GEQ)
+                    .replace("position-based chance", "option-distribution chance"))
             lines.append(f"{pop.capitalize()} & {vlab} & "
                          f"{fmt_ci(s.estimate, s.ci_low, s.ci_high)} & "
-                         f"{fmt_ci(m.estimate, m.ci_low, m.ci_high)} & {pval(m.p)} \\\\")
+                         f"{fmt_ci(m.estimate, m.ci_low, m.ci_high, 4)} & {pval(m.p)} \\\\")
         lines.append("\\hline")
     write("tab_outcome.tex", "\n".join(lines[:-1]) + "\n")
 
@@ -156,8 +158,61 @@ def tab_exploratory():
     write("tab_exploratory.tex", "\n".join(lines) + "\n")
 
 
+def jk(r, d):
+    """Estimate with a 95% CI from the delete-one-root jackknife SE."""
+    return fmt_ci(r.estimate, r.estimate - 1.96 * r.se_jackknife,
+                  r.estimate + 1.96 * r.se_jackknife, d)
+
+
+def tab_itemnull():
+    d = pd.read_csv(R / "exp04_item_null/item_null.csv")
+    short = {"pre-registered: same-wrong agreement": "Same-wrong agreement (primary outcome)",
+             "N1a: minus item distractor null (all models)": "N1a: minus item distractor null",
+             "N1b: minus item distractor null (roots weighted equally)": "N1b: as N1a, roots weighted equally",
+             "N2: excess co-failure over Rasch null (per item)": "N2: co-failure over Rasch null (per item)"}
+    lines = []
+    for pop, g in d.groupby("population", sort=False):
+        for o, h in g.groupby("outcome", sort=False):
+            r = h[h.term == "same_root"].iloc[0]
+            m = h[h.term == "gap0"].iloc[0]
+            lines.append(f"{pop.replace('_S2', ', S2').capitalize()} & {short[o]} & "
+                         f"{r.outcome_mean:.3f} & "
+                         f"{jk(r, 3)} & {pval(r.p_jackknife)} & "
+                         f"{jk(m, 4)} & {pval(m.p_jackknife)} \\\\")
+        lines.append("\\hline")
+    write("tab_itemnull.tex", "\n".join(lines[:-1]) + "\n")
+
+
+def tab_gateaudit():
+    """Post-hoc 1,000-replicate audit of the pair gate (Wilson 95% CIs)."""
+    files = sorted((R / "pair_gate_audit").glob("*_cap*.csv"))
+    if not files:
+        return
+    order = [("primary", 15), ("primary", 40), ("primary", 1000), ("expanded", 40)]
+    lines = []
+    for pop, cap in order:
+        f = R / "pair_gate_audit" / f"{pop}_cap{cap}.csv"
+        if not f.exists():
+            continue
+        d = pd.read_csv(f, keep_default_na=False)
+
+        def cell(rows):
+            r = rows.loc[rows.rate.idxmax()]
+            return f"{100 * r.rate:.1f} [{100 * r.ci_low:.1f}, {100 * r.ci_high:.1f}]"
+
+        null = d[d.truth == "null"]
+        leak = pd.concat([d[d.truth.str.startswith("lineage") & d.term.isin(["gap0", "gap1_2"])],
+                          d[d.truth.str.startswith("era") & (d.term == "same_root")]])
+        pw = lambda t, term: cell(d[(d.truth == t) & (d.term == term)])  # noqa: E731
+        lines.append(f"{pop.capitalize()} & {'none' if cap == 1000 else cap} & {int(d.N.iloc[0])} & "
+                     f"{cell(null)} & {cell(leak)} & {pw('lineage_0.05', 'same_root')} & "
+                     f"{pw('era_0.05', 'gap0')} & {pw('lineage_0.03', 'same_root')} & "
+                     f"{pw('era_0.03', 'gap0')} \\\\")
+    write("tab_gateaudit.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
-              tab_pairgate, tab_exploratory):
+              tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit):
         f()
     print(sorted(p.name for p in T.glob("*.tex")))
