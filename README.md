@@ -65,7 +65,7 @@ flowchart LR
     A["🏆 Open LLM Leaderboard v1<br/>6,896 models"] --> B["🌳 Lineage<br/>declared base_model → root"]
     B --> C["🧊 Frozen samples<br/>≤ 40 per root, hashed"]
     C --> D["✅ Item-level validation<br/>977 models accepted"]
-    D --> E["👥 173,755 model pairs<br/>P(same wrong | both wrong)"]
+    D --> E["👥 173,755 model pairs<br/>same wrong answer when both wrong"]
     E --> F["📈 Pair regression<br/>dyadic + root-level inference"]
     F --> G["🧪 Robustness<br/>nulls, outcomes, audits"]
 ```
