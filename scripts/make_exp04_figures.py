@@ -843,6 +843,29 @@ ALL = {"precision": fig_precision, "workflow": fig_workflow, "schematic": fig_sc
        "detection": fig_detection, "accuracy": fig_accuracy}
 
 
+README_FIGS = ["gap", "dose", "timing", "heterogeneity", "detection", "dataflow", "forest"]
+
+
+def readme_assets() -> list[str]:
+    """PNG copies of selected figures for the repository README (GitHub cannot
+    show PDFs inline). Same drawing code as the paper figures."""
+    out = ROOT / "docs" / "assets"
+    out.mkdir(parents=True, exist_ok=True)
+    global save
+    orig = save
+
+    def save_png(fig, name):
+        fig.savefig(out / f"{name}.png", dpi=220, facecolor="white",
+                    metadata={"Software": None})
+        plt.close(fig)
+        return name
+    save = save_png
+    try:
+        return [ALL[k]() for k in README_FIGS]
+    finally:
+        save = orig
+
+
 def build_all(only=None) -> list[str]:
     return [f() for k, f in ALL.items() if not only or k in only]
 
@@ -850,4 +873,8 @@ def build_all(only=None) -> list[str]:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", nargs="*")
-    print("\n".join(build_all(ap.parse_args().only)))
+    ap.add_argument("--readme", action="store_true", help="also write README PNGs")
+    a = ap.parse_args()
+    print("\n".join(build_all(a.only)))
+    if a.readme:
+        print("\n".join(f"docs/assets/{n}.png" for n in readme_assets()))
