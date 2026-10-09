@@ -259,6 +259,11 @@ def fetch_model(repo: str, retries: int = 4) -> dict:
         except FileNotFoundError as exc:
             if "repository not found" in str(exc):
                 return {"repo": repo, "status": "repo_missing"}
+            if len(repo) > 96:
+                # Hub repo names are capped at 96 characters, so the
+                # leaderboard's details repo for this model cannot exist.
+                return {"repo": repo, "status": "repo_missing",
+                        "error": f"details repo name is {len(repo)} chars (> 96)"}
             err = f"{type(exc).__name__}: {str(exc)[:160]}"
             time.sleep(min(120, 10 * 2 ** attempt))
         except (KeyError, ValueError, IndexError, TypeError, SyntaxError) as exc:
