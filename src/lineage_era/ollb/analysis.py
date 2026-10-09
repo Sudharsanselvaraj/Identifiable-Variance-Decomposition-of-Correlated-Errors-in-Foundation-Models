@@ -91,7 +91,7 @@ def position_tv(pred: np.ndarray, i: np.ndarray, j: np.ndarray) -> np.ndarray:
 
 
 def run(name: str, strict: bool = False, position: bool = False,
-        min_acc: float | None = None) -> dict:
+        min_acc: float | None = None, out_root: Path = OUT) -> dict:
     """Primary model; position=True adds S1, min_acc adds S2 (Amendment 3)."""
     pop, info = load_population(name, strict)
     pred, gold, checks = choice_matrix(pop.model)
@@ -113,7 +113,7 @@ def run(name: str, strict: bool = False, position: bool = False,
     label = (f"{name}{'_strict' if strict else ''}"
              f"{'_S1position' if position else ''}"
              f"{f'_S2acc{min_acc:g}' if min_acc is not None else ''}")
-    out = OUT / label
+    out = Path(out_root) / label
     out.mkdir(parents=True, exist_ok=True)
     coef.to_csv(out / "coefficients.csv", index=False)
     summary = {

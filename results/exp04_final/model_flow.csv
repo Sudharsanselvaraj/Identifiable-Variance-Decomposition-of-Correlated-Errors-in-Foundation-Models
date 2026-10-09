@@ -1,0 +1,7 @@
+stage,primary,expanded
+"v1 leaderboard models (contents table, de-duplicated)",6896.0,6896.0
+"eligible (primary lineage rules, dated)",721.0,
+"eligible (expanded lineage rules, dated)",,1295.0
+frozen download sample (cap 40 per root),613.0,967.0
+validated answers (analysed),590.0,928.0
+  of which root verified pretrained (strict),554.0,789.0
