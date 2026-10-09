@@ -1,180 +1,182 @@
 <div align="center">
 
-# 🧬 Lineage or Era?
+# Lineage or Era?
 
-### Do open-weight language models that share an ancestor make the *same* mistakes?
+### Correlated Errors in Open-Weight Language Models
 
 **A pair-level study of 977 Open LLM Leaderboard models and 173,755 model pairs**
 
-[![Paper](https://img.shields.io/badge/📄_paper-14_pages-1f4e79?style=for-the-badge)](paper/build/ieee_access_manuscript.pdf)
-[![Supplement](https://img.shields.io/badge/📎_supplement-6_pages-5b7a99?style=for-the-badge)](paper/build/supplement.pdf)
-[![Target](https://img.shields.io/badge/target-IEEE_Access-00629B?style=for-the-badge)](paper/build/ieee_access_manuscript.pdf)
-
-[![Python](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![Paper](https://img.shields.io/badge/paper-14_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
+[![Supplement](https://img.shields.io/badge/supplement-6_pages-5b7a99)](paper/build/supplement.pdf)
+[![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
+[![Python](https://img.shields.io/badge/python-3.11-3776AB)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-63_passing-2ea44f)](src/lineage_era)
-[![Reproducible](https://img.shields.io/badge/numbers-regenerated_from_code-b8652a)](docs/REPRODUCIBILITY_CHECKLIST.md)
 [![Status](https://img.shields.io/badge/status-in_preparation-orange)]()
 [![License](https://img.shields.io/badge/license-not_yet_specified-lightgrey)](docs/release/LICENSING_NOTES.md)
 
 <br>
 
-<img src="docs/assets/exp04_agreement_by_gap.png" width="560" alt="Same-root pairs agree on wrong answers far more than different-root pairs at every release gap">
+<img src="docs/assets/exp04_agreement_by_gap.png" width="560" alt="Agreement on wrong answers by release-month gap for same-root and different-root pairs">
 
-<sub><b>When two fine-tunes of the same base model both get a question wrong, they pick the same wrong answer ~3 times in 4.<br>Unrelated models do so ~2 times in 5, no matter how close together they were released.</b></sub>
+<sub>When two fine-tunes of the same base model both answer an item incorrectly, they choose the same wrong option about three times in four. Unrelated models do so about two times in five, at every release-month gap.</sub>
 
 </div>
 
 ---
 
-## 🔥 TL;DR
+## Summary
 
-> Models descended from the **same base model** choose the **same wrong answer** **13.3 percentage points** more often than unrelated models of equal accuracy (95% CI 10.8–15.8).
-> **When** a model was released adds nothing of stable sign once accuracy is accounted for: the primary analysis rules out same-month effects larger than **1.1 points**.
-> **Lineage, not release timing, is what ties model mistakes together.**
+Models descended from the same base model choose the same wrong answer **13.3 percentage points** more often than unrelated models of equal accuracy and release gap (delete-one-root jackknife 95% CI 10.8–15.8). Release proximity shows no association of stable sign once accuracy is controlled; the primary analysis excludes same-month effects larger than **1.1 percentage points**. Within this population, lineage, not release timing, is the dominant correlate of shared wrong answers.
 
-## ✨ Highlights
+## Key Findings
 
-- 🧪 **977 models, validated item by item.** Every one of 14,042 MMLU answers per model must reproduce the leaderboard's own correctness flag, or the model is rejected.
-- 🌳 **Closer relatives agree more.** Parent–child pairs: **+18.5** points; two steps apart: **+13.6**; more distant: **+11.5**.
-- 🧩 **It's everywhere.** Present in each of the **7 largest base-model families** (10.3–14.8 points) and in **all 57 MMLU subjects**.
-- 🕰️ **Release timing is a mirage of accuracy.** Unadjusted, same-month models agree 8.7 points more, because accuracy rose steeply over time. Net of accuracy, that gap is gone, whether timing is measured by the model or by its base model.
-- 🔍 **Agreement reveals lineage.** A pair's agreement alone flags shared ancestry with **AUC 0.95**.
-- 🧹 **Leaderboard data quality.** We found renamed models listed twice (50 entries → 23 repositories) and models answering one letter to almost everything; neither drives the results.
-- 📐 **Plan fixed before outcomes.** Analysis, sample rules and a simulation check were written down before any pairwise result was computed, and every deviation is labelled.
+- **Validated data.** For each of 977 models, the extracted answer on all 14,042 MMLU items must reproduce the leaderboard's stored correctness; models that fail are excluded and logged.
+- **Dose-response.** Agreement increases with closeness of descent: parent–child pairs +18.5 points, distance two +13.6, more distant relatives +11.5.
+- **Consistency.** The association appears separately in each of the seven largest base-model families (10.3–14.8 points) and in all 57 MMLU subjects.
+- **Release timing.** Unadjusted, same-month pairs agree 8.7 points more than pairs released a year or more apart. This difference is accounted for by accuracy similarity, which rose steeply over the period, and no positive association remains under either timing measure (fine-tune upload month or base-model release month).
+- **Lineage detection.** A pair's agreement alone separates same-root from different-root pairs with an area under the ROC curve of 0.95.
+- **Data quality.** The leaderboard lists some models more than once under different names (50 entries resolve to 23 repositories) and includes models that give one answer letter to almost every item. Neither affects the conclusions.
+- **Pre-specified design.** The analysis, sample rules and a simulation check were fixed before any pairwise outcome was computed; every later analysis is labelled as exploratory or post hoc.
 
 ---
 
-## 🎯 Why this matters
+## Motivation
 
-Majority votes, routers and "ask a second model" review steps all assume that models make **different** mistakes. If two models share a blind spot, their agreement is false reassurance.
+Majority voting, model routing and multi-model review all assume that the combined models make different mistakes. When two models share a failure mode, their agreement provides less independent evidence than it appears to.
 
-Two explanations compete for why models fail together:
+Two explanations for shared errors are commonly proposed:
 
-| | 🌳 **Lineage** | 🕰️ **Era** |
+| | Lineage | Era |
 |---|---|---|
-| **Idea** | A fine-tune inherits its base model's weights, and its blind spots | Models built at the same time share the same data, recipes and fashions |
-| **If it dominates** | Diversify **base models** | Diversify **release dates** |
-| **What we find** | ✅ Strong, graded, everywhere | ❌ No stable association net of accuracy |
+| Mechanism | A fine-tune inherits its base model's parameters and, plausibly, its errors | Models built in the same period share data, training recipes and base models |
+| Implication if dominant | Diversify base models | Diversify release periods |
+| Finding | Strong, graded and consistent | No stable association once accuracy is controlled |
 
-The two are entangled, since a fine-tune always comes after its base, which is why this needs a careful design.
+The two are entangled because a fine-tune is always released after its base model, so they must be estimated jointly.
 
-## 🔬 How it works
+## Method
 
 ```mermaid
 flowchart LR
-    A["🏆 Open LLM Leaderboard v1<br/>6,896 models"] --> B["🌳 Lineage<br/>declared base_model → root"]
-    B --> C["🧊 Frozen samples<br/>≤ 40 per root, hashed"]
-    C --> D["✅ Item-level validation<br/>977 models accepted"]
-    D --> E["👥 173,755 model pairs<br/>same wrong answer when both wrong"]
-    E --> F["📈 Pair regression<br/>dyadic + root-level inference"]
-    F --> G["🧪 Robustness<br/>nulls, outcomes, audits"]
+    A["Open LLM Leaderboard v1<br/>6,896 models"] --> B["Lineage resolution<br/>declared base_model to root"]
+    B --> C["Frozen samples<br/>at most 40 per root"]
+    C --> D["Item-level validation<br/>977 models accepted"]
+    D --> E["173,755 model pairs<br/>same wrong answer when both wrong"]
+    E --> F["Pair regression<br/>dyadic and root-level inference"]
+    F --> G["Robustness analyses"]
 ```
 
-For every pair of models we measure how often they choose the **same wrong option when both are wrong**, then ask how that depends on:
+For every pair of models, the outcome is the probability that both choose the same wrong option on items both answer incorrectly. It is regressed on:
 
-- **shared lineage root** (from Hugging Face `base_model` declarations), and
-- **release-month gap**,
+- a **shared lineage root** indicator, from Hugging Face `base_model` declarations;
+- **release-month gap** bins (0, 1–2, 3–5, 6–11 months; 12 or more as reference);
+- the sum and difference of the two models' **accuracies**.
 
-holding both models' **accuracies** fixed. Because each model appears in many pairs, uncertainty is estimated with **dyadic cluster-robust** errors and a **delete-one-root jackknife**.
+Because every model appears in many pairs, inference uses dyadic cluster-robust standard errors and a delete-one-root jackknife.
 
 <details>
-<summary><b>📦 Where the 977 models come from</b></summary>
+<summary><b>Sample construction</b></summary>
 <br>
-<img src="docs/assets/fig_dataflow.png" width="100%" alt="Data flow from 6,896 leaderboard models to 977 accepted models">
+<img src="docs/assets/fig_dataflow.png" width="100%" alt="Population, sampling and validation flow from 6,896 leaderboard models to 977 accepted models">
 </details>
 
 ---
 
-## 📊 Results
+## Results
 
 <table>
 <tr>
-<td width="50%" align="center"><b>🌳 Closer relatives agree more</b><br><img src="docs/assets/fig_dose.png" alt="Lineage dose-response"></td>
-<td width="50%" align="center"><b>🕰️ Release timing: flat under both measures</b><br><img src="docs/assets/fig_timing.png" alt="Release-gap coefficients near zero"></td>
+<td width="50%" align="center"><b>Lineage dose-response</b><br><img src="docs/assets/fig_dose.png" alt="Shared-root coefficients by tree distance and relation type"></td>
+<td width="50%" align="center"><b>Release-gap coefficients under two timing measures</b><br><img src="docs/assets/fig_timing.png" alt="Release-gap coefficients near zero"></td>
 </tr>
 <tr>
-<td align="center"><b>📐 Twelve pre-specified analyses agree</b><br><img src="docs/assets/exp04_forest.png" alt="Forest plot"></td>
-<td align="center"><b>🔍 Agreement reveals lineage (AUC 0.95)</b><br><img src="docs/assets/fig_detection.png" alt="Agreement distributions by lineage"></td>
+<td align="center"><b>Twelve pre-specified analyses</b><br><img src="docs/assets/exp04_forest.png" alt="Forest plot of shared-root and same-month coefficients"></td>
+<td align="center"><b>Agreement as a signal of shared lineage</b><br><img src="docs/assets/fig_detection.png" alt="Agreement distributions for same-root and different-root pairs"></td>
 </tr>
 </table>
 
-<p align="center"><b>🧩 Every big family, every subject</b><br><img src="docs/assets/fig_heterogeneity.png" width="100%" alt="Heterogeneity by root, capability and subject"></p>
+<p align="center"><b>Heterogeneity by root, capability and subject</b><br><img src="docs/assets/fig_heterogeneity.png" width="100%" alt="Shared-root coefficients by root, capability band and MMLU subject"></p>
 
-### Numbers at a glance
+### Principal Estimates
 
-| | Primary sample (590 models · 173,755 pairs) |
+| Quantity | Primary sample (590 models, 173,755 pairs) |
 |---|---|
-| 🌳 Shared lineage root | **+13.3 pts** (jackknife 95% CI 10.8–15.8); 11.7–13.4 across 12 pre-specified analyses |
-| 🧬 Dose-response | parent–child **+18.5** · distance 2 **+13.6** · distant **+11.5** |
-| 🕰️ Same release month (net of accuracy) | **+0.4 pts**; 90% interval excludes effects above **1.1 pts** |
-| 🕰️ Same release month (unadjusted) | +8.7 pts, explained by accuracy similarity |
-| 🎲 Item-difficulty nulls | average excess agreement ≈ 0, lineage contrast **unchanged** |
-| 🧹 Duplicates and degenerate models removed | +12.8 pts |
+| Shared lineage root | **+13.3 points** (jackknife 95% CI 10.8–15.8); 11.7–13.4 across 12 pre-specified analyses |
+| Dose-response | parent–child +18.5; distance two +13.6; more distant +11.5 |
+| Same release month, adjusted for accuracy | +0.4 points; 90% interval excludes effects above 1.1 points |
+| Same release month, unadjusted | +8.7 points, accounted for by accuracy similarity |
+| Item-difficulty-aware nulls | mean excess agreement near zero; lineage contrast unchanged |
+| Duplicate and degenerate models removed | +12.8 points |
 
 <details>
-<summary><b>🧪 Every robustness check (click to expand)</b></summary>
+<summary><b>Robustness checks</b></summary>
 
 | Check | Shared root | Same month |
 |---|---|---|
 | Pre-specified model | +0.133 | +0.004 |
-| Root-level dyadic SEs | +0.133 [0.114, 0.152] | +0.004 [−0.004, 0.012] |
+| Root-level dyadic standard errors | +0.133 [0.114, 0.152] | +0.004 [−0.004, 0.012] |
 | Delete-one-root jackknife | +0.133 [0.108, 0.158] | +0.004 [−0.005, 0.013] |
 | Weighted by jointly wrong items | +0.142 | +0.012 |
 | Minus answer-letter chance | +0.125 | −0.002 |
-| Item-difficulty null N1a / N1b | +0.133 / +0.133 | +0.004 / +0.004 |
-| + size and architecture controls | +0.126 | +0.007 |
-| Timing by base model's release month | +0.131 | −0.001 |
-| Config-consistent lineage only | +0.135 | +0.000 |
+| Item-difficulty nulls N1a / N1b | +0.133 / +0.133 | +0.004 / +0.004 |
+| With size and architecture controls | +0.126 | +0.007 |
+| Timing by base-model release month | +0.131 | −0.001 |
+| Configuration-consistent lineage only | +0.135 | +0.000 |
 | Cap-15 subset | +0.146 | +0.005 |
 
-Full tables for all four samples are in the [supplement](paper/build/supplement.pdf).
+Coefficients are differences in probability. Complete tables for all four samples are in the [supplementary material](paper/build/supplement.pdf).
 </details>
 
 ---
 
-## ⚡ Quickstart
+## Installation
 
 ```bash
 git clone https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models.git
 cd Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models
 python -m pip install -e ".[test,ollb]"
-python -m pytest                     # 63 tests
-make -C paper tables figures         # every table and figure from committed results
-make -C paper                        # paper + supplement PDFs
+python -m pytest
+```
+
+Regenerate every table and figure from the committed results, then build the paper and supplement:
+
+```bash
+make -C paper tables figures
+make -C paper
 ```
 
 <details>
-<summary><b>🔁 Reproduce every number from scratch</b></summary>
+<summary><b>Full reproduction from the public source</b></summary>
 
-The leaderboard's raw per-item files carry no licence, so they are **regenerated** from the public source rather than shipped. Each step verifies its inputs by SHA-256.
+The leaderboard's per-item files declare no licence, so they are regenerated rather than redistributed. Each step verifies its inputs against recorded SHA-256 hashes.
 
 ```bash
-python scripts/fetch_v1_contents_meta.py      # leaderboard metadata (hash-checked)
+python scripts/fetch_v1_contents_meta.py      # leaderboard metadata
 python -m lineage_era.ollb.roster_v1          # lineage roster
-python scripts/rebuild_frozen_lists.py        # frozen samples, must match recorded hashes
-python scripts/download_ollb_v1.py            # 977 validated answer files (~11 GB read)
-python scripts/validation_report.py           # per-model validation categories
-python scripts/run_exp04_final.py             # 12 pre-specified analyses + audits, diffed vs committed outputs
+python scripts/rebuild_frozen_lists.py        # frozen samples, checked against recorded hashes
+python scripts/download_ollb_v1.py            # validated answer files (about 11 GB read)
+python scripts/validation_report.py           # per-model validation report
+python scripts/run_exp04_final.py             # pre-specified analyses and audits
 python scripts/run_exp04_item_null.py         # item-difficulty-aware nulls
 python scripts/run_pair_gate_audit.py --population primary --cap 40 --reps 500
-python scripts/run_exp04_revision2.py         # timing, dose-response, CAPA, data-quality checks
-python scripts/run_exp04_heterogeneity.py     # per-root, per-subject, detection, descriptives
+python scripts/run_exp04_revision2.py         # timing, dose-response, CAPA and data-quality checks
+python scripts/run_exp04_heterogeneity.py     # heterogeneity, lineage detection, descriptives
 make -C paper tables figures && make -C paper
 ```
 
-Details: [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md)
+See [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md) for the environment and seeds.
 </details>
 
 <details>
-<summary><b>🗂️ Repository map</b></summary>
+<summary><b>Repository structure</b></summary>
 
-| Path | What's inside |
+| Path | Contents |
 |---|---|
 | [`paper/`](paper) | Manuscript and supplement source, figures, generated tables, IEEE class files, compiled PDFs |
-| [`src/lineage_era/ollb/`](src/lineage_era/ollb) | Leaderboard pipeline: Hub metadata, lineage, extraction and validation, simulation check, analysis |
+| [`src/lineage_era/ollb/`](src/lineage_era/ollb) | Leaderboard pipeline: Hub metadata, lineage resolution, extraction and validation, simulation check, analysis |
 | [`src/lineage_era/analysis/`](src/lineage_era/analysis) | Per-model precision analysis (crossed REML, expected information, Monte Carlo) |
 | [`scripts/`](scripts) | Entry points for every analysis, table and figure |
-| [`results/`](results) | Committed outputs that every reported number comes from |
+| [`results/`](results) | Committed outputs from which every reported number is generated |
 | [`datasets/ollb/frozen/`](datasets/ollb/frozen) | Frozen model lists (public versions) |
 | [`docs/05_Experiments/`](docs/05_Experiments) | Analysis plan and its three dated amendments |
 | [`docs/08_Reviews/`](docs/08_Reviews) | Revision log, including errata |
@@ -183,21 +185,21 @@ Details: [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md
 
 ---
 
-## ⚖️ Data and licensing
+## Data Availability and Licensing
 
-- 📦 **Code:** a licence has not yet been chosen ([notes](docs/release/LICENSING_NOTES.md)).
-- 🚫 **Leaderboard per-item data:** declares no licence, so the derived answer files and three copied metadata fields are **not redistributed**. Scripts rebuild them from the public source and check them byte for byte.
-- ✅ **Included:** frozen model lists, Hub metadata caches, validation reports and all analysis outputs.
+- **Code.** A licence has not yet been selected; see [`docs/release/LICENSING_NOTES.md`](docs/release/LICENSING_NOTES.md).
+- **Leaderboard data.** The per-item details and metadata declare no licence. The derived answer files and three copied metadata fields are therefore not redistributed; the scripts rebuild them from the public source and verify them byte for byte.
+- **Included.** Frozen model lists, Hugging Face metadata caches, validation reports and all analysis outputs.
 
-## ⚠️ Limitations (the honest part)
+## Limitations
 
-- 🔗 **Association, not causation.** The data come from a self-selected population dominated by community fine-tunes from 2022–2024.
-- 📏 **One benchmark** (MMLU, 4 options), scored by the leaderboard's own evaluation pipeline.
-- 🏷️ **Declared lineage can be wrong.** A config-file check agrees with the declared root for 74% of testable models.
-- 🧪 **No ensembles were tested.** Whether lineage diversity improves voting or routing is the next experiment.
-- 🕳️ **An earlier version of this project was withdrawn.** Its 16-model results came from an extraction bug; see Section S2 of the supplement.
+- The results are observational and describe a self-selected population dominated by community fine-tunes released between 2022 and 2024.
+- A single benchmark is used (MMLU, four options), scored by the leaderboard's evaluation pipeline.
+- Declared lineage may be incorrect; a configuration-file check agrees with the declared root for 74% of the models it could test.
+- Ensembles were not evaluated; whether lineage diversity improves voting or routing remains to be tested.
+- An earlier 16-model version of this project was withdrawn because of an extraction error; Section S2 of the supplement documents the changes.
 
-## 📝 Citation
+## Citation
 
 ```bibtex
 @misc{sudharsan2026lineage,
@@ -211,13 +213,11 @@ Details: [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md
 }
 ```
 
-## 👥 Authors
+## Authors
 
-**Sudharsan S** · **S. Kanaga Suba Raja** · **Shree Harish V** · **Chin-Shiuh Shieh** · **Mong-Fong Horng** · **Lavanya R**
+Sudharsan S, S. Kanaga Suba Raja, Shree Harish V, Chin-Shiuh Shieh, Mong-Fong Horng, Lavanya R
 
-SRM Institute of Science and Technology, Tiruchirappalli, India · National Kaohsiung University of Science and Technology, Taiwan
+Department of Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli, India
+Research Institute of IoT Cybersecurity, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan
 
-<div align="center">
-<br>
-<sub>If this work is useful to you, ⭐ the repository.</sub>
-</div>
+Correspondence: S. Kanaga Suba Raja (kanagass@srmist.edu.in)
