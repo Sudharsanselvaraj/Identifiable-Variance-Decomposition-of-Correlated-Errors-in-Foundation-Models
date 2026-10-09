@@ -80,7 +80,8 @@ python scripts/validation_report.py               # reconciled per-model categor
 python scripts/run_exp04_final.py                 # 12 pre-registered analyses + audits; diffs vs committed outputs
 python scripts/run_exp04_item_null.py             # item-difficulty-aware nulls (post hoc)
 python scripts/run_pair_gate_audit.py --population primary --cap 40 --reps 500   # post-hoc gate audit
-make -C paper tables figures && make -C paper     # tables and all 14 figures from outputs, then the PDF
+python scripts/run_exp04_revision2.py             # second-review analyses (post hoc; reads config.json read-only)
+make -C paper tables figures && make -C paper     # tables and figures from outputs, then the PDF and supplement
 python -m pytest                                  # test suite
 ```
 

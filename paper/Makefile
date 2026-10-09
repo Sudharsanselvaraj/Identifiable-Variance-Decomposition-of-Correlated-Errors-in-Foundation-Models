@@ -26,10 +26,10 @@ export TEXINPUTS   := ../support:
 export TEXFONTS    := ../support:
 export TEXFONTMAPS := ../support:
 
-.PHONY: all pdf clean tables figures
+.PHONY: all pdf clean tables figures supplement
 
 
-all: pdf
+all: pdf supplement
 
 pdf: $(PDF)
 
@@ -50,3 +50,10 @@ tables:
 # Regenerate every figure from the committed analysis outputs.
 figures:
 	cd .. && python3 scripts/make_exp04_figures.py
+
+# Supplementary material (moved per-model analysis, earlier-version record, gate audit table).
+supplement: build/supplement.pdf
+
+build/supplement.pdf: src/supplement.tex $(wildcard tables/*.tex) figures/precision_scaling.pdf
+	cd src && $(TEX) -interaction=nonstopmode -halt-on-error -output-directory=../$(OUTDIR) supplement.tex
+	cd src && $(TEX) -interaction=nonstopmode -halt-on-error -output-directory=../$(OUTDIR) supplement.tex

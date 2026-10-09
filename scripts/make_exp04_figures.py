@@ -136,7 +136,7 @@ def fig_precision():
            "sweep_F7_E8_M6": "42"}                        # Table I rows (models)
     o = obs.loc[list(tab)]
     ax.scatter(o.families, o.worst_share_rmse_mc, marker="x", s=16, color=ORANGE, lw=0.9,
-               zorder=4, label="Table I designs (label: models)")
+               zorder=4, label="candidate designs (label: models)")
     offs = {"obs16": (-7, 0), "sel22": (7, 0), "sweep_F6_E8_M5": (-9, 6),
             "cand47": (-10, -3), "sweep_F7_E8_M6": (8, -5)}           # points, avoid overlap
     for k, r in o.iterrows():
@@ -175,7 +175,7 @@ def fig_workflow():
         ("5  Pairs", f"$a_{{ij}}$ = P(same wrong | both wrong)\n{fmt(d['pairs_p'])} primary pairs\n"
                      f"{fmt(d['pairs_x'])} expanded pairs"),
         ("6  Estimate", f"shared root + gap bins\n+ accuracy terms\n"
-                        f"{d['n_prereg']} pre-registered analyses"),
+                        f"{d['n_prereg']} pre-specified analyses"),
         ("7  Audit (partly post hoc)", "root-level inference, outcomes,\nitem-difficulty nulls,"
                                        "\ngate audit, size controls"),
     ]
@@ -199,7 +199,7 @@ def fig_workflow():
     ax.plot([xe, xe, x0 + w / 2], [y1 - 0.005, ym, ym], color=BOX_EDGE, lw=0.8,
             transform=ax.transAxes)
     arrow(ax, (x0 + w / 2, ym), (x0 + w / 2, y2 + h + 0.005))
-    # pre-registration band over steps 2-6
+    # analysis-plan band over steps 2-6
     ax.text(0.5, 0.945, "Fixed before any pair outcome was computed: lineage rules, caps and seed, "
             "pair model, simulation gate\n(three dated amendments; the third after per-model "
             "accuracies were seen)", ha="center", va="center",
@@ -479,7 +479,7 @@ def fig_rawadj():
                         fmt="o", ms=3, color=c, mfc=mfc, lw=0.8,
                         label=lab.split(" (")[0].capitalize() + (" (no accuracy terms)"
                                                                  if "raw" in lab else
-                                                                 " (pre-registered)"))
+                                                                 " (pre-specified)"))
         zero(ax)
         ax.set_title(f"({'ab'[pop == 'expanded']}) {pop.capitalize()}")
         ax.set_xlabel("Coefficient")
@@ -495,7 +495,7 @@ def fig_rawadj():
 # ------------------------------------------------------------------ 9 inference
 def fig_inference():
     inf = pd.read_csv(RES / "exp04_final/inference_audit.csv")
-    kinds = [("model-dyadic (pre-registered)", "model-level dyadic (pre-reg.)", BLUE, "o"),
+    kinds = [("model-dyadic (pre-registered)", "model-level dyadic (pre-specified)", BLUE, "o"),
              ("root-dyadic", "root-level dyadic", GREY, "s"),
              ("delete-one-root jackknife", "delete-one-root jackknife", ORANGE, "^")]
     pops = list(SAMPLES)
@@ -522,7 +522,7 @@ def fig_inference():
 # ------------------------------------------------------------------ 10 outcomes
 def fig_outcomes():
     o = pd.read_csv(RES / "exp04_final/outcome_audit.csv")
-    variants = [("primary outcome, OLS (pre-registered)", "Pre-registered"),
+    variants = [("primary outcome, OLS (pre-registered)", "Pre-specified"),
                 ("WLS, weight = jointly-wrong items", "WLS, jointly wrong"),
                 ("agreement minus position-based chance (exploratory)",
                  "Minus option chance"),
@@ -612,7 +612,7 @@ def _parse(s: str) -> tuple[float, float]:
 def fig_controls():
     e = pd.read_csv(RES / "exp04_final/exploratory_E1_E2.csv").set_index("population")
     pops = list(SAMPLES)
-    cols = [("same_root (model-cl)", "shared root (pre-registered terms + S1)", BLUE, "o", BLUE),
+    cols = [("same_root (model-cl)", "shared root (pre-specified terms + S1)", BLUE, "o", BLUE),
             ("same_root +size/arch", "shared root (+ size, architecture)", BLUE, "o", "white"),
             ("same_arch", "same architecture", GREY, "s", GREY)]
     fig, ax = plt.subplots(figsize=(COL, 2.3))

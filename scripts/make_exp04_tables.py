@@ -86,7 +86,8 @@ def tab_outcome():
             s = h[h.term == "same_root"].iloc[0]
             m = h[h.term == "gap0"].iloc[0]
             vlab = (v.replace(">=", GEQ)
-                    .replace("position-based chance", "option-distribution chance"))
+                    .replace("position-based chance", "option-distribution chance")
+                    .replace("(pre-registered)", "(pre-specified)"))
             lines.append(f"{pop.capitalize()} & {vlab} & "
                          f"{fmt_ci(s.estimate, s.ci_low, s.ci_high)} & "
                          f"{fmt_ci(m.estimate, m.ci_low, m.ci_high, 4)} & {pval(m.p)} \\\\")
@@ -226,8 +227,44 @@ def tab_rawadj():
     write("tab_rawadj.tex", "\n".join(lines) + "\n")
 
 
+def tab_revision2():
+    """Post-hoc analyses from the second review (run_exp04_revision2.py)."""
+    d = pd.read_csv(R / "exp04_revision2/revision2.csv")
+    pops = ["primary", "primary_S2", "expanded", "expanded_S2"]
+
+    def cell(analysis, term, pop, kind="ci"):
+        r = d[(d.analysis == analysis) & (d.term == term) & (d.population == pop)]
+        if r.empty:
+            return "--"
+        r = r.iloc[0]
+        if kind == "eq":
+            return f"$\\pm${r.equivalence_bound_90:.3f}"
+        return fmt_ci(r.estimate, r.ci95_low, r.ci95_high, 3)
+
+    spec = [
+        ("Same month: 90\\% equivalence bound", "pre-registered model", "gap0", "eq"),
+        ("Root release month: shared root", "root release month in place of upload month",
+         "same_root", "ci"),
+        ("Root release month: same month", "root release month in place of upload month",
+         "gap0", "ci"),
+        ("CAPA outcome: shared root", "CAPA outcome, with accuracy terms", "same_root", "ci"),
+        ("CAPA outcome: same month", "CAPA outcome, with accuracy terms", "gap0", "ci"),
+        ("Clean sample: shared root", "data quality: both", "same_root", "ci"),
+        ("Clean sample: same month", "data quality: both", "gap0", "ci"),
+        ("Config-consistent lineage: shared root",
+         "without models whose config contradicts the card", "same_root", "ci"),
+        ("Tree distance 1", "lineage dose-response: tree distance", "distance 1", "ci"),
+        ("Tree distance 2", "lineage dose-response: tree distance", "distance 2", "ci"),
+        ("Tree distance 3+", "lineage dose-response: tree distance", "distance 3+", "ci"),
+    ]
+    lines = [f"{lab} & " + " & ".join(cell(a, t, p, k) for p in pops) + " \\\\"
+             for lab, a, t, k in spec]
+    write("tab_revision2.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
-              tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj):
+              tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj,
+              tab_revision2):
         f()
     print(sorted(p.name for p in T.glob("*.tex")))

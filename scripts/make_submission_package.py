@@ -103,14 +103,37 @@ def main() -> int:
         undefined = re.findall(r"(?:Reference|Citation) [^\n]* undefined", log)
         shutil.copy(build / f"{NAME}.pdf", OUT / f"{NAME}.pdf")
     same = pdf_text(OUT / f"{NAME}.pdf") == pdf_text(PAPER / "build" / f"{NAME}.pdf")
+
+    # Supplementary material: flattened source + its figure, compiled standalone.
+    sup, sfigs = flatten((PAPER / "src" / "supplement.tex").read_text())
+    (OUT / "supplement.tex").write_text(sup)
+    for f in sfigs:
+        shutil.copy(PAPER / "figures" / f, OUT / f)
+    with tempfile.TemporaryDirectory() as tmp:
+        build = Path(tmp) / "build"
+        shutil.copytree(OUT, build)
+        for _ in range(2):
+            r = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error",
+                                "supplement.tex"], cwd=build, env=env, capture_output=True,
+                               text=True)
+        if r.returncode != 0:
+            print("supplement does not compile standalone:\n" + r.stdout[-2000:])
+            return 1
+        sup_undef = re.findall(r"(?:Reference|Citation) [^\n]* undefined",
+                               (build / "supplement.log").read_text(errors="replace"))
+        shutil.copy(build / "supplement.pdf", OUT / "supplement.pdf")
+    sup_same = pdf_text(OUT / "supplement.pdf") == pdf_text(PAPER / "build" / "supplement.pdf")
     with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as z:
         for f in sorted(OUT.iterdir()):
             z.write(f, f"{NAME}/{f.name}")
-    print(f"files: 1 tex, {len(figs)} figures, {len(support)} class/style/font files, 1 pdf")
+    print(f"files: 1 tex, {len(figs)} figures, {len(support)} class/style/font files, 1 pdf; "
+          f"supplement: tex + pdf ({len(sfigs)} figure)")
+    print(f"supplement: standalone compile OK; undefined: {len(sup_undef)}; "
+          f"text identical to repository PDF: {sup_same}")
     print(f"standalone compile: OK; undefined references/citations: {len(undefined)}")
     print(f"PDF text identical to repository PDF: {same}")
     print(f"zip: {ZIP.relative_to(ROOT)} ({ZIP.stat().st_size / 1e6:.1f} MB; limit 40 MB)")
-    return 0 if same and not undefined else 1
+    return 0 if same and sup_same and not undefined and not sup_undef else 1
 
 
 if __name__ == "__main__":

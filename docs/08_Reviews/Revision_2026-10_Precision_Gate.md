@@ -257,3 +257,24 @@ the corrected root-level dyadic SE is 1.2–1.3 times the model-level SE, and th
 jackknife 1.1–1.6 times. `run_exp04_final.py` still diffs every other
 exploratory column against commit 679c5b7; the two root-clustered columns are
 excluded from that diff for this reason.
+
+## Second external review (2026-10-09) — post-hoc analyses and reframing
+
+All post hoc, in `scripts/run_exp04_revision2.py` -> `results/exp04_revision2/`:
+root release month as the timing measure; 90% equivalence bounds for the
+same-month coefficient; lineage dose-response by tree distance (the plan's
+pre-specified secondary, run only now); a CAPA-style outcome computed from chosen
+options; a config.json check of declared lineage (190 testable primary models,
+142 agree); and a data-quality audit.
+
+Data-quality finding: in the primary sample 50 leaderboard entries resolve on the
+Hub to 23 repositories (renamed or moved), most with identical predictions; 193
+primary pairs agree on >= 99.9% of items (24 same-root). 21 primary models choose
+one letter on >= 95% of items (all < 0.30 accuracy). Removing degenerate models and
+collapsing identical clusters leaves the shared-root coefficient at 0.117-0.128.
+
+Reframing: "pre-registered" -> "pre-specified" throughout (the plan was never
+deposited with an independent registry and its commit timestamps cannot be
+verified externally). Section III (per-model precision analysis), Appendix A and
+the gate-audit table moved to `paper/src/supplement.tex`. Abstract cut to 243
+words; gate result removed from it.
