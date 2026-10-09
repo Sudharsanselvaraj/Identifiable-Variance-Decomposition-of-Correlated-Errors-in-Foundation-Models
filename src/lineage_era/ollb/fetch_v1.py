@@ -34,7 +34,7 @@ ORG = "open-llm-leaderboard-old"
 N_SUBJECTS = 57
 COLUMNS = ["predictions", "gold", "acc", "hashes"]
 N_ITEMS = 14042
-SUBJECT_WORKERS = 4
+SUBJECT_WORKERS = 12
 # Reference model with the legacy layout (gold + item hash stored); supplies
 # gold by (subject, position) for runs whose gold column is empty.
 REFERENCE = OUT / "meta-llama__Llama-2-7b-hf.npz"
@@ -58,6 +58,35 @@ def _run_of(path: str) -> str:
 
 def _subject_of(path: str) -> str:
     return path.split("hendrycksTest-")[1].split("|")[0]
+
+
+def _open_cdn(hf_path: str):
+    """Open a Hub file for ranged reads straight from its CDN location.
+
+    One request to the (rate-limited) resolve endpoint returns a 302/307 to a
+    signed CDN URL; the footer and column-chunk range reads then go to the CDN
+    and do not count against the 5000 / 5 min resolver window. Falls back to
+    the resolve URL when the file is not LFS-backed (relative redirect).
+    """
+    import fsspec
+    import requests
+    from huggingface_hub import get_token
+    from urllib.parse import quote
+
+    _, org, repo, rest = hf_path.split("/", 3)
+    url = (f"https://huggingface.co/datasets/{org}/{repo}/resolve/main/"
+           + quote(rest, safe="/"))
+    headers = {"Authorization": f"Bearer {get_token()}"}
+    r = requests.head(url, headers=headers, allow_redirects=False, timeout=30)
+    if r.status_code == 429:
+        raise RuntimeError("resolver rate limit")
+    loc = r.headers.get("Location", "")
+    if r.status_code in (301, 302, 307, 308) and loc.startswith("http"):
+        return fsspec.open(loc, mode="rb", block_size=64 * 1024,
+                           cache_type="readahead").open()
+    return fsspec.open(url, mode="rb", block_size=64 * 1024,
+                       cache_type="readahead",
+                       client_kwargs={"headers": headers}).open()
 
 
 def fetch_model(repo: str, retries: int = 4) -> dict:
@@ -84,19 +113,19 @@ def fetch_model(repo: str, retries: int = 4) -> dict:
             sizes = {}
             for r, subj in complete.items():
                 any_file = next(iter(subj.values()))
-                with fs.open(any_file, block_size=64 * 1024) as fh:
+                with _open_cdn(any_file) as fh:
                     sizes[r] = pq.ParquetFile(fh).metadata.num_rows
             run = max(complete, key=lambda r: (sizes[r], r))
 
             def read_subject(subj: str):
-                with fs.open(complete[run][subj], block_size=64 * 1024,
-                             cache_type="readahead") as fh:
+                with _open_cdn(complete[run][subj]) as fh:
                     pf = pq.ParquetFile(fh)
                     names = set(pf.schema_arrow.names)
                     cols = (COLUMNS if "acc" in names
                             else ["predictions", "metrics"])
                     t = pf.read(columns=cols)
-                    return subj, t, getattr(fh.cache, "total_requested_bytes", 0)
+                    return subj, t, getattr(getattr(fh, "cache", None),
+                                            "total_requested_bytes", 0)
 
             with ThreadPoolExecutor(SUBJECT_WORKERS) as pool:
                 tables = dict((s_, (t_, b_)) for s_, t_, b_ in
