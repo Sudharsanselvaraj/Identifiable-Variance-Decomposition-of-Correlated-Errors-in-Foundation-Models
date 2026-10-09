@@ -28,7 +28,9 @@ import pandas as pd
 from .pair_gate import design, month_index, ols_twoway
 
 ROOT = Path(__file__).resolve().parents[3]
-FROZEN = ROOT / "datasets" / "ollb" / "frozen"
+# Full frozen lists (with the leaderboard metadata fields) are rebuilt locally by
+# scripts/rebuild_frozen_lists.py, which verifies them against the frozen hashes.
+FROZEN = ROOT / "datasets" / "ollb" / "frozen_full"
 ANSWERS = ROOT / "datasets" / "ollb" / "v1"
 OUT = ROOT / "results" / "exp04_analysis"
 
@@ -38,7 +40,11 @@ def answer_file(model: str) -> Path:
 
 
 def load_population(name: str, strict: bool) -> tuple[pd.DataFrame, dict]:
-    sample = pd.read_csv(FROZEN / f"{name}_sample_cap40.csv")
+    path = FROZEN / f"{name}_sample_cap40.csv"
+    if not path.exists():
+        raise FileNotFoundError(f"{path} missing: run scripts/fetch_v1_contents_meta.py "
+                                "then scripts/rebuild_frozen_lists.py")
+    sample = pd.read_csv(path)
     if strict:
         sample = sample[sample.root_verified]
     have = sample.model.map(lambda m: answer_file(m).exists())

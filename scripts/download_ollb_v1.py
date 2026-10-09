@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from lineage_era.ollb import fetch_v1  # noqa: E402
 
 FROZEN = ROOT / "datasets" / "ollb" / "frozen"
+FULL = ROOT / "datasets" / "ollb" / "frozen_full"   # hash-verified full lists
 SAMPLES = ["primary_sample_cap40", "expanded_sample_cap40"]
 
 
@@ -45,7 +46,7 @@ def main() -> int:
     want = recorded_hashes()
     frames = {}
     for name in SAMPLES:
-        path = FROZEN / f"{name}.csv"
+        path = FULL / f"{name}.csv"
         got = hashlib.sha256(path.read_bytes()).hexdigest()
         if got != want.get(name):
             print(f"ABORT: {path} hash {got} != recorded {want.get(name)}")

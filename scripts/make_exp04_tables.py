@@ -211,8 +211,23 @@ def tab_gateaudit():
     write("tab_gateaudit.tex", "\n".join(lines) + "\n")
 
 
+def tab_rawadj():
+    d = pd.read_csv(R / "exp04_final/raw_vs_adjusted.csv")
+    lab = {"same_root": "Shared root", "gap0": "Same month", "gap1_2": "1--2 months",
+           "gap3_5": "3--5 months", "gap6_11": "6--11 months"}
+    lines = []
+    for t, name in lab.items():
+        cells = []
+        for pop in ("primary", "expanded"):
+            for model in ("raw (no accuracy terms)", "adjusted (pre-registered)"):
+                r = d[(d.population == pop) & (d.model == model) & (d.term == t)].iloc[0]
+                cells.append(fmt_ci(r.estimate, r.ci_low, r.ci_high, 3))
+        lines.append(f"{name} & " + " & ".join(cells) + " \\\\")
+    write("tab_rawadj.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
-              tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit):
+              tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj):
         f()
     print(sorted(p.name for p in T.glob("*.tex")))

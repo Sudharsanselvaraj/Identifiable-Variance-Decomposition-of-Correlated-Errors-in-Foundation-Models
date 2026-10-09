@@ -40,6 +40,7 @@ from lineage_era.ollb.pair_gate import design, month_index, ols_twoway  # noqa: 
 OUT = ROOT / "results" / "exp04_final"
 COMMITTED = ROOT / "results" / "exp04_analysis"
 FROZEN = ROOT / "datasets" / "ollb" / "frozen"
+FULL = ROOT / "datasets" / "ollb" / "frozen_full"   # rebuilt, hash-verified
 TERMS = ["same_root", "gap0", "gap1_2", "gap3_5", "gap6_11"]
 PREREG = [  # (population, strict, position, min_acc)
     (p, s, pos, m) for p in ("primary", "expanded")
@@ -57,7 +58,7 @@ def ci(est, se):
 def integrity() -> dict:
     text = (ROOT / "results/exp04_rosters/comparison.md").read_text()
     want = dict(re.findall(r"- `([\w]+)\.csv`: `([0-9a-f]{64})`", text))
-    got = {k: hashlib.sha256((FROZEN / f"{k}.csv").read_bytes()).hexdigest()
+    got = {k: hashlib.sha256((FULL / f"{k}.csv").read_bytes()).hexdigest()
            for k in want}
     return {"hashes_match": got == want, "hashes": got}
 
@@ -353,6 +354,31 @@ def extra_checks() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def raw_vs_adjusted() -> pd.DataFrame:
+    """Pre-registered model with and without the accuracy terms (both samples).
+
+    The adjusted coefficients are associations conditional on both models'
+    accuracies; if release time shifts accuracy, adjustment can remove part of
+    a release-time relationship, so both are reported.
+    """
+    rows = []
+    for pop_name in ("primary", "expanded"):
+        d = prepared(pop_name)
+        X, names, y, i, j, rid = d["X"], d["names"], d["y"], d["i"], d["j"], d["rid"]
+        keep = [k for k, n in enumerate(names) if not n.startswith("acc")]
+        for label, cols in (("raw (no accuracy terms)", keep),
+                            ("adjusted (pre-registered)", list(range(len(names))))):
+            b, se = ols_twoway(X[:, cols], y, i, j, len(d["pop"]))
+            jk = jackknife_roots(X[:, cols], y, rid, i, j)
+            nm = [names[k] for k in cols]
+            for t in TERMS:
+                k = nm.index(t)
+                rows.append({"population": pop_name, "model": label, "term": t,
+                             "estimate": b[k], "se": se[k], "se_jackknife": jk[k],
+                             "ci_low": b[k] - 1.96 * jk[k], "ci_high": b[k] + 1.96 * jk[k]})
+    return pd.DataFrame(rows)
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     report = {"A_integrity": integrity()}
@@ -372,6 +398,7 @@ def main() -> int:
     report["F_exploratory_all_match"] = bool(expl.matches_committed.all())
     report["G_figures"] = figures(prereg)
     extra_checks().to_csv(OUT / "extra_checks.csv", index=False)
+    raw_vs_adjusted().to_csv(OUT / "raw_vs_adjusted.csv", index=False)
     (OUT / "report.json").write_text(json.dumps(report, indent=1))
     pd.set_option("display.width", 220)
     print(json.dumps(report, indent=1))

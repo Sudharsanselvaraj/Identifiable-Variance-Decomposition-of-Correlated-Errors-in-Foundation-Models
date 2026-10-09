@@ -15,3 +15,9 @@ datasets/ollb/*.log
 *.egg-info/
 # leaderboard metadata copy: no declared licence; regenerate with scripts/fetch_v1_contents_meta.py
 datasets/ollb/v1_contents_meta.csv
+# full frozen lists with leaderboard metadata fields (rebuilt by scripts/rebuild_frozen_lists.py)
+datasets/ollb/frozen_full/
+# regenerable roster (python -m lineage_era.ollb.roster_v1)
+datasets/ollb/v1_roster.csv
+# private snapshot of exact analysis inputs (not for redistribution)
+private/

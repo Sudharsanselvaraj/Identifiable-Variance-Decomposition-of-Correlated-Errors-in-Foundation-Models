@@ -33,7 +33,10 @@ from lineage_era.analysis.precision_gate import (  # noqa: E402
 from lineage_era.ollb.roster_v1 import build  # noqa: E402
 
 OUT = ROOT / "results" / "exp04_rosters"
-FROZEN = ROOT / "datasets" / "ollb" / "frozen"
+# Writes the FULL lists (historical generator, run once on 2026-10-09). Public
+# copies without the leaderboard metadata fields are made with
+# scripts/rebuild_frozen_lists.py --strip.
+FROZEN = ROOT / "datasets" / "ollb" / "frozen_full"
 CAP = 40
 
 
