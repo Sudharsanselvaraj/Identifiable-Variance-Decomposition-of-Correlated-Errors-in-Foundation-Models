@@ -1,0 +1,10 @@
+check,term,estimate,se,models,se_jackknife
+no accuracy controls,same_root,0.2830608973706915,0.01104945869628754,590,
+no accuracy controls,gap0,0.08661877663905915,0.007704437332608395,590,
+cap-15 subset,same_root,0.14593040434065907,0.010563358609301457,540,0.014450316895397105
+cap-15 subset,gap0,0.004802188768619153,0.0038123265551515684,540,0.004749873638484441
+same-root pairs by gap bin,0,711.0,,590,
+same-root pairs by gap bin,1-2,1004.0,,590,
+same-root pairs by gap bin,3-5,259.0,,590,
+same-root pairs by gap bin,6-11,45.0,,590,
+same-root pairs by gap bin,12+,1.0,,590,

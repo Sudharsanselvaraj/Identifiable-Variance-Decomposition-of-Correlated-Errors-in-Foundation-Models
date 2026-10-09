@@ -275,13 +275,21 @@ def figures(prereg: pd.DataFrame) -> list[str]:
     lab = ["0", "1–2", "3–5", "6–11", "12+"]
     b = np.digitize(gap, bins[1:])
     fig, ax = plt.subplots(figsize=(3.5, 2.6))
+    MIN_PAIRS = 20   # bins with fewer pairs are not plotted (e.g. 1 same-root pair at 12+)
     for flag, name, c in [(True, "same root", "#b2182b"), (False, "different root", "#2166ac")]:
-        m = [d["y"][(b == k) & (same == flag)].mean() if ((b == k) & (same == flag)).any()
-             else np.nan for k in range(5)]
+        cnt = [int(((b == k) & (same == flag)).sum()) for k in range(5)]
+        m = [d["y"][(b == k) & (same == flag)].mean() if cnt[k] >= MIN_PAIRS else np.nan
+             for k in range(5)]
         ax.plot(lab, m, "o-", label=name, color=c, ms=4)
+        for k in range(5):
+            if cnt[k] >= MIN_PAIRS:
+                ax.annotate(f"n={cnt[k]:,}", (k, m[k]), textcoords="offset points",
+                            xytext=(0, 5 if flag else -10), ha="center", fontsize=5.5,
+                            color=c)
+    ax.margins(x=0.08, y=0.12)
     ax.set_xlabel("Release-month gap", fontsize=8)
     ax.set_ylabel("Mean P(same wrong | both wrong)", fontsize=8)
-    ax.tick_params(labelsize=7); ax.legend(fontsize=7, frameon=False)
+    ax.tick_params(labelsize=7); ax.legend(fontsize=7, frameon=False, loc="center right")
     fig.tight_layout()
     p = figdir / "exp04_agreement_by_gap.pdf"
     fig.savefig(p, metadata={"CreationDate": None}); plt.close(fig); made.append(p.name)
@@ -302,6 +310,49 @@ def figures(prereg: pd.DataFrame) -> list[str]:
     return made
 
 
+# ------------------------------------------------------------------ H
+def extra_checks() -> pd.DataFrame:
+    """Exploratory: no accuracy controls; cap-15 subset (a subset of cap 40
+    under the same seeded order); same-root pair counts by gap bin."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from run_pair_gate import population, sample
+
+    rows = []
+    d = prepared("primary")
+    keep = [k for k, n in enumerate(d["names"]) if not n.startswith("acc")]
+    b, se = ols_twoway(d["X"][:, keep], d["y"], d["i"], d["j"], len(d["pop"]))
+    names = [d["names"][k] for k in keep]
+    for t in ("same_root", "gap0"):
+        k = names.index(t)
+        rows.append({"check": "no accuracy controls", "term": t,
+                     "estimate": b[k], "se": se[k], "models": len(d["pop"])})
+    roster = pd.read_csv(ROOT / "datasets/ollb/v1_roster.csv")
+    c15 = set(sample(population(roster, "primary"), 100000, 15).model)
+    c40 = set(sample(population(roster, "primary"), 100000, 40).model)
+    assert c15 <= c40
+    pop, _ = A.load_population("primary", False)
+    p = pop[pop.model.isin(c15)].reset_index(drop=True)
+    pred, gold, _ = A.choice_matrix(p.model)
+    acc = (pred == gold[None, :]).mean(1)
+    rid = pd.factorize(p.root)[0]
+    i, j, y, _ = A.pair_outcomes(pred, gold)
+    X, nm = design(i, j, rid, month_index(p.created_month), acc)
+    b, se = ols_twoway(X, y, i, j, len(p))
+    jk = jackknife_roots(X, y, rid, i, j)
+    for t in ("same_root", "gap0"):
+        k = nm.index(t)
+        rows.append({"check": "cap-15 subset", "term": t, "estimate": b[k],
+                     "se": se[k], "se_jackknife": jk[k], "models": len(p)})
+    gap = np.abs(month_index(d["pop"].created_month)[d["i"]]
+                 - month_index(d["pop"].created_month)[d["j"]])
+    same = d["rid"][d["i"]] == d["rid"][d["j"]]
+    bins = np.digitize(gap, [1, 3, 6, 12])
+    for k, lab in enumerate(["0", "1-2", "3-5", "6-11", "12+"]):
+        rows.append({"check": "same-root pairs by gap bin", "term": lab,
+                     "estimate": int(((bins == k) & same).sum()), "models": len(d["pop"])})
+    return pd.DataFrame(rows)
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     report = {"A_integrity": integrity()}
@@ -320,6 +371,7 @@ def main() -> int:
     expl.to_csv(OUT / "exploratory_E1_E2.csv", index=False)
     report["F_exploratory_all_match"] = bool(expl.matches_committed.all())
     report["G_figures"] = figures(prereg)
+    extra_checks().to_csv(OUT / "extra_checks.csv", index=False)
     (OUT / "report.json").write_text(json.dumps(report, indent=1))
     pd.set_option("display.width", 220)
     print(json.dumps(report, indent=1))
