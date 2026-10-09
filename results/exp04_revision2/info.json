@@ -1,0 +1,136 @@
+{
+ "primary_roots_with_release_month": "590 of 590 models",
+ "primary_different_root_pairs_same_root_month": 12271,
+ "primary_degenerate_models": 21,
+ "primary_identical_pairs": {
+  "total": 193,
+  "same_root": 24
+ },
+ "primary_chain_root_mismatches": 0,
+ "primary_same_root_pair_types": {
+  "more distant": 1101,
+  "siblings": 627,
+  "ancestor-descendant": 260,
+  "same repository": 32
+ },
+ "primary_same_root_tree_distance": {
+  "0": 32,
+  "1": 177,
+  "2": 699,
+  "3": 718,
+  "4": 228,
+  "5": 50,
+  "6": 49,
+  "7": 48,
+  "8": 17,
+  "9": 2
+ },
+ "primary_config_check": {
+  "models": 590,
+  "read": 590,
+  "names_cached_hub_repo": 191,
+  "same_root": 142,
+  "other_root": 48,
+  "chain_unresolved": 1,
+  "self_or_unusable": 367,
+  "not_in_cache": 32,
+  "other_root_examples": [
+   [
+    "AbacusResearch/RasGulla1-7b",
+    "AbacusResearch/RasGulla1-7b",
+    "AbacusResearch/haLLAwa3"
+   ],
+   [
+    "Cartinoe5930/iDUS",
+    "Cartinoe5930/SOLAR-10.7B-iDUS-1layer",
+    "Cartinoe5930/SOLAR-DUS-implement"
+   ],
+   [
+    "Cartinoe5930/iDUS-8layers",
+    "Cartinoe5930/SOLAR-10.7B-iDUS",
+    "Cartinoe5930/SOLAR-DUS-implement"
+   ],
+   [
+    "DevaMalla/llama-base-7b",
+    "DevaMalla/llama7b",
+    "huggyllama/llama-7b"
+   ],
+   [
+    "Hemanth-thunder/Tamil-Mistral-7B-v0.1",
+    "Hemanth-thunder/Tamil-Mistral-7B-v0.1",
+    "mistralai/Mistral-7B-v0.1"
+   ],
+   [
+    "Locutusque/TinyMistral-248M-v2",
+    "Locutusque/TinyMistral-248M-v2",
+    "Locutusque/TinyMistral-248M"
+   ],
+   [
+    "Locutusque/llama-3-neural-chat-v1-8b",
+    "meta-llama/Meta-Llama-3-8B",
+    "Locutusque/Llama-3-Orca-1.0-8B"
+   ],
+   [
+    "M4-ai/tau-1.8B",
+    "M4-ai/tau-1.8B",
+    "Qwen/Qwen1.5-1.8B"
+   ],
+   [
+    "PY007/TinyLlama-1.1B-intermediate-step-240k-503b",
+    "TinyLlama/TinyLlama-1.1B-intermediate-step-240k-503b",
+    "meta-llama/Llama-2-7b-hf"
+   ],
+   [
+    "PY007/TinyLlama-1.1B-step-50K-105b",
+    "TinyLlama/TinyLlama-1.1B-step-50K-105b",
+    "meta-llama/Llama-2-7b-hf"
+   ],
+   [
+    "Ramikan-BR/tinyllama_PY-CODER-4bit-lora_4k-v12",
+    "Ramikan-BR/tinyllama_PY-CODER-4bit-lora_4k-v7",
+    "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+   ],
+   [
+    "Ramikan-BR/tinyllama_PY-CODER-4bit-lora_4k-v5",
+    "unsloth/tinyllama-bnb-4bit",
+    "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+   ],
+   [
+    "Wanfq/FuseLLM-7B",
+    "Wanfq/FuseLLM-7B",
+    "meta-llama/Llama-2-7b-hf"
+   ],
+   [
+    "cloudyu/Mixtral_11Bx2_MoE_19B",
+    "cloudyu/Mixtral_11Bx2_MoE_19B",
+    "jeonsworld/CarbonVillain-en-10.7B-v4"
+   ],
+   [
+    "frankenmerger/delta-4B-super",
+    "frankenmerger/delta-4B-super",
+    "abacaj/phi-2-super"
+   ]
+  ]
+ },
+ "primary_S2_roots_with_release_month": "343 of 343 models",
+ "primary_S2_different_root_pairs_same_root_month": 5218,
+ "primary_S2_degenerate_models": 0,
+ "primary_S2_identical_pairs": {
+  "total": 15,
+  "same_root": 14
+ },
+ "expanded_roots_with_release_month": "928 of 928 models",
+ "expanded_different_root_pairs_same_root_month": 30584,
+ "expanded_degenerate_models": 30,
+ "expanded_identical_pairs": {
+  "total": 382,
+  "same_root": 32
+ },
+ "expanded_S2_roots_with_release_month": "589 of 589 models",
+ "expanded_S2_different_root_pairs_same_root_month": 15518,
+ "expanded_S2_degenerate_models": 0,
+ "expanded_S2_identical_pairs": {
+  "total": 22,
+  "same_root": 20
+ }
+}

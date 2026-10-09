@@ -18,16 +18,16 @@ R = ROOT / "results"
 T = ROOT / "paper" / "tables"
 
 NICE = {
-    "primary": "Primary", "primary_strict": "Primary, verified roots",
+    "primary": "Primary", "primary_strict": "Primary, strict",
     "primary_S1position": "Primary + S1 (option distribution)",
     "primary_S2acc0.3": "Primary, S2 (acc $\\geq$ 0.30)",
     "primary_S1position_S2acc0.3": "Primary + S1, S2",
-    "primary_strict_S1position_S2acc0.3": "Primary, verified + S1, S2",
-    "expanded": "Expanded", "expanded_strict": "Expanded, verified roots",
+    "primary_strict_S1position_S2acc0.3": "Primary, strict + S1, S2",
+    "expanded": "Expanded", "expanded_strict": "Expanded, strict",
     "expanded_S1position": "Expanded + S1 (option distribution)",
     "expanded_S2acc0.3": "Expanded, S2 (acc $\\geq$ 0.30)",
     "expanded_S1position_S2acc0.3": "Expanded + S1, S2",
-    "expanded_strict_S1position_S2acc0.3": "Expanded, verified + S1, S2",
+    "expanded_strict_S1position_S2acc0.3": "Expanded, strict + S1, S2",
 }
 
 
@@ -35,8 +35,21 @@ DAGGER = "$^\\dagger$"
 GEQ = "$\\geq$"
 
 
+def num(v, d=3, sign=True):
+    """Number for math mode: true minus sign, no negative zero."""
+    if round(v, d) == 0:
+        return f"{0:.{d}f}"
+    return f"{v:+.{d}f}" if sign else f"{v:.{d}f}"
+
+
 def fmt_ci(e, lo, hi, d=3):
-    return f"${e:+.{d}f}$ [{lo:+.{d}f}, {hi:+.{d}f}]"
+    return f"${num(e, d)}$ [${num(lo, d)}$, ${num(hi, d)}$]"
+
+
+def est_se(text, d=4):
+    """'+0.1328 (0.0096)' -> math-mode estimate (SE)."""
+    e, se = text.replace("(", "").replace(")", "").split()
+    return f"${num(float(e), d)}$ ({float(se):.{d}f})"
 
 
 def pval(p):
@@ -72,7 +85,7 @@ def tab_inference():
             label = r.inference.replace(" (pre-registered)", DAGGER)
             who = "same root" if term == "same_root" else "same month"
             dig = 3 if term == "same_root" else 4
-            lines.append(f"{pop.replace('_S2', ', S2')} & {who} & {label} & "
+            lines.append(f"{pop.capitalize().replace('_s2', ', S2')} & {who} & {label} & "
                          f"{fmt_ci(r.estimate, r.ci_low, r.ci_high, dig)} & {pval(r.p)} \\\\")
         lines.append("\\hline")
     write("tab_inference.tex", "\n".join(lines[:-1]) + "\n")
@@ -86,7 +99,8 @@ def tab_outcome():
             s = h[h.term == "same_root"].iloc[0]
             m = h[h.term == "gap0"].iloc[0]
             vlab = (v.replace(">=", GEQ)
-                    .replace("position-based chance", "option-distribution chance"))
+                    .replace("position-based chance", "option-distribution chance")
+                    .replace("(pre-registered)", "(pre-specified)"))
             lines.append(f"{pop.capitalize()} & {vlab} & "
                          f"{fmt_ci(s.estimate, s.ci_low, s.ci_high)} & "
                          f"{fmt_ci(m.estimate, m.ci_low, m.ci_high, 4)} & {pval(m.p)} \\\\")
@@ -152,9 +166,9 @@ def tab_exploratory():
     lines = []
     for _, r in d.iterrows():
         pop = r["population"].capitalize().replace("_s2", ", S2")
-        lines.append(f"{pop} & {r['models']} & {r['same_root (root-cl)']} & "
-                     f"{r['same_root +size/arch']} & {r['gap0 +size/arch']} & "
-                     f"{r['same_arch']} \\\\")
+        lines.append(f"{pop} & {r['models']} & {est_se(r['same_root (root-cl)'])} & "
+                     f"{est_se(r['same_root +size/arch'])} & {est_se(r['gap0 +size/arch'])} & "
+                     f"{est_se(r['same_arch'])} \\\\")
     write("tab_exploratory.tex", "\n".join(lines) + "\n")
 
 
@@ -175,8 +189,8 @@ def tab_itemnull():
         for o, h in g.groupby("outcome", sort=False):
             r = h[h.term == "same_root"].iloc[0]
             m = h[h.term == "gap0"].iloc[0]
-            lines.append(f"{pop.replace('_S2', ', S2').capitalize()} & {short[o]} & "
-                         f"{r.outcome_mean:.3f} & "
+            lines.append(f"{pop.capitalize().replace('_s2', ', S2')} & {short[o]} & "
+                         f"${num(r.outcome_mean, 3, sign=False)}$ & "
                          f"{jk(r, 3)} & {pval(r.p_jackknife)} & "
                          f"{jk(m, 4)} & {pval(m.p_jackknife)} \\\\")
         lines.append("\\hline")
@@ -226,8 +240,138 @@ def tab_rawadj():
     write("tab_rawadj.tex", "\n".join(lines) + "\n")
 
 
+def tab_revision2():
+    """Post-hoc analyses from the second review (run_exp04_revision2.py)."""
+    d = pd.read_csv(R / "exp04_revision2/revision2.csv")
+    pops = ["primary", "primary_S2", "expanded", "expanded_S2"]
+
+    def cell(analysis, term, pop, kind="ci"):
+        r = d[(d.analysis == analysis) & (d.term == term) & (d.population == pop)]
+        if r.empty:
+            return "--"
+        r = r.iloc[0]
+        if kind == "eq":
+            return f"$\\pm${r.equivalence_bound_90:.3f}"
+        return fmt_ci(r.estimate, r.ci95_low, r.ci95_high, 3)
+
+    spec = [
+        ("Same month: 90\\% equivalence bound", "pre-registered model", "gap0", "eq"),
+        ("Root release month: shared root", "root release month in place of upload month",
+         "same_root", "ci"),
+        ("Root release month: same month", "root release month in place of upload month",
+         "gap0", "ci"),
+        ("CAPA outcome: shared root", "CAPA outcome, with accuracy terms", "same_root", "ci"),
+        ("CAPA outcome: same month", "CAPA outcome, with accuracy terms", "gap0", "ci"),
+        ("Clean sample: shared root", "data quality: both", "same_root", "ci"),
+        ("Clean sample: same month", "data quality: both", "gap0", "ci"),
+        ("Config-consistent lineage: shared root",
+         "without models whose config contradicts the card", "same_root", "ci"),
+        ("Tree distance 1", "lineage dose-response: tree distance", "distance 1", "ci"),
+        ("Tree distance 2", "lineage dose-response: tree distance", "distance 2", "ci"),
+        ("Tree distance 3+", "lineage dose-response: tree distance", "distance 3+", "ci"),
+    ]
+    lines = [f"{lab} & " + " & ".join(cell(a, t, p, k) for p in pops) + " \\\\"
+             for lab, a, t, k in spec]
+    write("tab_revision2.tex", "\n".join(lines) + "\n")
+
+
+def tab_robust():
+    """One consolidated robustness table for the primary sample (main text)."""
+    pre = pd.read_csv(R / "exp04_final/prereg_12.csv")
+    inf = pd.read_csv(R / "exp04_final/inference_audit.csv")
+    raw = pd.read_csv(R / "exp04_final/raw_vs_adjusted.csv")
+    out = pd.read_csv(R / "exp04_final/outcome_audit.csv")
+    itn = pd.read_csv(R / "exp04_item_null/item_null.csv")
+    ex = pd.read_csv(R / "exp04_final/exploratory_E1_E2.csv").set_index("population")
+    ext = pd.read_csv(R / "exp04_final/extra_checks.csv")
+    rv = pd.read_csv(R / "exp04_revision2/revision2.csv")
+    Z = 1.959964
+
+    def ci(e, se, d):
+        return fmt_ci(e, e - Z * se, e + Z * se, d)
+
+    def pick(df, **kw):
+        m = pd.Series(True, index=df.index)
+        for k, v in kw.items():
+            m &= df[k] == v
+        r = df[m]
+        assert len(r) == 1, kw
+        return r.iloc[0]
+
+    def two(get):
+        return [get("same_root", 3), get("gap0", 4)]
+
+    rows = []
+    rows.append(("Pre-specified model", "Pre-spec.", "model",
+                 two(lambda t, d: fmt_ci(*pick(pre, analysis="primary", term=t)
+                                         [["estimate", "ci_low", "ci_high"]], d))))
+    for kind, lab, name in (("root-dyadic", "root", "\\quad root-level dyadic SEs"),
+                            ("delete-one-root jackknife", "jackknife",
+                             "\\quad delete-one-root jackknife")):
+        rows.append((name, "Explor.", lab,
+                     two(lambda t, d, k=kind: fmt_ci(*pick(inf, population="primary", term=t,
+                         inference=k)[["estimate", "ci_low", "ci_high"]], d))))
+    rows.append(("Without accuracy terms", "Post hoc", "jackknife",
+                 two(lambda t, d: fmt_ci(*pick(raw, population="primary",
+                     model="raw (no accuracy terms)", term=t)[["estimate", "ci_low", "ci_high"]], d))))
+    for v, lab, st in (("WLS, weight = jointly-wrong items", "WLS (weight: jointly wrong items)", "Explor."),
+                       ("agreement minus position-based chance (exploratory)",
+                        "Minus option-distribution chance", "Explor."),
+                       ("phi of error indicators (secondary)", "Phi of error indicators$^{a}$", "Pre-spec.")):
+        rows.append((lab, st, "model", two(lambda t, d, v=v: fmt_ci(*pick(
+            out, population="primary", variant=v, term=t)[["estimate", "ci_low", "ci_high"]], d))))
+    rows.append(("CAPA, chance-adjusted agreement$^{a}$", "Post hoc", "jackknife",
+                 two(lambda t, d: ci(*pick(rv, population="primary", term=t,
+                     analysis="CAPA outcome, with accuracy terms")[["estimate", "se_jackknife"]], d))))
+    for o, lab in (("N1a: minus item distractor null (all models)", "N1a: minus item distractor null"),
+                   ("N1b: minus item distractor null (roots weighted equally)", "N1b: as N1a, roots weighted equally"),
+                   ("N2: excess co-failure over Rasch null (per item)", "N2: co-failure over Rasch null$^{a}$")):
+        rows.append((lab, "Post hoc", "jackknife", two(lambda t, d, o=o: ci(*pick(
+            itn, population="primary", outcome=o, term=t)[["estimate", "se_jackknife"]], d))))
+    e = ex.loc["primary"]
+    rows.append(("+ size and architecture controls", "Explor.", "model",
+                 [ci(*map(float, e["same_root +size/arch"].replace("(", "").replace(")", "").split()), 3),
+                  ci(*map(float, e["gap0 +size/arch"].replace("(", "").replace(")", "").split()), 4)]))
+    rows.append(("Root release month for timing", "Post hoc", "jackknife",
+                 two(lambda t, d: ci(*pick(rv, population="primary", term=t,
+                     analysis="root release month in place of upload month")[["estimate", "se_jackknife"]], d))))
+    rows.append(("Without duplicate and degenerate models", "Post hoc", "jackknife",
+                 two(lambda t, d: ci(*pick(rv, population="primary", term=t,
+                     analysis="data quality: both")[["estimate", "se_jackknife"]], d))))
+    rows.append(("Config-consistent lineage only", "Post hoc", "jackknife",
+                 two(lambda t, d: ci(*pick(rv, population="primary", term=t,
+                     analysis="without models whose config contradicts the card")[["estimate", "se_jackknife"]], d))))
+    rows.append(("Cap-15 subset of the sample", "Post hoc", "jackknife",
+                 two(lambda t, d: ci(*pick(ext, check="cap-15 subset", term=t)[["estimate", "se_jackknife"]], d))))
+    for dist in ("distance 1", "distance 2", "distance 3+"):
+        r = pick(rv, population="primary", term=dist, analysis="lineage dose-response: tree distance")
+        rows.append((f"Lineage tree {dist}", "Post hoc$^{b}$", "jackknife",
+                     [ci(r.estimate, r.se_jackknife, 3), "--"]))
+    body = "\n".join(f"{a} & {b} & {c} & {x} & {y} \\\\" for a, b, c, (x, y) in rows)
+    write("tab_robust.tex", body + "\n")
+
+
+def tab_descriptives():
+    d = pd.read_csv(R / "exp04_heterogeneity/descriptives.csv").set_index("sample")
+    order = [("primary", "Primary"), ("primary_S2", "Primary, S2"), ("expanded", "Expanded"),
+             ("expanded_S2", "Expanded, S2")]
+    rows = [("Models", lambda r: f"{int(r.models):,}"),
+            ("Lineage roots (with $\\geq 2$ models)", lambda r: f"{int(r.roots)} ({int(r.roots_ge2)})"),
+            ("Upload months", lambda r: f"{int(r.months)}"),
+            ("Pairs", lambda r: f"{int(r.pairs):,}"),
+            ("Same-root pairs", lambda r: f"{int(r.same_root_pairs):,}"),
+            ("Accuracy, median [range]", lambda r: f"{r.accuracy_median:.3f} [{r.accuracy_min:.3f}, {r.accuracy_max:.3f}]"),
+            ("Jointly wrong items per pair, median", lambda r: f"{int(r.joint_wrong_median):,}"),
+            ("Agreement $a_{ij}$, mean", lambda r: f"{r.agreement_mean:.3f}"),
+            ("\\quad same-root pairs", lambda r: f"{r.agreement_same_root:.3f}"),
+            ("\\quad different-root pairs", lambda r: f"{r.agreement_other:.3f}")]
+    lines = [f"{lab} & " + " & ".join(f(d.loc[k]) for k, _ in order) + " \\\\" for lab, f in rows]
+    write("tab_descriptives.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
-              tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj):
+              tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj,
+              tab_revision2, tab_robust, tab_descriptives):
         f()
     print(sorted(p.name for p in T.glob("*.tex")))
