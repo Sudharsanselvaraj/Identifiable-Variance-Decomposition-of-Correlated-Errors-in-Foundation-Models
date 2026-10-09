@@ -19,7 +19,9 @@ Usage (repo root):
 from __future__ import annotations
 
 import argparse
+import io
 import json
+import threading
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -60,33 +62,101 @@ def _subject_of(path: str) -> str:
     return path.split("hendrycksTest-")[1].split("|")[0]
 
 
-def _open_cdn(hf_path: str):
+_local = threading.local()
+
+
+def _session():
+    """One requests.Session per thread (Sessions are not thread-safe)."""
+    import requests
+
+    if not hasattr(_local, "s"):
+        _local.s = requests.Session()
+    return _local.s
+
+
+class _RangeFile(io.RawIOBase):
+    """Seekable read-only file over HTTP range requests, with a small
+    read-ahead block cache. Plain synchronous requests, safe across threads
+    (fsspec's shared async loop deadlocked under ~100 worker threads)."""
+
+    def __init__(self, url: str, size: int, headers: dict | None = None,
+                 block: int = 64 * 1024):
+        self.url, self.size, self.headers, self.block = url, size, headers or {}, block
+        self.pos, self.nbytes = 0, 0
+        self._cache_start, self._cache = 0, b""
+
+    def readable(self): return True
+    def seekable(self): return True
+    def tell(self): return self.pos
+
+    def seek(self, offset, whence=io.SEEK_SET):
+        base = {io.SEEK_SET: 0, io.SEEK_CUR: self.pos, io.SEEK_END: self.size}[whence]
+        self.pos = base + offset
+        return self.pos
+
+    def _fetch(self, start: int, end: int) -> bytes:
+        for attempt in range(5):
+            r = _session().get(self.url, timeout=60, headers={
+                **self.headers, "Range": f"bytes={start}-{end - 1}"})
+            if r.status_code in (200, 206):
+                self.nbytes += len(r.content)
+                return r.content if r.status_code == 206 else r.content[start:end]
+            time.sleep(min(30, 2 * 2 ** attempt))
+        raise OSError(f"range read failed ({r.status_code}) for {self.url[:80]}")
+
+    def read(self, n=-1):
+        if n is None or n < 0:
+            n = self.size - self.pos
+        n = max(0, min(n, self.size - self.pos))
+        if n == 0:
+            return b""
+        cs, ce = self._cache_start, self._cache_start + len(self._cache)
+        if not (cs <= self.pos and self.pos + n <= ce):
+            start = self.pos
+            end = min(self.size, start + max(n, self.block))
+            if self.pos + n > self.size - self.block:
+                # Parquet footer: pyarrow reads the last 8 bytes, then the
+                # metadata just before them; fetch the whole tail at once.
+                start = max(0, min(self.pos, self.size - 4 * self.block))
+                end = self.size
+            self._cache_start, self._cache = start, self._fetch(start, end)
+            cs = start
+        out = self._cache[self.pos - cs:self.pos - cs + n]
+        self.pos += len(out)
+        return out
+
+    def readinto(self, b):
+        data = self.read(len(b))
+        b[:len(data)] = data
+        return len(data)
+
+
+def _open_cdn(hf_path: str) -> _RangeFile:
     """Open a Hub file for ranged reads straight from its CDN location.
 
-    One request to the (rate-limited) resolve endpoint returns a 302/307 to a
-    signed CDN URL; the footer and column-chunk range reads then go to the CDN
-    and do not count against the 5000 / 5 min resolver window. Falls back to
-    the resolve URL when the file is not LFS-backed (relative redirect).
+    One HEAD to the (rate-limited) resolve endpoint returns a redirect to a
+    signed CDN URL plus the file size; footer and column-chunk range reads then
+    go to the CDN and do not count against the 5000 / 5 min resolver window.
     """
-    import fsspec
-    import requests
     from huggingface_hub import get_token
     from urllib.parse import quote
 
     _, org, repo, rest = hf_path.split("/", 3)
     url = (f"https://huggingface.co/datasets/{org}/{repo}/resolve/main/"
            + quote(rest, safe="/"))
-    headers = {"Authorization": f"Bearer {get_token()}"}
-    r = requests.head(url, headers=headers, allow_redirects=False, timeout=30)
-    if r.status_code == 429:
-        raise RuntimeError("resolver rate limit")
+    auth = {"Authorization": f"Bearer {get_token()}"}
+    for attempt in range(6):
+        r = _session().head(url, headers=auth, allow_redirects=False, timeout=30)
+        if r.status_code != 429:
+            break
+        time.sleep(30)
     loc = r.headers.get("Location", "")
-    if r.status_code in (301, 302, 307, 308) and loc.startswith("http"):
-        return fsspec.open(loc, mode="rb", block_size=64 * 1024,
-                           cache_type="readahead").open()
-    return fsspec.open(url, mode="rb", block_size=64 * 1024,
-                       cache_type="readahead",
-                       client_kwargs={"headers": headers}).open()
+    size = int(r.headers.get("X-Linked-Size") or r.headers.get("Content-Length") or 0)
+    if r.status_code in (301, 302, 307, 308) and loc.startswith("http") and size:
+        return _RangeFile(loc, size)
+    # Not LFS-backed: read through the resolve URL (counts against the quota).
+    h = _session().head(url, headers=auth, allow_redirects=True, timeout=30)
+    return _RangeFile(url, int(h.headers["Content-Length"]), headers=auth)
 
 
 def fetch_model(repo: str, retries: int = 4) -> dict:
@@ -124,8 +194,7 @@ def fetch_model(repo: str, retries: int = 4) -> dict:
                     cols = (COLUMNS if "acc" in names
                             else ["predictions", "metrics"])
                     t = pf.read(columns=cols)
-                    return subj, t, getattr(getattr(fh, "cache", None),
-                                            "total_requested_bytes", 0)
+                    return subj, t, fh.nbytes
 
             with ThreadPoolExecutor(SUBJECT_WORKERS) as pool:
                 tables = dict((s_, (t_, b_)) for s_, t_, b_ in
