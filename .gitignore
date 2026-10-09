@@ -13,3 +13,5 @@ __pycache__/
 datasets/ollb/v1/
 datasets/ollb/*.log
 *.egg-info/
+# leaderboard metadata copy: no declared licence; regenerate with scripts/fetch_v1_contents_meta.py
+datasets/ollb/v1_contents_meta.csv
