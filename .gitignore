@@ -8,3 +8,7 @@ __pycache__/
 *.log
 *.out
 .manuscript_pandoc.tex
+
+# Exp04 leaderboard data (large / regenerable)
+datasets/ollb/v1/
+datasets/ollb/*.log

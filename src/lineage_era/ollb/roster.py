@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[3]
 CONTENTS = ROOT / "datasets" / "kim" / "hugging_face.csv"
 OUT_DIR = ROOT / "datasets" / "ollb"
 CACHE = OUT_DIR / "lineage_cache.json"
+ALIASES = OUT_DIR / "repo_aliases.json"   # old repo id -> current id (renames)
 
 # Metadata only. Adding a score column here breaks outcome independence.
 META_COLS = ["name", "type", "architecture", "is_merged", "is_moe", "is_flagged",
@@ -41,21 +42,93 @@ def load_cache() -> dict[str, str | None]:
     return json.loads(CACHE.read_text()) if CACHE.exists() else {}
 
 
-def hub_parent(repo_id: str) -> str | None:
-    """First declared base_model of a Hub repo, or None (root / unknown)."""
-    from huggingface_hub import HfApi
-    from huggingface_hub.utils import HfHubHTTPError
+def load_aliases() -> dict[str, str]:
+    return json.loads(ALIASES.read_text()) if ALIASES.exists() else {}
 
-    try:
-        info = HfApi().model_info(repo_id)
-    except (HfHubHTTPError, OSError, ValueError):
-        return None
-    base = (info.card_data or {}).get("base_model") if info.card_data else None
+
+class HubUnavailable(Exception):
+    """Transient Hub failure; the repo is retried on the next run, never cached."""
+
+
+def hub_parent(repo_id: str, retries: int = 5) -> tuple[str, str | None]:
+    """(current repo id, declared single base_model); parent None = root,
+    missing or merge. The current id differs from ``repo_id`` after a rename.
+
+    Rate limits and network errors raise HubUnavailable instead of returning
+    None, so a throttled request is never recorded as "this model is a root".
+    """
+    import time
+
+    from huggingface_hub import HfApi
+    from huggingface_hub.utils import (GatedRepoError, HfHubHTTPError,
+                                       RepositoryNotFoundError)
+
+    for attempt in range(retries):
+        try:
+            info = HfApi().model_info(repo_id)
+            break
+        except (RepositoryNotFoundError, GatedRepoError):
+            return repo_id, None
+        except HfHubHTTPError as exc:
+            status = getattr(exc.response, "status_code", None)
+            if status in (400, 404, 410):
+                return repo_id, None
+            time.sleep(min(60, 5 * 2 ** attempt))
+        except (OSError, ValueError):
+            time.sleep(min(60, 5 * 2 ** attempt))
+    else:
+        raise HubUnavailable(repo_id)
+    base = info.card_data.get("base_model") if info.card_data else None
     if isinstance(base, list):
         if len(base) != 1:      # multi-parent = merge; treat as unresolved root
-            return None
+            return info.id, None
         base = base[0]
-    return base if isinstance(base, str) and base != repo_id else None
+    ok = isinstance(base, str) and base not in (repo_id, info.id)
+    return info.id, base if ok else None
+
+
+def resolve_missing(names: list[str], parent: dict, cache: dict,
+                    aliases: dict, workers: int = 8) -> None:
+    """Breadth-first Hub resolution of every ancestor not yet known."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def unknown(n: str | None) -> bool:
+        return isinstance(n, str) and n not in parent and n not in cache
+
+    # Leaderboard roots (parent None) are queried too, only to record renames
+    # so that e.g. Meta-Llama-3.1-8B and Llama-3.1-8B become one root.
+    roots = {n for n in names if n in parent and parent[n] is None
+             and n not in cache}
+    frontier = sorted({n for n in names if unknown(n)} | roots
+                      | {p for p in parent.values() if unknown(p)})
+    level = 0
+    while frontier:
+        print(f"resolve level {level}: {len(frontier)} repos", flush=True)
+        with ThreadPoolExecutor(workers) as pool:
+            results = list(pool.map(_safe_parent, frontier))
+        failed = 0
+        for n, (ok, current, p) in zip(frontier, results):
+            if ok:
+                cache[n] = p
+                if current != n:
+                    aliases[n] = current
+            else:
+                failed += 1
+        CACHE.write_text(json.dumps(cache, indent=0, sort_keys=True))
+        ALIASES.write_text(json.dumps(aliases, indent=0, sort_keys=True))
+        print(f"  cached {len(frontier) - failed}, transient failures {failed}",
+              flush=True)
+        frontier = sorted({p for n, p in cache.items() if unknown(p)})
+        level += 1
+        if level > MAX_DEPTH:
+            break
+
+
+def _safe_parent(n: str) -> tuple[bool, str, str | None]:
+    try:
+        return (True, *hub_parent(n))
+    except HubUnavailable:
+        return False, n, None
 
 
 def build_roster(resolve: bool = False) -> pd.DataFrame:
@@ -73,14 +146,13 @@ def build_roster(resolve: bool = False) -> pd.DataFrame:
                 parent[n] = None
         else:
             parent[n] = b
-    cache = load_cache()
+    cache, aliases = load_cache(), load_aliases()
+    if resolve:
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        resolve_missing(list(meta.name), parent, cache, aliases)
 
     def parent_of(n: str) -> str | None:
-        if n in parent:
-            return parent[n]
-        if n not in cache and resolve:
-            cache[n] = hub_parent(n)
-        return cache.get(n)
+        return parent[n] if n in parent else cache.get(n)
 
     def walk(n: str) -> tuple[str, int, bool]:
         """(root, depth, resolved) following single-parent base_model links."""
@@ -102,6 +174,7 @@ def build_roster(resolve: bool = False) -> pd.DataFrame:
         merge = bool(r.is_merged) or r.type == MERGE_TYPE \
             or str(r.base_model).endswith("(Merge)")
         root, depth, resolved = walk(r.name)
+        root = aliases.get(root, root)
         rows.append({
             "name": r.name, "root": root, "root_org": root.split("/")[0],
             "depth": depth, "lineage_resolved": resolved,
@@ -115,9 +188,6 @@ def build_roster(resolve: bool = False) -> pd.DataFrame:
                           "base_removed" if r.base_model == "Removed" else ""),
         })
 
-    if resolve:
-        OUT_DIR.mkdir(parents=True, exist_ok=True)
-        CACHE.write_text(json.dumps(cache, indent=0, sort_keys=True))
     return pd.DataFrame(rows)
 
 
