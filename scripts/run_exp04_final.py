@@ -3,7 +3,7 @@
 and run the inference / outcome audits requested before the manuscript rewrite.
 
 Writes only to results/exp04_final/ and compares against the committed
-outputs in results/exp04_analysis/ (commit 2d4429a).
+outputs in results/exp04_analysis/ (commit 679c5b7).
 
 Sections
   A  integrity: frozen-sample hashes; answer files re-validated
