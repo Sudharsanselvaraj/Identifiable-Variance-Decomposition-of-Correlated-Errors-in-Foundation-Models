@@ -26,23 +26,33 @@ from lineage_era.ollb.pair_gate import Truth, run, summarize  # noqa: E402
 OUT = ROOT / "results" / "pair_gate"
 
 
-def sample(roster: pd.DataFrame, n: int, cap: int, seed: int = 0) -> pd.DataFrame:
-    e = roster[roster.eligible & roster.created_month.notna()]
-    e = e.sample(frac=1, random_state=seed).groupby("root").head(cap)
+def population(roster: pd.DataFrame, which: str) -> pd.DataFrame:
+    """Eligible models of one frozen population with a common 'root' column."""
+    if which == "expanded":
+        e = roster[roster.eligible_expanded].assign(root=lambda d: d.root_x)
+    else:
+        e = roster[roster.eligible_primary]
+    return e[e.created_month.notna()]
+
+
+def sample(pop: pd.DataFrame, n: int, cap: int, seed: int = 0) -> pd.DataFrame:
+    e = pop.sample(frac=1, random_state=seed).groupby("root").head(cap)
     return e.head(n)
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--roster", default="datasets/ollb/v1_roster.csv")
+    ap.add_argument("--population", choices=["primary", "expanded"], default="primary")
     ap.add_argument("--sizes", default="200,400,800,1200")
     ap.add_argument("--cap", type=int, default=15, help="max models per root")
     ap.add_argument("--reps", type=int, default=20)
     ap.add_argument("--items", type=int, default=1500,
                     help="simulated items (real: 14042; fewer is conservative)")
     args = ap.parse_args()
-    roster = pd.read_csv(ROOT / args.roster)
-    OUT.mkdir(parents=True, exist_ok=True)
+    pop = population(pd.read_csv(ROOT / args.roster), args.population)
+    out = OUT / args.population
+    out.mkdir(parents=True, exist_ok=True)
 
     truths = {"null": Truth()}
     for lam in (0.03, 0.05, 0.10):
@@ -52,7 +62,7 @@ def main() -> int:
 
     rows = []
     for n in map(int, args.sizes.split(",")):
-        s = sample(roster, n, args.cap)
+        s = sample(pop, n, args.cap)
         for label, t in truths.items():
             res = run(s, t, K=args.items, reps=args.reps, seed=n)
             rows.append({"N": len(s), "roots": s.root.nunique(),
@@ -61,9 +71,10 @@ def main() -> int:
             print(f"N={len(s)} {label}: same_root reject={rows[-1]['same_root_reject5']:.2f} "
                   f"gap0 reject={rows[-1]['gap0_reject5']:.2f}", flush=True)
     df = pd.DataFrame(rows)
-    df.to_csv(OUT / "power.csv", index=False)
-    (OUT / "summary.md").write_text(
-        f"# Pair-gate power (reps={args.reps}, items={args.items}, cap={args.cap})\n\n"
+    df.to_csv(out / "power.csv", index=False)
+    (out / "summary.md").write_text(
+        f"# Pair-gate power: {args.population} population "
+        f"(reps={args.reps}, items={args.items}, cap={args.cap})\n\n"
         + df[["N", "roots", "months", "truth", "same_root_mean", "same_root_se_mean",
               "same_root_reject5", "gap0_mean", "gap0_se_mean", "gap0_reject5"]]
         .to_markdown(index=False, floatfmt=".4f") + "\n")

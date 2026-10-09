@@ -69,6 +69,7 @@ def fetch(repo: str, retries: int = 6) -> dict | None:
     """Metadata record for one repo, or None on a transient failure."""
     from huggingface_hub import HfApi
     from huggingface_hub.utils import (GatedRepoError, HfHubHTTPError,
+                                       HFValidationError,
                                        RepositoryNotFoundError)
 
     if not isinstance(repo, str) or repo.count("/") != 1 or " " in repo:
@@ -85,7 +86,8 @@ def fetch(repo: str, retries: int = 6) -> dict | None:
                     "base_model": base if isinstance(base, list) else None,
                     "created_at": info.created_at.isoformat() if info.created_at else None,
                     "status": "ok"}
-        except (RepositoryNotFoundError, GatedRepoError):
+        except (RepositoryNotFoundError, GatedRepoError, HFValidationError):
+            # HFValidationError: malformed id (e.g. trailing '-'); never valid.
             return {"repo": repo, "id": repo, "base_model": None,
                     "created_at": None, "status": "missing"}
         except HfHubHTTPError as exc:
@@ -104,12 +106,68 @@ def fetch(repo: str, retries: int = 6) -> dict | None:
     return None
 
 
+def prefetch_by_author(names: set[str], cache: dict, fh, min_models: int = 3) -> None:
+    """One listing call per author instead of one call per model.
+
+    Only repos that appear in their author's listing are recorded here.
+    Absent repos (deleted, private or renamed) are left for ``fetch``, which
+    follows rename redirects, so a rename is never mistaken for a deletion.
+    """
+    from huggingface_hub import HfApi
+
+    authors = pd.Series([n.split("/")[0] for n in names if n.count("/") == 1])
+    todo = authors.value_counts()
+    todo = todo[todo >= min_models].index.tolist()
+    print(f"author prefetch: {len(todo)} authors", flush=True)
+    for k, author in enumerate(todo):
+        wanted = {n for n in names if n.split("/")[0] == author} - set(cache)
+        for attempt in range(6):
+            _throttle()
+            try:
+                listed = {}
+                for i, m in enumerate(HfApi().list_models(
+                        author=author, expand=["cardData", "createdAt"])):
+                    if i and i % 1000 == 0:
+                        _throttle()               # each page is a request
+                    listed[m.id] = m
+                break
+            except Exception as exc:
+                code = getattr(getattr(exc, "response", None), "status_code", None)
+                if code == 429:
+                    time.sleep(_retry_after(exc))
+                else:
+                    time.sleep(min(90, 3 * 2 ** attempt))
+        else:
+            continue
+        for n in wanted & set(listed):
+            m = listed[n]
+            base = m.card_data.get("base_model") if m.card_data else None
+            if isinstance(base, str):
+                base = [base]
+            rec = {"repo": n, "id": m.id,
+                   "base_model": base if isinstance(base, list) else None,
+                   "created_at": m.created_at.isoformat() if m.created_at else None,
+                   "status": "ok"}
+            cache[n] = rec
+            fh.write(json.dumps(rec) + "\n")
+        fh.flush()
+        if (k + 1) % 50 == 0:
+            print(f"  authors {k + 1}/{len(todo)}; cached {len(cache)}", flush=True)
+
+
 def resolve(names: list[str], workers: int = 8) -> dict[str, dict]:
     """Fetch every name and, breadth-first, every declared ancestor."""
     cache = load()
     CACHE.parent.mkdir(parents=True, exist_ok=True)
     lock = threading.Lock()
-    frontier = sorted({n for n in names if isinstance(n, str)} - set(cache))
+    with open(CACHE, "a") as fh:
+        prefetch_by_author({n for n in names if isinstance(n, str)} - set(cache),
+                           cache, fh)
+    # Unfetched names plus unfetched declared ancestors of anything cached, so
+    # a resumed run also finishes an interrupted ancestor level.
+    parents = {p for r in cache.values() for p in (r["base_model"] or [])}
+    frontier = sorted(({n for n in names if isinstance(n, str)} | parents)
+                      - set(cache))
     with open(CACHE, "a") as fh:
         for level in range(MAX_LEVELS):
             if not frontier:
