@@ -19,6 +19,7 @@ Usage (repo root):
 from __future__ import annotations
 
 import argparse
+import ast
 import io
 import json
 import threading
@@ -208,7 +209,15 @@ def fetch_model(repo: str, retries: int = 4) -> dict:
                 t, b = tables[subj]
                 nbytes += b
                 preds = t["predictions"].to_pylist()
-                if "acc" in t.column_names:
+                if "acc" in t.column_names and t.schema.field("acc").type == "string":
+                    # Early-2023 variant: every column serialised as text.
+                    schema = "legacy_str"
+                    preds = [ast.literal_eval(p_) for p_ in preds]
+                    golds = [int(g_) for g_ in t["gold"].to_pylist()]
+                    accs = [float(a_) for a_ in t["acc"].to_pylist()]
+                    hs = [ast.literal_eval(h_)["example"]
+                          for h_ in t["hashes"].to_pylist()]
+                elif "acc" in t.column_names:
                     golds = t["gold"].to_pylist()
                     accs = t["acc"].to_pylist()
                     hs = [h["example"] for h in t["hashes"].to_pylist()]
@@ -247,7 +256,12 @@ def fetch_model(repo: str, retries: int = 4) -> dict:
             return {"repo": repo, "status": "ok", "items": len(pred), "run": run,
                     "schema": schema, "bytes": nbytes,
                     "acc": round(float(np.mean(np.array(pred) == np.array(gold))), 4)}
-        except (KeyError, ValueError, IndexError) as exc:
+        except FileNotFoundError as exc:
+            if "repository not found" in str(exc):
+                return {"repo": repo, "status": "repo_missing"}
+            err = f"{type(exc).__name__}: {str(exc)[:160]}"
+            time.sleep(min(120, 10 * 2 ** attempt))
+        except (KeyError, ValueError, IndexError, TypeError, SyntaxError) as exc:
             # Layout problems are deterministic: fail once, do not retry.
             return {"repo": repo, "status": "schema_error",
                     "error": f"{type(exc).__name__}: {str(exc)[:160]}"}
