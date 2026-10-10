@@ -17,7 +17,9 @@ Fail-closed: only models the manifest marks "validated" are analysed; an
 answer file for a model the manifest does not list stops the analysis (stale
 manifest: re-run the validation report), and choice_matrix() raises before
 any pair outcome is computed if an answer file's item order, gold vector,
-item hashes, length or option range disagree with the reference.
+item hashes, length or option range disagree with the reference, or if the
+file is not the one validated for that model (its prediction hash or accuracy
+differs from the manifest's pred_sha256 / accuracy).
 
 Usage (repo root):
     python3 -m lineage_era.ollb.analysis --population primary
@@ -27,6 +29,7 @@ Usage (repo root):
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -47,6 +50,11 @@ OUT = ROOT / "results" / "exp04_analysis"
 
 def answer_file(model: str) -> Path:
     return ANSWERS / f"{model.replace('/', '__')}.npz"
+
+
+def pred_sha256(pred: np.ndarray) -> str:
+    """Content hash of a prediction vector, as recorded by scripts/validation_report.py."""
+    return hashlib.sha256(np.ascontiguousarray(pred, dtype=np.int8).tobytes()).hexdigest()
 
 
 def load_population(name: str, strict: bool) -> tuple[pd.DataFrame, dict]:
@@ -79,16 +87,24 @@ def choice_matrix(models: pd.Series) -> tuple[np.ndarray, np.ndarray, dict]:
 
     Raises ValueError, before any outcome is computed, if any file's item
     order, gold vector or stored item hashes differ from the first model's,
-    or if its length or option range is invalid. The returned checks are then
-    all empty; they are kept for the summary record.
+    if its length or option range is invalid, or if it is not the file that
+    was validated for that model (prediction hash or accuracy differs from the
+    manifest: a file swapped, replaced or edited after validation). The
+    returned checks are then all empty; they are kept for the summary record.
     """
+    manifest = pd.read_csv(MANIFEST, keep_default_na=False).set_index("model")
+    for col in ("accuracy", "pred_sha256"):
+        if col not in manifest.columns:
+            raise ValueError(f"{MANIFEST} has no {col} column: "
+                             "re-run scripts/validation_report.py")
     ref = np.load(answer_file(models.iloc[0]))
     items, gold = ref["item"], ref["gold"]
     if len(items) != N_ITEMS:
         raise ValueError(f"{models.iloc[0]}: {len(items)} items, expected {N_ITEMS}")
     ref_hash = None
     pred = np.empty((len(models), len(items)), dtype=np.int8)
-    checks = {"item_order_mismatch": [], "gold_mismatch": [], "hash_mismatch": []}
+    checks = {"item_order_mismatch": [], "gold_mismatch": [], "hash_mismatch": [],
+              "not_the_validated_file": []}
     for r, m in enumerate(models):
         z = np.load(answer_file(m))
         p = z["pred"]
@@ -104,6 +120,10 @@ def choice_matrix(models: pd.Series) -> tuple[np.ndarray, np.ndarray, dict]:
                 ref_hash = h
             elif not np.array_equal(h, ref_hash):
                 checks["hash_mismatch"].append(m)
+        rec = manifest.loc[m]
+        if (pred_sha256(p) != rec.pred_sha256
+                or abs(float((p == z["gold"]).mean()) - float(rec.accuracy)) > 1e-9):
+            checks["not_the_validated_file"].append(m)
         pred[r] = p
     bad = {k: v for k, v in checks.items() if v}
     if bad:
@@ -116,11 +136,15 @@ def pair_outcomes(pred: np.ndarray, gold: np.ndarray):
     """Upper-triangle pairs with agree_ij = same wrong option / both wrong."""
     wrong = pred != gold[None, :]
     W = wrong.astype(np.float32)
-    both = W @ W.T
-    same = np.zeros_like(both)
-    for o in range(4):
-        B = ((pred == o) & wrong).astype(np.float32)
-        same += B @ B.T
+    # Counts of 0/1 products stay exact in float32 (< 2**24). macOS Accelerate
+    # raises spurious divide/overflow/invalid flags in matmul for any dtype, with
+    # correct results; they are silenced here.
+    with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
+        both = W @ W.T
+        same = np.zeros_like(both)
+        for o in range(4):
+            B = ((pred == o) & wrong).astype(np.float32)
+            same += B @ B.T
     i, j = np.triu_indices(len(pred), 1)
     ok = both[i, j] > 0
     return i[ok], j[ok], (same[i, j] / both[i, j])[ok], both[i, j][ok]

@@ -1,0 +1,16 @@
+$ PYTHONPATH=src python3 -m pytest -q -p no:warnings 2>&1 | tail -2; exit ${PIPESTATUS[0]}
+exit 0 | sys 1.26 
+$ make -C paper tables
+exit 0 | sys 0.08 
+$ git status --short paper/tables | wc -l | tr -d ' '
+exit 0 | sys 0.03 
+$ make -C paper
+exit 0 | sys 0.12 
+$ PYTHONPATH=src python3 scripts/make_exp04_figures.py
+exit 1 | sys 0.13 
+$ python3 scripts/fetch_v1_contents_meta.py
+exit 0
+$ PYTHONPATH=src python3 -m lineage_era.ollb.roster_v1
+exit 0
+$ PYTHONPATH=src python3 scripts/rebuild_frozen_lists.py
+exit 0

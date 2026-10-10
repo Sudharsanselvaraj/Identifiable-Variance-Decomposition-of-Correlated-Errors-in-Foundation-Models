@@ -609,7 +609,7 @@ def fig_gate():
         r = a[a.truth == "null"].set_index("term").loc[terms]
         pts(ax, r, np.arange(3), k, lab)
     ax.axhline(10, color=RED, ls=(0, (3, 2)), lw=0.7); ax.axhline(5, color=LGREY, lw=0.5)
-    ax.text(2.45, 10.3, "10% criterion", color=RED, fontsize=7.5, ha="right", va="bottom")
+    ax.text(2.45, 10.3, "10% criterion", color=RED, fontsize=8, ha="right", va="bottom")
     ax.set_xticks(range(3), ["root", "0 mo", "1–2 mo"])
     groups(ax, [(0, 2, "coefficient tested")])
     ax.set_ylabel("Rejection rate (%)"); ax.set_ylim(0, 16)
@@ -632,10 +632,11 @@ def fig_gate():
     a = aud["primary_cap40"]
     worst = a[(a.truth == "era_0.1") & (a.term == "same_root")].iloc[0]
     ax.annotate(f"{100 * worst.rate:.1f}% > 10%", (2 + off[1], 100 * worst.rate),
-                (0.6, 15.2), fontsize=7.5, color=RED, ha="center", arrowprops=dict(arrowstyle="-", color=RED,
+                (0.6, 15.2), fontsize=8, color=RED, ha="center", arrowprops=dict(arrowstyle="-", color=RED,
                                                                      lw=0.6))
     ax.set_xticks(range(xs), labs)
-    groups(ax, [(0, 2, "root coef. under $λ_E$"), (3, 5, "month coef. under $λ_L$")])
+    # no mathtext subscripts: they print near 5 pt at the supplement's width
+    groups(ax, [(0, 2, "root coef., era λ"), (3, 5, "month coef., lineage λ")])
     ax.set_ylim(0, 17); ax.set_title("(b) Leakage")
     # (c) power
     ax = axes[2]
@@ -648,8 +649,8 @@ def fig_gate():
             labs.append(f"{float(lam):.2f}"); xs += 1
     ax.axhline(80, color=RED, ls=(0, (3, 2)), lw=0.7)
     ax.set_xticks(range(xs), labs)
-    groups(ax, [(0, 1, "root coef. under $λ_L$"), (2, 3, "0-mo coef. under $λ_E$")])
-    ax.text(3.45, 78, "80% criterion", color=RED, fontsize=7.5, ha="right", va="top")
+    groups(ax, [(0, 1, "root coef., lineage λ"), (2, 3, "0-mo coef., era λ")])
+    ax.text(3.45, 78, "80% criterion", color=RED, fontsize=8, ha="right", va="top")
     ax.set_ylim(0, 105); ax.set_title("(c) Power")
     for ax in axes:
         ax.set_xlim(-0.5, len(ax.get_xticks()) - 0.5)
@@ -759,7 +760,8 @@ def fig_rawadj():
     ax.set_title("(a) Primary pairs by accuracy")
     axn.set_yscale("log")
     axn.set_ylim(10, 2e5)
-    axn.set_yticks([1e2, 1e4], ["$10^2$", "$10^4$"])
+    # plain labels: mathtext exponents render below 6 pt at print size
+    axn.set_yticks([1e2, 1e4], ["100", "10k"])
     axn.minorticks_off()
     axn.set_ylabel("Pairs")
     axn.set_xlabel("Mean accuracy of the two models")
@@ -936,7 +938,7 @@ def fig_itemnull():
     ax.set_title("(c) N2: co-failure vs Rasch")
     ax.legend(frameon=False, fontsize=7.5)
     for a in axes:
-        a.tick_params(axis="x", labelsize=5.8)
+        a.tick_params(axis="x", labelsize=7.5)   # >= 6.8 pt at the supplement's 6.5-in width
     fig.tight_layout(pad=0.3, w_pad=0.8)
     return save(fig, "fig_item_null")
 
@@ -1501,6 +1503,8 @@ if __name__ == "__main__":
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--readme", action="store_true", help="also write README PNGs")
     a = ap.parse_args()
+    # macOS Accelerate raises spurious matmul/vecdot flags; the products are exact
+    np.seterr(divide="ignore", over="ignore", invalid="ignore")
     done, skipped = build_all(a.only)
     print("\n".join(done))
     if skipped:

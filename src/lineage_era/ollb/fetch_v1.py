@@ -201,7 +201,6 @@ def fetch_model(repo: str, retries: int = 4) -> dict:
                 tables = dict((s_, (t_, b_)) for s_, t_, b_ in
                               pool.map(read_subject, sorted(complete[run])))
 
-            ref = reference()
             items, hashes, pred, gold = [], [], [], []
             n_bad = nbytes = 0
             schema = "legacy"
@@ -227,6 +226,9 @@ def fetch_model(repo: str, retries: int = 4) -> dict:
                     # (subject, position); the per-item acc check below then
                     # validates that alignment (a misaligned gold fails ~75%).
                     schema = "lighteval"
+                    # Loaded only here: the reference model itself (legacy
+                    # layout, gold stored) is fetched before its file exists.
+                    ref = reference()
                     if subj not in ref or len(ref[subj][0]) != len(preds):
                         return {"repo": repo, "status": "row_count_mismatch",
                                 "subject": subj, "run": run}
