@@ -75,6 +75,30 @@ ROOT_LABEL = {
     "openlm-research/open_llama_3b": "OpenLLaMA-3B"}
 
 
+# MMLU subject -> category, as tagged in lm-evaluation-harness 0.4.12 (tasks/mmlu/default).
+MMLU_CATEGORY = {**{s_: "STEM" for s_ in (
+    "abstract_algebra anatomy astronomy college_biology college_chemistry "
+    "college_computer_science college_mathematics college_physics computer_security "
+    "conceptual_physics electrical_engineering elementary_mathematics high_school_biology "
+    "high_school_chemistry high_school_computer_science high_school_mathematics "
+    "high_school_physics high_school_statistics machine_learning").split()},
+    **{s_: "humanities" for s_ in (
+        "formal_logic high_school_european_history high_school_us_history "
+        "high_school_world_history international_law jurisprudence logical_fallacies "
+        "moral_disputes moral_scenarios philosophy prehistory professional_law "
+        "world_religions").split()},
+    **{s_: "social_sciences" for s_ in (
+        "econometrics high_school_geography high_school_government_and_politics "
+        "high_school_macroeconomics high_school_microeconomics high_school_psychology "
+        "human_sexuality professional_psychology public_relations security_studies sociology "
+        "us_foreign_policy").split()},
+    **{s_: "other" for s_ in (
+        "business_ethics clinical_knowledge college_medicine global_facts human_aging "
+        "management marketing medical_genetics miscellaneous nutrition professional_accounting "
+        "professional_medicine virology").split()}}
+CAT_COLORS = {"STEM": BLUE, "humanities": ORANGE, "social_sciences": "#6a9f6f", "other": GREY}
+
+
 def root_label(root: str) -> str:
     return ROOT_LABEL.get(root, root.split("/")[-1])
 
@@ -708,8 +732,9 @@ def nice(a: str) -> str:
 def fig_forest():
     pre = pd.read_csv(RES / "exp04_final/prereg_12.csv")
     order = list(dict.fromkeys(pre.analysis))
-    fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.75), sharey=True,
-                             gridspec_kw=dict(width_ratios=[1, 1, 0.9]))
+    fig, axes = plt.subplots(1, 4, figsize=(FULL, 2.75), sharey=True,
+                             gridspec_kw=dict(width_ratios=[1, 0.95, 0.85, 1.05]))
+    tcol, axes = axes[3], axes[:3]
     yy = np.arange(len(order))[::-1] + np.array([0.6 if a.startswith("primary") else 0
                                                  for a in order])
     ZOOM = (-0.04, 0.03)                              # range magnified in panel (c)
@@ -741,6 +766,21 @@ def fig_forest():
     axes[0].text(0.004, yy[6] + 0.5, "EXPANDED", fontsize=8, weight="bold", color=GREY,
                  va="center")
     axes[0].set_ylim(yy[-1] - 0.6, yy[0] + 0.9)
+    # numeric column, points [95% CI], as in clinical forest plots
+    tcol.set_axis_off()
+    tcol.axhspan(yy[5] - 0.45, yy[0] + 0.45, color="#f3f6fa", zorder=-1)
+    tcol.set_xlim(0, 1)
+    for x_, t, c in ((0.03, "same_root", BLUE), (0.53, "gap0", ORANGE)):
+        dd = pre[pre.term == t].set_index("analysis").loc[order]
+        tcol.text(x_ + 0.21, yy[0] + 0.85, "Shared root" if t == "same_root" else "Same month",
+                  ha="center", va="bottom", fontsize=7.6, weight="bold", color=c)
+        for k, a in enumerate(order):
+            tcol.text(x_ + 0.21, yy[k], f"{dd.estimate[a] * 100:+.1f} "
+                      f"[{dd.ci_low[a] * 100:.1f}, {dd.ci_high[a] * 100:.1f}]",
+                      ha="center", va="center", fontsize=6.4, color=INK,
+                      weight="bold" if a in ("primary", "expanded") else "normal")
+    tcol.text(0.5, yy[-1] - 0.75, "points [95% CI]", ha="center", va="top", fontsize=7,
+              color=GREY)
     from matplotlib.lines import Line2D
     h = [Line2D([], [], marker="D", color=GREY, ls="", ms=4.2, label="primary specification"),
          Line2D([], [], marker="o", color=GREY, mfc="white", ls="", ms=3.4,
@@ -758,28 +798,67 @@ GAPS = [("same_root", "shared root"), ("gap0", "0 months"), ("gap1_2", "1–2 mo
 
 
 def fig_rawadj():
+    from matplotlib.colors import LogNorm
+    from scipy.stats import pearsonr
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from run_exp04_final import prepared
+    d = prepared("primary")
     r = pd.read_csv(RES / "exp04_final/raw_vs_adjusted.csv")
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.35), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.55),
+                             gridspec_kw=dict(width_ratios=[1.35, 1, 1]))
+    # (a) every primary pair: agreement against the pair's mean accuracy
+    ax = axes[0]
+    macc = (d["acc"][d["i"]] + d["acc"][d["j"]]) / 2
+    sr = d["rid"][d["i"]] == d["rid"][d["j"]]
+    hb = ax.hexbin(macc[~sr], d["y"][~sr], gridsize=(46, 30), extent=(0.2, 0.8, 0, 1),
+                   cmap="Greys", norm=LogNorm(), mincnt=1, lw=0.1, edgecolors="face")
+    ax.scatter(macc[sr], d["y"][sr], s=2.2, color=BLUE, alpha=0.45, lw=0, zorder=3)
+    edges = np.arange(0.2, 0.825, 0.025)
+    for mask, c, lab in ((~sr, ORANGE, "different roots"), (sr, BLUE, "same root")):
+        k = np.digitize(macc[mask], edges)
+        mm = [(edges[t - 1] + 0.0125, d["y"][mask][k == t].mean()) for t in np.unique(k)
+              if (k == t).sum() >= 30]
+        ax.plot(*zip(*mm), color=c, lw=1.4, zorder=4, label=f"{lab}: binned mean")
+    rd, rs = pearsonr(macc[~sr], d["y"][~sr]).statistic, pearsonr(macc[sr], d["y"][sr]).statistic
+    ax.text(0.97, 0.05, f"different roots: r = {rd:.2f}, n = {(~sr).sum():,}\n"
+            f"same root: r = {rs:.2f}, n = {sr.sum():,}", transform=ax.transAxes, ha="right",
+            va="bottom", fontsize=6.8, linespacing=1.2,
+            bbox=dict(fc="white", ec=LGREY, lw=0.5, boxstyle="round,pad=0.25"), zorder=6)
+    ax.set_xlim(0.2, 0.8); ax.set_ylim(0, 1)
+    ax.set_xlabel("Mean accuracy of the two models")
+    ax.set_ylabel("P(same wrong | both wrong)")
+    ax.set_title("(a) All primary pairs")
+    ax.legend(frameon=True, framealpha=0.9, edgecolor=LGREY, loc="upper left", fontsize=6.8,
+              handlelength=1.2).get_frame().set_linewidth(0.5)
+    cb = fig.colorbar(hb, ax=ax, fraction=0.05, pad=0.02)
+    cb.set_label("Different-root pairs per cell", fontsize=6.8); cb.ax.tick_params(labelsize=6)
+    # (b, c) raw -> adjusted coefficients as dumbbells
     y = np.arange(len(GAPS))[::-1]
-    for ax, pop in zip(axes, ("primary", "expanded")):
-        for lab, dy, c, mfc in (("raw (no accuracy terms)", 0.14, GREY, "white"),
-                                ("adjusted (pre-registered)", -0.14, BLUE, BLUE)):
-            d = r[(r.population == pop) & (r.model == lab)].set_index("term").loc[
-                [g for g, _ in GAPS]]
-            ax.errorbar(d.estimate, y + dy, xerr=[d.estimate - d.ci_low, d.ci_high - d.estimate],
-                        fmt="o", ms=3, color=c, mfc=mfc, lw=0.8,
-                        label=lab.split(" (")[0].capitalize() + (" (no accuracy terms)"
-                                                                 if "raw" in lab else
-                                                                 " (pre-specified)"))
+    for ax, pop, title in ((axes[1], "primary", "(b) Primary"), (axes[2], "expanded", "(c) Expanded")):
+        raw = r[(r.population == pop) & (r.model == "raw (no accuracy terms)")].set_index("term")
+        adj = r[(r.population == pop) & (r.model == "adjusted (pre-registered)")].set_index("term")
+        for k, (t, _) in enumerate(GAPS):
+            x0, x1 = raw.estimate[t], adj.estimate[t]
+            ax.plot([raw.ci_low[t], raw.ci_high[t]], [y[k] + 0.13] * 2, color=LGREY, lw=0.8)
+            ax.plot([adj.ci_low[t], adj.ci_high[t]], [y[k] - 0.13] * 2, color=LBLUE, lw=0.8)
+            ax.annotate("", (x1, y[k]), (x0, y[k]), arrowprops=dict(
+                arrowstyle="-|>", color=GREY, lw=0.7, mutation_scale=6, shrinkA=3, shrinkB=3))
+            ax.plot(x0, y[k], "o", ms=4, mfc="white", mec=GREY, mew=0.9, zorder=4,
+                    label="raw (no accuracy terms)" if k == 0 else None)
+            ax.plot(x1, y[k], "o", ms=4, color=BLUE, zorder=4,
+                    label="adjusted (pre-specified)" if k == 0 else None)
+            if t == "same_root":
+                ax.text((x0 + x1) / 2, y[k] + 0.3, f"{x0 * 100:.1f} → {x1 * 100:.1f}",
+                        ha="center", va="bottom", fontsize=7, color=INK)
         zero(ax)
-        ax.set_title(f"({'ab'[pop == 'expanded']}) {pop.capitalize()}")
-        ax.set_xlabel("Coefficient")
         ax.axhline(3.5, color=LGREY, lw=0.5)
-    axes[0].set_yticks(y, [g for _, g in GAPS])
-    axes[0].set_ylabel("Release gap (reference: 12+ months)", fontsize=7.8)
-    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2,
-               frameon=False, fontsize=7.5, handletextpad=0.2, bbox_to_anchor=(0.55, 1.0))
-    fig.tight_layout(pad=0.3, w_pad=0.5, rect=(0, 0, 1, 0.9))
+        ax.set_xlim(-0.03, 0.33)
+        ax.set_ylim(-0.6, 4.75)
+        ax.set_xlabel("Coefficient (95% CI)")
+        ax.set_title(title)
+        ax.set_yticks(y, [g for _, g in GAPS] if pop == "primary" else [])
+    axes[2].legend(frameon=False, loc="center right", fontsize=6.8, handlelength=1)
+    fig.tight_layout(pad=0.3, w_pad=1.6)
     return save(fig, "fig_raw_adjusted")
 
 
@@ -790,23 +869,32 @@ def fig_inference():
              ("root-dyadic", "root-level dyadic", GREY, "s"),
              ("delete-one-root jackknife", "delete-one-root jackknife", ORANGE, "^")]
     pops = list(SAMPLES)
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.45), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.55), sharey=True)
     y = np.arange(len(pops))[::-1]
     for ax, t, title in zip(axes, ("same_root", "gap0"),
                             ("(a) Shared root", "(b) Same month")):
+        base = inf[(inf.term == t) & (inf.inference == kinds[0][0])].set_index("population")
         for k, (kind, lab, c, mk) in enumerate(kinds):
             d = inf[(inf.term == t) & (inf.inference == kind)].set_index("population").loc[pops]
             ax.errorbar(d.estimate, y + (0.22 - 0.22 * k), xerr=[d.estimate - d.ci_low,
                         d.ci_high - d.estimate], fmt=mk, ms=2.8, color=c, lw=0.8, label=lab,
                         mfc="white" if k else c)
+            if k == 2:                                # width relative to the model-level CI
+                ratio = (d.ci_high - d.ci_low) / (base.ci_high - base.ci_low).loc[pops]
+                for yy, rr in zip(y, ratio):
+                    ax.text(0.163 if t == "same_root" else 0.034, yy - 0.22, f"×{rr:.2f}",
+                            fontsize=6.6, color=c, va="center", ha="left")
         zero(ax)
         ax.set_title(title); ax.set_xlabel("Coefficient (95% CI)")
-    axes[0].set_xlim(0, 0.18)
+    axes[0].set_xlim(0.06, 0.19)
+    axes[1].set_xlim(-0.05, 0.055)
     axes[0].set_yticks(y, [SAMPLES[p] for p in pops])
     fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2,
-               frameon=False, fontsize=7.5, bbox_to_anchor=(0.5, 1.0), handletextpad=0.2,
+               frameon=False, fontsize=7.2, bbox_to_anchor=(0.5, 1.0), handletextpad=0.2,
                columnspacing=0.8)
-    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.86), w_pad=0.5)
+    fig.text(0.99, 0.01, "×: jackknife CI width relative to model-level", ha="right",
+             va="bottom", fontsize=6.6, color=ORANGE)
+    fig.tight_layout(pad=0.3, rect=(0, 0.04, 1, 0.84), w_pad=0.5)
     return save(fig, "fig_inference")
 
 
@@ -930,18 +1018,23 @@ def fig_heatmap(top: int = 10):
         .reindex(columns=months, fill_value=0)
     n_other_roots = pop.root.nunique() - len(keep)
     tab = tab.loc[keep + ["other"]]
-    fig, ax = plt.subplots(figsize=(FULL, 2.5))
+    fig = plt.figure(figsize=(FULL, 3.0))
+    gs = fig.add_gridspec(2, 3, height_ratios=[0.6, 2.5], width_ratios=[30, 2.6, 0.45],
+                          hspace=0.06, wspace=0.03, left=0.2, right=0.935, top=0.97, bottom=0.15)
+    ax = fig.add_subplot(gs[1, 0])
+    axt = fig.add_subplot(gs[0, 0], sharex=ax)
+    axr = fig.add_subplot(gs[1, 1], sharey=ax)
+    cax = fig.add_subplot(gs[1, 2])
     data = tab.to_numpy().astype(float)
     masked = np.ma.masked_equal(data, 0)
-    from matplotlib.colors import LogNorm
-    from matplotlib.colors import LinearSegmentedColormap
+    from matplotlib.colors import LinearSegmentedColormap, LogNorm
     cmap = LinearSegmentedColormap.from_list("steel", ["#eef3f9", "#b5c7df", BLUE, "#3f5f8f"])
     cmap.set_bad("white")
     im = ax.imshow(masked, aspect="auto", cmap=cmap, norm=LogNorm(1, data.max()),
                    interpolation="none")
     for (r, c), v in np.ndenumerate(data):
         if v:
-            ax.text(c, r, int(v), ha="center", va="center", fontsize=7.5,
+            ax.text(c, r, int(v), ha="center", va="center", fontsize=7,
                     color="white" if v > data.max() ** 0.6 else "black")
     ax.set_xticks(range(len(months)), [m.strftime("%b %y") if m.month in (1, 4, 7, 10)
                                        else "" for m in months], fontsize=8.0)
@@ -954,18 +1047,52 @@ def fig_heatmap(top: int = 10):
     ax.grid(which="minor", color="#e6e6e6", lw=0.3)
     ax.tick_params(which="minor", length=0)
     ax.axhline(len(keep) - 0.5, color=GREY, lw=0.6)
-    for s in ("top", "right"):
-        ax.spines[s].set_visible(True)
+    for s_ in ("top", "right"):
+        ax.spines[s_].set_visible(True)
     ax.set_xlabel("Hub upload month")
-    cb = fig.colorbar(im, ax=ax, fraction=0.02, pad=0.01)
+    # marginals: models per month (stacked: ten largest roots / others), models per row
+    per_m = data.sum(0)
+    big = data[:-1].sum(0)
+    axt.bar(range(len(months)), big, color=BLUE, width=0.8, label="ten largest roots")
+    axt.bar(range(len(months)), data[-1], bottom=big, color=LBLUE, width=0.8,
+            label=f"{n_other_roots} other roots")
+    axt.set_ylim(0, per_m.max() * 1.15)
+    axt.set_ylabel("Models", fontsize=7.5)
+    axt.tick_params(axis="x", labelbottom=False, length=0)
+    axt.tick_params(axis="y", labelsize=7)
+    axt.legend(frameon=False, fontsize=7.2, loc="upper left", ncol=2, handlelength=1)
+    axr.barh(range(len(names)), data.sum(1), color=[BLUE] * len(keep) + [LBLUE], height=0.7)
+    axr.tick_params(axis="y", labelleft=False, length=0)
+    axr.tick_params(axis="x", labelsize=7)
+    axr.set_xscale("log"); axr.set_xlim(3, 800)
+    axr.set_xticks([10, 100], ["10", "100"])
+    from matplotlib.ticker import NullLocator
+    axr.xaxis.set_minor_locator(NullLocator())
+    axr.grid(axis="y", visible=False); axr.grid(axis="x", visible=True)
+    axr.set_xlabel("Models", fontsize=7.5)
+    cb = fig.colorbar(im, cax=cax)
     ticks = [t for t in (1, 2, 5, 10, 20, 50) if t <= data.max()]
     cb.set_ticks(ticks, labels=[str(t) for t in ticks]); cb.minorticks_off()
-    cb.set_label("Models (log scale)", fontsize=7.5); cb.ax.tick_params(labelsize=5.5)
-    fig.tight_layout(pad=0.3)
+    cb.set_label("Models per cell (log scale)", fontsize=7.5); cb.ax.tick_params(labelsize=6.5)
     return save(fig, "fig_lineage_month_map")
 
 
 # ------------------------------------------------------------------ 14 agreement by gap
+def _half_violin(ax, x, vals, side, color, width=0.4):
+    from scipy.stats import gaussian_kde
+    v = vals if len(vals) <= 20000 else \
+        np.random.default_rng(0).choice(vals, 20000, replace=False)
+    grid = np.linspace(0, 1, 241)
+    dens = gaussian_kde(v, bw_method="scott")(grid)
+    dens = dens / dens.max() * width
+    keep = dens > width * 0.01
+    g, dd = grid[keep], dens[keep]
+    ax.fill_betweenx(g, x, x + side * dd, color=color, alpha=0.35, lw=0)
+    ax.plot(x + side * dd, g, color=color, lw=0.6)
+    q1, q3 = np.percentile(vals, [25, 75])
+    ax.plot([x + side * 0.05] * 2, [q1, q3], color=color, lw=2.2, solid_capstyle="butt")
+
+
 def fig_gap():
     sys.path.insert(0, str(ROOT / "scripts"))
     from run_exp04_final import prepared
@@ -976,38 +1103,38 @@ def fig_gap():
     same = d["rid"][d["i"]] == d["rid"][d["j"]]
     b = np.digitize(gap, [1, 3, 6, 12])
     lab = ["0", "1–2", "3–5", "6–11", "12+"]
-    fig, ax = plt.subplots(figsize=(COL, 2.6))
+    fig, ax = plt.subplots(figsize=(COL, 2.75))
     MIN_PAIRS = 20   # bins with fewer pairs are not plotted (1 same-root pair at 12+)
-    for flag, name, c, mk in [(True, "same lineage root", BLUE, "D"),
-                              (False, "different roots", ORANGE, "o")]:
+    for flag, name, c, mk, side in [(True, "same lineage root", BLUE, "D", 1),
+                                    (False, "different roots", ORANGE, "o", -1)]:
         cnt = np.array([int(((b == k) & (same == flag)).sum()) for k in range(5)])
-        ys = [d["y"][(b == k) & (same == flag)] for k in range(5)]
-        m = np.array([v.mean() if cnt[k] >= MIN_PAIRS else np.nan for k, v in enumerate(ys)])
-        q = np.array([np.percentile(v, [25, 75]) if cnt[k] >= MIN_PAIRS else [np.nan] * 2
-                      for k, v in enumerate(ys)])
-        x = np.arange(5) + (0.08 if flag else -0.08)
-        ax.vlines(x, q[:, 0], q[:, 1], color=c, lw=2.2, alpha=0.25)
-        ax.plot(x, m, marker=mk, ms=3.2, color=c, label=name)
+        m = np.full(5, np.nan)
         for k in range(5):
             if cnt[k] >= MIN_PAIRS:
-                ax.annotate(f"{cnt[k]:,}", (x[k], q[k, 1] if flag else 0.02),
-                            textcoords="offset points", xytext=(0, 3 if flag else 0),
-                            ha="center", va="bottom", fontsize=7.5, color=c)
+                vals = d["y"][(b == k) & (same == flag)]
+                _half_violin(ax, k, vals, side, c)
+                m[k] = vals.mean()
+                ax.text(k + side * 0.2, 1.075 if flag else 0.015, f"{cnt[k]:,}", ha="center",
+                        va="top" if flag else "bottom", fontsize=6.8, color=c)
+        ax.plot(np.arange(5) + side * 0.05, m, marker=mk, ms=3.2, color=c, lw=0.9,
+                mec="white", mew=0.4, zorder=5, label=name)
+    ax.axhline(1 / 3, color=GREY, lw=0.7, ls=(0, (4, 3)), zorder=0)
     ax.set_xticks(range(5), lab)
-    ax.set_xlim(-0.45, 4.45)
+    ax.set_xlim(-0.55, 4.55)
     ax.set_xlabel("Release-month gap between the two models")
     ax.set_ylabel("P(same wrong | both wrong)")
-    ax.set_ylim(0, 1.0)
-    ax.axhline(1 / 3, color=GREY, lw=0.7, ls=(0, (4, 3)), zorder=0)
+    ax.set_ylim(0, 1.08)
+    ax.set_yticks(np.arange(0, 1.01, 0.2))
+    ax.axhline(1.0, color="#d0d0d0", lw=0.5, zorder=0)
     from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
     h, l = ax.get_legend_handles_labels()
-    h += [Patch(color=GREY, alpha=0.3, lw=0),
+    h += [Patch(fc=LGREY, alpha=0.6, lw=0), Line2D([], [], color=GREY, lw=2.2),
           Line2D([], [], color=GREY, lw=0.7, ls=(0, (4, 3)))]
-    l += ["interquartile range (not a CI)", "1/3: uniform over three wrong options"]
-    fig.legend(h, l, loc="upper center", ncol=2, frameon=False, fontsize=7.5,
-               bbox_to_anchor=(0.54, 1.0), handlelength=1.6, columnspacing=0.8)
-    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.87))
+    l += ["density across pairs", "interquartile range", "1/3: uniform over three wrong options"]
+    fig.legend(h, l, loc="upper center", ncol=2, frameon=False, fontsize=7.2,
+               bbox_to_anchor=(0.54, 1.0), handlelength=1.5, columnspacing=0.8)
+    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.8))
     return save(fig, "exp04_agreement_by_gap")
 
 
@@ -1112,7 +1239,9 @@ def fig_heterogeneity():
     r = h[h.analysis == "per root"].reset_index(drop=True)
     y = np.arange(len(r))[::-1]
     ax.errorbar(r.estimate, y, xerr=[r.estimate - r.ci95_low, r.ci95_high - r.estimate],
-                fmt="o", ms=3.5, color=BLUE, lw=1)
+                fmt="none", color=BLUE, lw=1)
+    ax.scatter(r.estimate, y, s=6 + 60 * np.sqrt(r.pairs / r.pairs.max()), color=BLUE,
+               ec="white", lw=0.5, zorder=4)
     lab = [root_label(g) if g != "other multi-model roots" else "56 smaller roots"
            for g in r.group]
     ax.set_yticks(y, [f"{l} ({int(n)})" for l, n in zip(lab, r.pairs)])
@@ -1131,8 +1260,18 @@ def fig_heterogeneity():
     # (c) per subject
     ax = axes[2]
     x = np.arange(len(sub))
-    ax.errorbar(x, sub.same_root, yerr=Z * sub.same_root_se, fmt="o", ms=2, color=BLUE,
-                lw=0.6, elinewidth=0.6)
+    cat = sub.subject.map(MMLU_CATEGORY)
+    for name, c in CAT_COLORS.items():
+        m = (cat == name).to_numpy()
+        ax.errorbar(x[m], sub.same_root[m], yerr=Z * sub.same_root_se[m], fmt="o", ms=2.3,
+                    color=c, lw=0.6, elinewidth=0.6, label=name.replace("_", " "))
+    for k, ha in ((0, "left"), (len(sub) - 1, "right")):
+        ax.annotate(sub.subject.iloc[k].replace("_", " "), (x[k], sub.same_root.iloc[k]),
+                    xytext=(4 if ha == "left" else -4, -12 if ha == "left" else 8),
+                    textcoords="offset points", ha=ha, fontsize=6.8, color=INK,
+                    arrowprops=dict(arrowstyle="-", color=GREY, lw=0.4))
+    ax.legend(frameon=False, loc="lower right", fontsize=6.6, ncol=2, handletextpad=0.1,
+              columnspacing=0.5, markerscale=1.2)
     ax.set_xticks([])
     ax.set_xlabel(f"{len(sub)} MMLU subjects, sorted")
     ax.set_title("(c) By subject")
@@ -1180,37 +1319,56 @@ def fig_detection():
 
 # ------------------------------------------------------------------ accuracy over time
 def fig_accuracy():
+    from scipy.stats import gaussian_kde, spearmanr
     pop = population("primary")
     v = pd.read_csv(RES / "exp04_validation/per_model.csv").set_index("model")
     pop = pop.assign(acc=v.loc[pop.model, "accuracy"].to_numpy())
     per = pd.PeriodIndex(pop.created_month, freq="M")
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.3), gridspec_kw=dict(width_ratios=[1, 1.5]))
+    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.45), gridspec_kw=dict(width_ratios=[1, 1.5]))
     ax = axes[0]
-    cnt, _, _ = ax.hist(pop.acc, bins=np.arange(0.2, 0.85, 0.025), color=LBLUE, edgecolor=BLUE,
-                        lw=0.5)
+    a = pop.acc.to_numpy()
+    ax.hist(a, bins=np.arange(0.2, 0.85, 0.025), density=True, color=LBLUE, edgecolor=BLUE,
+            lw=0.4, alpha=0.8)
+    g = np.linspace(0.18, 0.85, 300)
+    ax.plot(g, gaussian_kde(a, bw_method=0.18)(g), color=BLUE, lw=1.1)
+    ax.plot(a, np.full(len(a), -0.25), "|", color=BLUE, ms=3.5, mew=0.3, alpha=0.5)
+    top = ax.get_ylim()[1] * 1.32
+    ax.set_ylim(-0.6, top)
     ax.axvline(0.25, color=GREY, ls=(0, (3, 2)), lw=0.7)
     ax.axvline(0.30, color=RED, ls=(0, (3, 2)), lw=0.7)
-    top = cnt.max() * 1.3                            # head-room so labels clear the bars
-    ax.set_ylim(0, top)
-    ax.text(0.245, top * 0.99, "chance", color=GREY, fontsize=7.5, va="top", ha="right")
-    ax.text(0.305, top * 0.99, "S2 cut-off", color=RED, fontsize=7.5, va="top", ha="left")
+    ax.text(0.245, top * 0.985, "chance", color=GREY, fontsize=7.2, va="top", ha="right")
+    ax.text(0.305, top * 0.985, "S2 cut-off", color=RED, fontsize=7.2, va="top", ha="left")
+    ax.text(0.83, top * 0.72, f"n = {len(a)}\nmedian {np.median(a):.2f}\n"
+            f"{int((a < 0.30).sum())} below 0.30", ha="right", va="top", fontsize=7,
+            linespacing=1.15, bbox=dict(fc="white", ec=LGREY, lw=0.5, boxstyle="round,pad=0.25"))
     ax.set_xlabel("Accuracy")
-    ax.set_ylabel("Models")
+    ax.set_ylabel("Density")
+    ax.set_yticks([])
     ax.set_title("(a) Distribution")
     ax = axes[1]
+    x = ((per.year - 2022) * 12 + per.month).to_numpy().astype(float)
+    xj = x + np.random.default_rng(1).uniform(-0.3, 0.3, len(x))   # spread one-month columns
+    dens = gaussian_kde(np.vstack([x / 30, a]))(np.vstack([x / 30, a]))
+    o = np.argsort(dens)
+    ax.scatter(xj[o], a[o], c=dens[o], cmap="Blues", vmin=-dens.max() * 0.3, s=6, lw=0,
+               alpha=0.9)
     q = pd.PeriodIndex(per.asfreq("Q"))
-    x = (per.year - 2022) * 12 + per.month
-    ax.scatter(x, pop.acc, s=5, color=BLUE, alpha=0.35, lw=0)
-    g = pop.groupby(q).acc
-    med = g.median()[g.size() >= 10]                 # quarters with at least 10 models
-    qx = [(p.year - 2022) * 12 + p.end_time.month - 1 for p in med.index]
-    ax.plot(qx, med.values, "-", color=ORANGE, lw=1.4, label="quarterly median")
+    gq = pop.groupby(q).acc
+    ok = gq.size() >= 10                              # quarters with at least 10 models
+    med, lo, hi = gq.median()[ok], gq.quantile(0.25)[ok], gq.quantile(0.75)[ok]
+    qx = [(p_.year - 2022) * 12 + p_.end_time.month - 1 for p_ in med.index]
+    ax.fill_between(qx, lo.values, hi.values, color=ORANGE, alpha=0.18, lw=0,
+                    label="quarterly IQR")
+    ax.plot(qx, med.values, "-o", color=ORANGE, lw=1.3, ms=2.5, label="quarterly median")
     ax.axhline(0.25, color=GREY, ls=(0, (3, 2)), lw=0.7)
-    ticks = [(y - 2022) * 12 + 1 for y in (2022, 2023, 2024)]
+    rho = spearmanr(x, a).statistic
+    ax.text(0.03, 0.62, f"Spearman ρ = {rho:.2f}", transform=ax.transAxes, fontsize=7,
+            bbox=dict(fc="white", ec=LGREY, lw=0.5, boxstyle="round,pad=0.25"))
+    ticks = [(y_ - 2022) * 12 + 1 for y_ in (2022, 2023, 2024)]
     ax.set_xticks(ticks, ["2022", "2023", "2024"])
     ax.set_xlabel("Upload month")
     ax.set_title("(b) Over time")
-    ax.legend(frameon=False, loc="upper left", fontsize=7.5)
+    ax.legend(frameon=False, loc="upper left", fontsize=7, handlelength=1.2)
     fig.tight_layout(pad=0.3, w_pad=0.6)
     return save(fig, "fig_accuracy")
 

@@ -250,7 +250,7 @@ Fig.~\ref{fig:lineagemap} places the primary models on a grid of root by upload 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_lineage_month_map.pdf}
-\caption{\textbf{Lineage roots by upload month} (primary sample, 590 models). Each cell counts the models of one root uploaded in one month (log color scale). The 10 largest roots are shown individually; the bottom row pools the other 341 roots, most of which contribute one model. Fine-tunes of a root cluster within a few months, so same-root pairs occur mainly at short release gaps.}
+\caption{\textbf{Lineage roots by upload month} (primary sample, 590 models). Each cell counts the models of one root uploaded in one month (log color scale); the marginal bars give the models per month (top, split into the ten largest roots and the rest) and per row (right, log scale). The 10 largest roots are shown individually; the bottom row pools the other 341 roots, most of which contribute one model. Fine-tunes of a root cluster within a few months, so same-root pairs occur mainly at short release gaps.}
 \label{fig:lineagemap}
 \end{figure*}
 
@@ -360,7 +360,7 @@ Fig.~\ref{fig:gap} shows the finding before any modelling. At every release gap 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{exp04_agreement_by_gap.pdf}
-\caption{\textbf{Agreement on wrong answers by release-month gap} (primary sample, no adjustment). Points: mean of $a_{ij}$; shaded bars: interquartile range across pairs, not confidence intervals; labels: number of pairs. Dashed line: 1/3, the agreement if both models chose uniformly among the three wrong options, a descriptive reference only (the item-difficulty-aware nulls are in Section~\ref{sec:robust}). Bins with fewer than 20 pairs are omitted.}
+\caption{\textbf{Agreement on wrong answers by release-month gap} (primary sample, no adjustment). Half-violins: kernel density of $a_{ij}$ across pairs (left, different roots; right, same root), scaled to equal height within each half; markers and lines: means; bars: interquartile ranges, not confidence intervals; labels: number of pairs. Dashed line: 1/3, the agreement if both models chose uniformly among the three wrong options, a descriptive reference only (the item-difficulty-aware nulls are in Section~\ref{sec:robust}). Bins with fewer than 20 pairs are omitted.}
 \label{fig:gap}
 \end{figure}
 
@@ -384,7 +384,7 @@ Analysis & Models & Pairs & Shared root & Same month & $p$ (same month) \\
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{exp04_forest.pdf}
-\caption{\textbf{Shared-root and same-month coefficients in the twelve analyses fixed before any pair outcome} (95\% CIs, model-level dyadic SEs). Panels (a) and (b) share one horizontal scale, so the sizes of the two associations can be compared; panel (c) magnifies the dotted region of (b) on its own scale, so that the sign changes of the same-month coefficient across specifications are visible. Diamonds: the primary specification of each population. These model-level intervals allow a like-for-like comparison across the twelve analyses; they are narrower than the delete-one-root jackknife interval reported for the headline estimate (10.8--15.8 points; Fig.~\ref{fig:inference}).}
+\caption{\textbf{Shared-root and same-month coefficients in the twelve analyses fixed before any pair outcome} (95\% CIs, model-level dyadic SEs). Panels (a) and (b) share one horizontal scale, so the sizes of the two associations can be compared; panel (c) magnifies the dotted region of (b) on its own scale, so that the sign changes of the same-month coefficient across specifications are visible. Diamonds: the primary specification of each population. The right-hand column gives each coefficient and interval in points. These model-level intervals allow a like-for-like comparison across the twelve analyses; they are narrower than the delete-one-root jackknife interval reported for the headline estimate (10.8--15.8 points; Fig.~\ref{fig:inference}).}
 \label{fig:forest}
 \end{figure*}
 
@@ -394,16 +394,16 @@ Accuracy can mediate both associations: fine-tunes of one root tend to have simi
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{fig_accuracy.pdf}
-\caption{\textbf{Model accuracy} (primary sample, 590 models). (a) Distribution; dashed lines mark chance for four options (0.25) and the S2 cut-off (0.30). (b) Accuracy by upload month, with the median of each quarter containing at least 10 models.}
+\caption{\textbf{Model accuracy} (primary sample, 590 models). (a) Histogram, kernel density and rug of the 590 accuracies; dashed lines mark chance for four options (0.25) and the S2 cut-off (0.30). (b) Accuracy by upload month (points shaded by local density, jittered within the month), with the median and interquartile range of each quarter containing at least 10 models; $\rho$: Spearman rank correlation between upload month and accuracy.}
 \label{fig:accuracy}
 \end{figure}
 
-\begin{figure}[!t]
+\begin{figure*}[!t]
 \centering
-\includegraphics[width=\columnwidth]{fig_raw_adjusted.pdf}
-\caption{\textbf{Coefficients with and without the accuracy terms} (delete-one-root jackknife 95\% CIs). Release-gap bins are relative to 12 or more months. Adding the accuracy terms halves the shared-root coefficient and removes the graded release-gap association in both populations.}
+\includegraphics[width=\textwidth]{fig_raw_adjusted.pdf}
+\caption{\textbf{Why accuracy must be adjusted for.} (a) All 173{,}755 primary pairs: agreement on wrong answers against the mean accuracy of the two models (hexagons: different-root pairs, log count; points: same-root pairs; lines: means in accuracy bins of 0.025 with at least 30 pairs; $r$: Pearson correlation). Agreement rises with accuracy, and same-root pairs are concentrated among accurate models. (b, c) Coefficients without (open) and with (filled) the accuracy terms; arrows show the change, and the lines above and below each marker are delete-one-root jackknife 95\% CIs. Release-gap bins are relative to 12 or more months. Adding the accuracy terms halves the shared-root coefficient and removes the graded release-gap association in both populations.}
 \label{fig:rawadj}
-\end{figure}
+\end{figure*}
 
 \subsection{Release Timing in Detail}
 \label{sec:timing}
@@ -429,7 +429,7 @@ TABLE~\ref{tab:robust} collects every robustness check for the primary sample; d
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{fig_inference.pdf}
-\caption{\textbf{Sensitivity of the intervals to the unit of dependence} (95\% CIs). Model-level dyadic: pairs sharing a model may be correlated (pre-specified). Root-level dyadic: pairs touching a common root may be correlated. Jackknife: one root, and every pair involving it, omitted at a time.}
+\caption{\textbf{Sensitivity of the intervals to the unit of dependence} (95\% CIs). Model-level dyadic: pairs sharing a model may be correlated (pre-specified). Root-level dyadic: pairs touching a common root may be correlated. Jackknife: one root, and every pair involving it, omitted at a time. Numbers: width of the jackknife interval relative to the model-level interval.}
 \label{fig:inference}
 \end{figure}
 
@@ -481,7 +481,7 @@ The contrast is identified by 63 roots, two of which contribute 39 and 37 models
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_heterogeneity.pdf}
-\caption{\textbf{Heterogeneity of the lineage association} (primary sample; post hoc). (a) Shared-root coefficient for each root with at least eight models and for the remaining multi-model roots pooled (labels: same-root pairs; model-level dyadic 95\% CIs, since a jackknife over roots is undefined for a single root). (b) By the lower accuracy of the two models (jackknife 95\% CIs). (c) For each of the 57 MMLU subjects, with the outcome computed on that subject's items (model-level 95\% CIs, which tend to be too narrow; 57 tests without multiplicity adjustment). Shaded band and dashed line: the pre-specified estimate and its jackknife interval.}
+\caption{\textbf{Heterogeneity of the lineage association} (primary sample; post hoc). (a) Shared-root coefficient for each root with at least eight models and for the remaining multi-model roots pooled (labels and marker area: same-root pairs; model-level dyadic 95\% CIs, since a jackknife over roots is undefined for a single root). (b) By the lower accuracy of the two models (jackknife 95\% CIs). (c) For each of the 57 MMLU subjects, with the outcome computed on that subject's items (model-level 95\% CIs, which tend to be too narrow; 57 tests without multiplicity adjustment), coloured by the MMLU category of the subject as tagged in the LM Evaluation Harness. Shaded band and dashed line: the pre-specified estimate and its jackknife interval.}
 \label{fig:heterogeneity}
 \end{figure*}
 
