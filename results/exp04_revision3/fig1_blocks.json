@@ -1,0 +1,16 @@
+{
+ "roots": [
+  "meta-llama/Meta-Llama-3-8B",
+  "mistralai/Mistral-7B-v0.1",
+  "google/gemma-2b",
+  "google/gemma-7b",
+  "mistralai/Mixtral-8x7B-v0.1",
+  "mistral-community/Mistral-7B-v0.2",
+  "meta-llama/Meta-Llama-3-70B"
+ ],
+ "models": 140,
+ "mean_agreement_same_root": 0.7344969511032104,
+ "mean_agreement_different_root": 0.5644102692604065,
+ "pairs_same_root": 1812,
+ "pairs_different_root": 7918
+}

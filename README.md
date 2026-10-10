@@ -4,10 +4,10 @@
 
 ### Correlated Errors in Open-Weight Language Models
 
-**A pair-level study of 977 Open LLM Leaderboard models and 173,755 model pairs**
+**A pair-level study of Open LLM Leaderboard models: 977 validated models in two overlapping samples (primary: 590 models, 173,755 pairs)**
 
-[![Paper](https://img.shields.io/badge/paper-14_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
-[![Supplement](https://img.shields.io/badge/supplement-6_pages-5b7a99)](paper/build/supplement.pdf)
+[![Paper](https://img.shields.io/badge/paper-17_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
+[![Supplement](https://img.shields.io/badge/supplement-13_pages-5b7a99)](paper/build/supplement.pdf)
 [![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
 [![Python](https://img.shields.io/badge/python-3.11-3776AB)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-63_passing-2ea44f)](src/lineage_era)
@@ -26,17 +26,17 @@
 
 ## Summary
 
-Models descended from the same base model choose the same wrong answer **13.3 percentage points** more often than unrelated models of equal accuracy and release gap (delete-one-root jackknife 95% CI 10.8–15.8). Release proximity shows no association of stable sign once accuracy is controlled; the primary analysis excludes same-month effects larger than **1.1 percentage points**. Within this population, lineage, not release timing, is the dominant correlate of shared wrong answers.
+In the primary sample (590 models, 173,755 pairs), models descended from the same declared base model choose the same wrong answer **13.3 percentage points** more often than unrelated models of equal accuracy and release gap (delete-one-root jackknife 95% CI 10.8–15.8; pairs weighted equally, so the two largest roots dominate; counting each root once gives larger estimates). In the expanded sample (928 models) the difference is 12.7 points (11.0–14.5). Release proximity shows only small associations once accuracy is controlled, and their sign depends on the specification: same-month pairs agree up to a few points more in several specifications and less among models above 0.30 accuracy. Within this population, lineage is associated with shared wrong answers far more strongly than release timing. The associations are observational.
 
 ## Key Findings
 
-- **Validated data.** For each of 977 models, the extracted answer on all 14,042 MMLU items must reproduce the leaderboard's stored correctness; models that fail are excluded and logged.
-- **Dose-response.** Agreement increases with closeness of descent: parent–child pairs +18.5 points, distance two +13.6, more distant relatives +11.5.
-- **Consistency.** The association appears separately in each of the seven largest base-model families (10.3–14.8 points) and in all 57 MMLU subjects.
-- **Release timing.** Unadjusted, same-month pairs agree 8.7 points more than pairs released a year or more apart. This difference is accounted for by accuracy similarity, which rose steeply over the period, and no positive association remains under either timing measure (fine-tune upload month or base-model release month).
-- **Lineage detection.** A pair's agreement alone separates same-root from different-root pairs with an area under the ROC curve of 0.95.
+- **Validated data.** For each of 977 models, the correctness status of the reconstructed answer on all 14,042 MMLU items must match the leaderboard's stored correctness flag (this validates correctness, not the specific wrong option); models that fail are excluded and logged.
+- **Dose-response (in the plan, run after review).** Agreement increases with closeness of descent: parent–child pairs +18.5 points, distance two +13.6, more distant relatives +11.5; within roots the gradient is smaller but present.
+- **Consistency (post hoc).** The association appears separately in each of the seven largest base-model families (10.3–14.8 points) and in all 57 MMLU subjects (model-level intervals). These are re-analyses of the same data, not replications.
+- **Release timing.** Unadjusted, same-month pairs agree 8.7 points more than pairs released a year or more apart; most of this is accounted for by accuracy similarity, which rose steeply over the period. Net of accuracy, same-month associations are a few points or less and change sign across specifications (for example +1.8 points when upload and base-model release month enter together, −1.5 among models above 0.30 accuracy).
+- **Lineage signal (exploratory).** A pair's agreement alone separates same-root from different-root pairs with an area under the ROC curve of 0.95; this is descriptive, not a validated lineage detector.
 - **Data quality.** The leaderboard lists some models more than once under different names (50 entries resolve to 23 repositories) and includes models that give one answer letter to almost every item. Neither affects the conclusions.
-- **Pre-specified design.** The analysis, sample rules and a simulation check were fixed before any pairwise outcome was computed; every later analysis is labelled as exploratory or post hoc.
+- **Pre-specified design.** The analysis, sample rules and a simulation check were fixed before any pairwise outcome was computed (the populations, cap and two sensitivity analyses through dated amendments; timing recorded by commit times); every later analysis is labelled as exploratory or post hoc.
 
 ---
 
@@ -50,7 +50,7 @@ Two explanations for shared errors are commonly proposed:
 |---|---|---|
 | Mechanism | A fine-tune inherits its base model's parameters and, plausibly, its errors | Models built in the same period share data, training recipes and base models |
 | Implication if dominant | Diversify base models | Diversify release periods |
-| Finding | Strong, graded and consistent | No stable association once accuracy is controlled |
+| Finding | Strong and graded | Small and specification-dependent once accuracy is controlled |
 
 The two are entangled because a fine-tune is always released after its base model, so they must be estimated jointly.
 
@@ -90,7 +90,7 @@ Because every model appears in many pairs, inference uses dyadic cluster-robust 
 <td width="50%" align="center"><b>Release-gap coefficients under two timing measures</b><br><img src="docs/assets/fig_timing.png" alt="Release-gap coefficients near zero"></td>
 </tr>
 <tr>
-<td align="center"><b>Twelve pre-specified analyses</b><br><img src="docs/assets/exp04_forest.png" alt="Forest plot of shared-root and same-month coefficients"></td>
+<td align="center"><b>Twelve analyses fixed before any pair outcome</b><br><img src="docs/assets/exp04_forest.png" alt="Forest plot of shared-root and same-month coefficients"></td>
 <td align="center"><b>Agreement as a signal of shared lineage</b><br><img src="docs/assets/fig_detection.png" alt="Agreement distributions for same-root and different-root pairs"></td>
 </tr>
 </table>
@@ -101,10 +101,10 @@ Because every model appears in many pairs, inference uses dyadic cluster-robust 
 
 | Quantity | Primary sample (590 models, 173,755 pairs) |
 |---|---|
-| Shared lineage root | **+13.3 points** (jackknife 95% CI 10.8–15.8); 11.7–13.4 across 12 pre-specified analyses |
+| Shared lineage root | **+13.3 points** (jackknife 95% CI 10.8–15.8); 11.7–13.4 across the 12 analyses fixed in advance; 16.6 when the 16 roots with at least 10 same-root pairs are weighted equally |
 | Dose-response | parent–child +18.5; distance two +13.6; more distant +11.5 |
-| Same release month, adjusted for accuracy | +0.4 points; 90% interval excludes effects above 1.1 points |
-| Same release month, unadjusted | +8.7 points, accounted for by accuracy similarity |
+| Same release month, adjusted for accuracy | +0.4 points (pre-specified model); −2.2 to +3.3 across other primary-sample specifications |
+| Same release month, unadjusted | +8.7 points, mostly accounted for by accuracy similarity |
 | Item-difficulty-aware nulls | mean excess agreement near zero; lineage contrast unchanged |
 | Duplicate and degenerate models removed | +12.8 points |
 
@@ -161,6 +161,7 @@ python scripts/run_exp04_item_null.py         # item-difficulty-aware nulls
 python scripts/run_pair_gate_audit.py --population primary --cap 40 --reps 500
 python scripts/run_exp04_revision2.py         # timing, dose-response, CAPA and data-quality checks
 python scripts/run_exp04_heterogeneity.py     # heterogeneity, lineage detection, descriptives
+python scripts/run_exp04_revision3.py         # flexible accuracy, item fixed effects, bootstrap, MMLU-Redux (needs datasets/mmlu_redux/, fetched separately)
 make -C paper tables figures && make -C paper
 ```
 
@@ -180,7 +181,8 @@ See [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md) for
 | [`datasets/ollb/frozen/`](datasets/ollb/frozen) | Frozen model lists (public versions) |
 | [`docs/05_Experiments/`](docs/05_Experiments) | Analysis plan and its three dated amendments |
 | [`docs/08_Reviews/`](docs/08_Reviews) | Revision log, including errata |
-| [`paper/src/archive/`](paper/src/archive), [`master/`](master) | Superseded 16-model version (withdrawn) |
+| [`master/`](master) | Publisher-neutral single-column version, generated from the IEEE source (`make -C master`) |
+| [`paper/src/archive/`](paper/src/archive), [`master/archive/`](master/archive) | Superseded 16-model version (withdrawn) |
 </details>
 
 ---
@@ -197,7 +199,8 @@ See [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md) for
 - A single benchmark is used (MMLU, four options), scored by the leaderboard's evaluation pipeline.
 - Declared lineage may be incorrect; a configuration-file check agrees with the declared root for 74% of the models it could test.
 - Ensembles were not evaluated; whether lineage diversity improves voting or routing remains to be tested.
-- An earlier 16-model version of this project was withdrawn because of an extraction error; Section S2 of the supplement documents the changes.
+- An earlier per-model evaluation (16 of 20 planned models on one rented A100 GPU) is not used: an extraction error invalidated every per-question output. Sections S2 and S7 of the supplement and the paper's Appendix document it.
+- The analysis plan was not registered externally; its timing rests on commit times within a single day.
 
 ## Citation
 

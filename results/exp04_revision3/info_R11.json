@@ -1,0 +1,6 @@
+{
+ "theta_from_real_accuracy": true,
+ "K": 1500,
+ "reps": 200,
+ "corr_real_vs_sim_accuracy": 0.9982183564549624
+}

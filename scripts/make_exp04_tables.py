@@ -269,6 +269,10 @@ def tab_revision2():
         ("Tree distance 1", "lineage dose-response: tree distance", "distance 1", "ci"),
         ("Tree distance 2", "lineage dose-response: tree distance", "distance 2", "ci"),
         ("Tree distance 3+", "lineage dose-response: tree distance", "distance 3+", "ci"),
+        ("Upload and root month together: same upload month",
+         "upload month and root release month together", "gap0", "ci"),
+        ("Upload and root month together: same root month",
+         "upload month and root release month together", "root_gap0", "ci"),
     ]
     lines = [f"{lab} & " + " & ".join(cell(a, t, p, k) for p in pops) + " \\\\"
              for lab, a, t, k in spec]
@@ -343,9 +347,20 @@ def tab_robust():
                      analysis="without models whose config contradicts the card")[["estimate", "se_jackknife"]], d))))
     rows.append(("Cap-15 subset of the sample", "Post hoc", "jackknife",
                  two(lambda t, d: ci(*pick(ext, check="cap-15 subset", term=t)[["estimate", "se_jackknife"]], d))))
+    r3 = pd.concat([_r3(k) for k in ("R7", "R9", "R10", "R12")])
+    for a, lab, se_lab in (
+            ("quadratic accuracy surface", "Quadratic accuracy surface", "jackknife"),
+            ("accuracy cells: 20 bins (210 cells)", "Accuracy-cell fixed effects (210 cells)", "jackknife"),
+            ("accuracy-matched pairs (|diff| <= 0.02) + decile cells",
+             "Accuracy-matched pairs ($|\\Delta\\mathrm{acc}| \\leq 0.02$)", "jackknife"),
+            ("pair x item model with item fixed effects", "Pair $\\times$ item, item fixed effects", "jackknife"),
+            ("root cluster bootstrap (percentile)", "Root cluster bootstrap", "bootstrap"),
+            ("items flagged as erroneous in MMLU-Redux removed", "MMLU-Redux flagged items removed", "jackknife")):
+        rows.append((lab, "Post hoc", se_lab, two(lambda t, d, a=a: fmt_ci(*pick(
+            r3, analysis=a, term=t, sample="primary")[["estimate", "ci95_low", "ci95_high"]], d))))
     for dist in ("distance 1", "distance 2", "distance 3+"):
         r = pick(rv, population="primary", term=dist, analysis="lineage dose-response: tree distance")
-        rows.append((f"Lineage tree {dist}", "Post hoc$^{b}$", "jackknife",
+        rows.append((f"Lineage tree {dist}", "Plan, run late$^{b}$", "jackknife",
                      [ci(r.estimate, r.se_jackknife, 3), "--"]))
     body = "\n".join(f"{a} & {b} & {c} & {x} & {y} \\\\" for a, b, c, (x, y) in rows)
     write("tab_robust.tex", body + "\n")
@@ -369,9 +384,192 @@ def tab_descriptives():
     write("tab_descriptives.tex", "\n".join(lines) + "\n")
 
 
+def _r3(name):
+    # keep_default_na: the R11 scenario called "null" must not be read as missing
+    return pd.read_csv(R / f"exp04_revision3/{name}.csv", keep_default_na=False,
+                       na_values=[""])
+
+
+def tab_revision3():
+    """Third-review accuracy-control and answer-key checks, all samples (R7, R12)."""
+    d = pd.concat([_r3("R7"), _r3("R12")])
+    pops = ["primary", "primary_S2", "expanded", "expanded_S2"]
+
+    def cell(analysis, term, pop):
+        r = d[(d.analysis == analysis) & (d.term == term) & (d["sample"] == pop)]
+        if r.empty:
+            return "--"
+        r = r.iloc[0]
+        return fmt_ci(r.estimate, r.ci95_low, r.ci95_high, 3)
+
+    spec = [("Pre-specified (linear accuracy terms)", "pre-specified (linear sum and difference)"),
+            ("No accuracy terms (total association)", "no accuracy terms (total association)"),
+            ("Quadratic accuracy surface", "quadratic accuracy surface"),
+            ("Accuracy cells: deciles (55 cells)", "accuracy cells: deciles (55 cells)"),
+            ("Accuracy cells: 20 bins (210 cells)", "accuracy cells: 20 bins (210 cells)"),
+            ("Accuracy-matched pairs ($|\\Delta| \\leq 0.02$) + decile cells",
+             "accuracy-matched pairs (|diff| <= 0.02) + decile cells"),
+            ("MMLU-Redux: flagged items removed", "items flagged as erroneous in MMLU-Redux removed"),
+            ("MMLU-Redux items only", "MMLU-Redux items only (5,700)"),
+            ("MMLU-Redux items annotated correct only", "MMLU-Redux items annotated ok only")]
+    lines = []
+    for term, head in (("same_root", "Shared root"), ("gap0", "Same month")):
+        lines.append(f"\\multicolumn{{5}}{{l}}{{\\textit{{{head}}}}} \\\\")
+        lines += [f"{lab} & " + " & ".join(cell(a, term, p) for p in pops) + " \\\\"
+                  for lab, a in spec]
+    write("tab_revision3.tex", "\n".join(lines) + "\n")
+
+
+def tab_revision3_inf():
+    """Item fixed effects, bootstrap and permutation (R9, R10)."""
+    d = pd.concat([_r3("R9"), _r3("R10")])
+    lines = []
+    spec = [("Item fixed effects", "pair x item model with item fixed effects", "jackknife"),
+            ("Same weights, no item effects", "pair x item model without item fixed effects (WLS)", "jackknife"),
+            ("Root cluster bootstrap", "root cluster bootstrap (percentile)", "bootstrap")]
+    for lab, a, inf in spec:
+        cells = []
+        for pop in ("primary", "expanded"):
+            for term in ("same_root", "gap0"):
+                r = d[(d.analysis == a) & (d.term == term) & (d["sample"] == pop)]
+                cells.append(fmt_ci(*r.iloc[0][["estimate", "ci95_low", "ci95_high"]], 3)
+                             if len(r) else "--")
+        lines.append(f"{lab} & {inf} & " + " & ".join(cells) + " \\\\")
+    cells = []
+    for pop in ("primary", "expanded"):
+        r = d[(d.analysis == "root-label permutation within upload quarter") & (d["sample"] == pop)].iloc[0]
+        cells += [f"$p = {r.p:.3f}$", "--"]
+    lines.append("Root-label permutation & permutation & " + " & ".join(cells) + " \\\\")
+    write("tab_revision3_inf.tex", "\n".join(lines) + "\n")
+
+
+def tab_revision3_dose():
+    """Within-root dose-response and per-root pooling, primary sample (R8)."""
+    d = _r3("R8")
+    lines = []
+    for _, r in d.iterrows():
+        lab = {"distance 1": "Within root: tree distance 1 (vs 3+)",
+               "distance 2": "Within root: tree distance 2 (vs 3+)",
+               "ancestor-descendant": "Within root: ancestor--descendant (vs more distant)",
+               "siblings": "Within root: siblings (vs more distant)"}.get(r.term)
+        if lab is None:
+            lab = ("Per-root coefficients, random-effects pooled ($\\geq$ 10 same-root pairs)"
+                   if "random" in r.analysis else "Per-root coefficients, unweighted mean")
+        extra = (f"{int(r.roots)} roots; $\\tau$ = {r.tau:.3f}, $I^2$ = {r.I2:.2f}"
+                 if pd.notna(r.get("tau")) else f"{int(r.roots)} roots")
+        lines.append(f"{lab} & {fmt_ci(r.estimate, r.ci95_low, r.ci95_high, 3)} & {extra} \\\\")
+    write("tab_revision3_dose.tex", "\n".join(lines) + "\n")
+
+
+def tab_sim_real():
+    """Simulation check on the real roster with real accuracies (R11)."""
+    d = _r3("R11")
+    lines = []
+    for sc, g in d.groupby("scenario", sort=False):
+        cells = []
+        for spec in ("pre-specified", "decile cells"):
+            for term in ("same_root", "gap0"):
+                r = g[(g.spec == spec) & (g.term == term)].iloc[0]
+                cells.append(f"{100 * r.rate:.1f} [{100 * r.ci_low:.1f}, {100 * r.ci_high:.1f}]")
+        lab = {"ability-dependent attractor (no lineage or release-time effect)":
+               "Ability-dependent distractor, no effect", "null": "No effect"}.get(
+            sc, sc.replace("release-time", "Release-time $\\lambda_E$ =").replace(
+                "lineage", "Lineage $\\lambda_L$ ="))
+        lines.append(f"{lab} & " + " & ".join(cells) + " \\\\")
+    write("tab_sim_real.tex", "\n".join(lines) + "\n")
+
+
+def tab_runpod():
+    """Earlier per-model evaluation (not used for inference): two tables.
+
+    tab_runpod_plan.tex: the planned roster, from
+    datasets/coverage/trait_definition.csv (family, quarter, size, repository,
+    precision, gated).
+    tab_runpod.tex: what was recorded, from datasets/phase2_eval_results.csv
+    (lm-eval aggregate accuracy), datasets/eval_samples/*.jsonl (per-question
+    files) and results/exp04_validation/per_model.csv (item-validated
+    leaderboard accuracy of the same repository).
+    """
+    import json
+    plan = pd.read_csv(ROOT / "datasets/coverage/trait_definition.csv")
+    run = pd.read_csv(ROOT / "datasets/phase2_eval_results.csv").set_index("full_name")
+    lb = pd.read_csv(R / "exp04_validation/per_model.csv")
+    lb = lb[lb.category == "validated"].assign(key=lambda d: d.model.str.lower()) \
+        .set_index("key").accuracy
+    samples = {p.name.split("__")[0]: p for p in (ROOT / "datasets/eval_samples").glob("*.jsonl")}
+    tt = lambda x: "\\texttt{" + x.replace("_", "\\_") + "}"  # noqa: E731
+    fid = {"bf16": "bf16", "4bit": "4-bit NF4", "imputed": "imputed"}   # as planned
+    plan_lines, run_lines = [], []
+    for _, r in plan.iterrows():
+        name = r.full_name
+        plan_lines.append(f"{name} & {r.family} & {r.quarter} & {r.params} & {tt(r.hf_repo)} & "
+                          f"{fid[r.fidelity]} & {r.gated} \\\\")
+        if name in run.index:
+            q = run.loc[name]
+            with open(samples[name]) as f:
+                rows = [json.loads(x) for x in f]
+            nlp = len(json.loads(rows[0]["choice_logprobs"]))
+            all_a = sum(x["answer"] == 0 for x in rows) / len(rows)
+            repo = tt(q.hf_repo) + ("$^{a}$" if q.hf_repo != r.hf_repo else "")
+            notes = [f"{len(rows):,} rows, {nlp} log-lik./item"]
+            if abs(q.acc - all_a) < 5e-4:
+                notes.append("equals the all-A rate")
+            elif q.acc < 0.26:
+                notes.append("chance level, unresolved")
+            k = q.hf_repo.lower()
+            if k in lb.index:
+                notes.append(f"leaderboard {lb[k]:.3f}")
+            tag = {"bf16": "bf16", "4bit": "4-bit tag$^{b}$"}[q.fidelity]
+            run_lines.append(f"{name} & {repo} & {tag} & {q.acc:.3f} & "
+                             + "; ".join(notes) + " \\\\")
+        elif r.fidelity == "imputed":
+            run_lines.append(f"{name} & -- & -- & -- & imputation specified, not executed \\\\")
+        else:
+            run_lines.append(f"{name} & -- & -- & -- & not run (evaluation stopped after 16 "
+                             "models: GPU budget) \\\\")
+    write("tab_runpod_plan.tex", "\n".join(plan_lines) + "\n")
+    write("tab_runpod.tex", "\n".join(run_lines) + "\n")
+
+    # Main-paper appendix: one row per planned entry, execution and data status.
+    size_of = lambda repo: next((t for t in repo.replace("-", " ").split()  # noqa: E731
+                                 if t[:-1].replace(".", "").isdigit() and t[-1] in "Bb"), None)
+    main_lines = []
+    for _, r in plan.iterrows():
+        name = r.full_name
+        if name in run.index:
+            q = run.loc[name]
+            with open(samples[name]) as f:
+                rows = [json.loads(x) for x in f]
+            all_a = sum(x["answer"] == 0 for x in rows) / len(rows)
+            repo = tt(q.hf_repo) + ("$^{a}$" if q.hf_repo != r.hf_repo else "")
+            rec_size = size_of(q.hf_repo.split("/")[-1])
+            size = r.params if not rec_size or rec_size.upper() == str(r.params).upper() \
+                else f"{r.params} / {rec_size.upper()}"
+            rec = {"bf16": "bf16", "4bit": "4-bit tag$^{b}$"}[q.fidelity]
+            note = []
+            if abs(q.acc - all_a) < 5e-4:
+                note.append(f"acc.\\ {q.acc:.3f} = all-A rate")
+            elif q.acc < 0.26:
+                note.append(f"chance level ({q.acc:.3f})")
+            k = q.hf_repo.lower()
+            if k in lb.index:
+                if not note:
+                    note.append(f"acc.\\ {q.acc:.3f}")
+                note.append(f"leaderboard {lb[k]:.3f}")
+            main_lines.append(f"{name} & {r.family} & {repo} & {size} & {fid[r.fidelity]} & {rec} & "
+                              f"recorded & failed$^{{c}}$ & {'; '.join(note) or '--'} \\\\")
+        elif r.fidelity == "imputed":
+            main_lines.append(f"{name} & {r.family} & {tt(r.hf_repo)}$^{{d}}$ & {r.params} & "
+                              "imputed & -- & not imputed & none & -- \\\\")
+        else:
+            main_lines.append(f"{name} & {r.family} & {tt(r.hf_repo)}$^{{d}}$ & {r.params} & "
+                              f"{fid[r.fidelity]} & -- & not run (budget) & none & -- \\\\")
+    write("tab_runpod_main.tex", "\n".join(main_lines) + "\n")
+
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
               tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj,
-              tab_revision2, tab_robust, tab_descriptives):
+              tab_revision2, tab_robust, tab_descriptives, tab_revision3,
+              tab_revision3_inf, tab_revision3_dose, tab_sim_real, tab_runpod):
         f()
     print(sorted(p.name for p in T.glob("*.tex")))
