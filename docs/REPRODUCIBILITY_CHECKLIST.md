@@ -82,6 +82,8 @@ python scripts/run_exp04_item_null.py             # item-difficulty-aware nulls 
 python scripts/run_pair_gate_audit.py --population primary --cap 40 --reps 500   # post-hoc gate audit
 python scripts/run_exp04_revision2.py             # second-review analyses (post hoc; reads config.json read-only)
 python scripts/run_exp04_heterogeneity.py         # heterogeneity, lineage detection, descriptives (post hoc)
+python scripts/run_exp04_revision3.py            # third-review analyses (post hoc; needs datasets/mmlu_redux/)
+python scripts/run_exp04_matched_followup.py      # accuracy-matched pairs: composition and S1 (post hoc)
 make -C paper tables figures && make -C paper     # tables and figures from outputs, then the PDF and supplement
 python -m pytest -m "not slow"                    # quick tests (skips the two slow optimizer searches)
 python -m pytest                                  # full suite, including the slow Monte Carlo tests

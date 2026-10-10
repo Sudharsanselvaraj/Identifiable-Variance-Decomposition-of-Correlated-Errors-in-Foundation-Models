@@ -6,7 +6,7 @@
 
 **A pair-level study of Open LLM Leaderboard models: 977 validated models in two overlapping samples (primary: 590 models, 173,755 pairs)**
 
-[![Paper](https://img.shields.io/badge/paper-17_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
+[![Paper](https://img.shields.io/badge/paper-18_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
 [![Supplement](https://img.shields.io/badge/supplement-13_pages-5b7a99)](paper/build/supplement.pdf)
 [![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
 [![Python](https://img.shields.io/badge/python-3.11-3776AB)](pyproject.toml)
@@ -164,6 +164,7 @@ python scripts/run_pair_gate_audit.py --population primary --cap 40 --reps 500
 python scripts/run_exp04_revision2.py         # timing, dose-response, CAPA and data-quality checks
 python scripts/run_exp04_heterogeneity.py     # heterogeneity, lineage detection, descriptives
 python scripts/run_exp04_revision3.py         # flexible accuracy, item fixed effects, bootstrap, MMLU-Redux (needs datasets/mmlu_redux/, fetched separately)
+python scripts/run_exp04_matched_followup.py  # accuracy-matched pairs: composition and S1 (post hoc)
 make -C paper tables figures && make -C paper
 ```
 

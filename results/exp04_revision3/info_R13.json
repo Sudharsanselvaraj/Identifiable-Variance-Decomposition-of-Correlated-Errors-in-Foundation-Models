@@ -1,0 +1,50 @@
+{
+ "primary": {
+  "matched_pairs": 28170,
+  "same_root_pairs": 1106,
+  "share_both_below_0.30": 0.7362797302094427,
+  "mean_accuracy_quartiles": [
+   0.2508901865831078,
+   0.25858139866115937,
+   0.4136964107676969
+  ],
+  "share_both_uploaded_before_2024": 0.3093006744763933,
+  "same_month_pairs": 2603
+ },
+ "primary_S2": {
+  "matched_pairs": 7404,
+  "same_root_pairs": 1019,
+  "share_both_below_0.30": 0.0,
+  "mean_accuracy_quartiles": [
+   0.5985258510183735,
+   0.62590799031477,
+   0.6369819114086313
+  ],
+  "share_both_uploaded_before_2024": 0.03862776877363587,
+  "same_month_pairs": 1327
+ },
+ "expanded": {
+  "matched_pairs": 56251,
+  "same_root_pairs": 2535,
+  "share_both_below_0.30": 0.6734635828696379,
+  "mean_accuracy_quartiles": [
+   0.25156672838626976,
+   0.2603261643640507,
+   0.5394352656316764
+  ],
+  "share_both_uploaded_before_2024": 0.3357984746937832,
+  "same_month_pairs": 4915
+ },
+ "expanded_S2": {
+  "matched_pairs": 18258,
+  "same_root_pairs": 2252,
+  "share_both_below_0.30": 0.0,
+  "mean_accuracy_quartiles": [
+   0.5453639082751744,
+   0.610205098988748,
+   0.6338484546360917
+  ],
+  "share_both_uploaded_before_2024": 0.1685836345711469,
+  "same_month_pairs": 2796
+ }
+}

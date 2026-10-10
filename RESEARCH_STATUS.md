@@ -33,7 +33,7 @@ specification-dependent associations. Observational; no ensemble was tested.
 | `results/pair_gate/` | simulation check run before any pair outcome (chose the per-root cap) |
 | `results/exp04_analysis/` | the 12 analyses fixed before any pair outcome was computed |
 | `results/exp04_final/` | the 12 analyses reproduced and diffed (`prereg/`), plus inference and outcome audits added after the first results |
-| `results/exp04_item_null/`, `results/pair_gate_audit/`, `results/exp04_revision2/`, `results/exp04_heterogeneity/`, `results/exp04_revision3/` | post hoc (review rounds); labelled as such in the manuscript |
+| `results/exp04_item_null/`, `results/pair_gate_audit/`, `results/exp04_revision2/`, `results/exp04_heterogeneity/`, `results/exp04_revision3/` (R7–R13) | post hoc (review rounds); labelled as such in the manuscript |
 | `results/precision_gate/` | per-model precision analysis that motivates the pair-level design (Supplementary S1) |
 | `results/phase2_empirical/`, `results/design_space/` | earlier study (below); not evidence for the current one |
 
