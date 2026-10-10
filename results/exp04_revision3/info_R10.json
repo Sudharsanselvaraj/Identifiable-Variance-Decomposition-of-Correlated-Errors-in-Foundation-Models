@@ -1,0 +1,14 @@
+{
+ "primary": {
+  "roots": 351,
+  "roots_with_2plus_models": 63,
+  "same_root_pairs": 2020,
+  "top2_root_same_root_pairs": 1407
+ },
+ "expanded": {
+  "roots": 422,
+  "roots_with_2plus_models": 108,
+  "same_root_pairs": 4836,
+  "top2_root_same_root_pairs": 1521
+ }
+}

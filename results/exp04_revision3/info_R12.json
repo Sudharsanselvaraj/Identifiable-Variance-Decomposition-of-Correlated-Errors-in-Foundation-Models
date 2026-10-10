@@ -1,0 +1,13 @@
+{
+ "items_matched": 5724,
+ "flag_counts": {
+  "not in Redux": 8344,
+  "ok": 5329,
+  "bad_question_clarity": 131,
+  "wrong_groundtruth": 106,
+  "multiple_correct_answers": 39,
+  "no_correct_answer": 36,
+  "expert": 32,
+  "bad_options_clarity": 25
+ }
+}

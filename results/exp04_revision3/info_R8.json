@@ -1,0 +1,25 @@
+{
+ "distance_by_root_size": {
+  "distance 1": {
+   "pairs": 177,
+   "from_roots_lt8_models": 82
+  },
+  "distance 2": {
+   "pairs": 699,
+   "from_roots_lt8_models": 77
+  },
+  "distance 3": {
+   "pairs": 1112,
+   "from_roots_lt8_models": 24
+  }
+ },
+ "per_root_estimates": {
+  "roots": 63,
+  "median_all": 0.20970149059472026,
+  "share_positive_all": 0.9841269841269841,
+  "roots_ge10_pairs": 17,
+  "median_ge10": 0.14542892120987794,
+  "mean_lt10": 0.2813281507083731,
+  "roots_lt10": 46
+ }
+}

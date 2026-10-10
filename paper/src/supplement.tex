@@ -13,7 +13,7 @@
 \begin{document}
 \sloppy
 \maketitle
-\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), and detailed robustness results for every sample (S4). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
+\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), detailed robustness results for every sample (S4), the exploratory analysis of agreement as a signal of shared lineage (S5), and the post-hoc analyses added after the third review (S6). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
 
 \section*{S1. Why per-model variance decomposition is not enough}\label{sec:precision}
 
@@ -211,6 +211,92 @@ Sample & Models & Shared root (root-clustered SE) & Shared root (+ size, archite
 \tabinput{../tables/tab_revision2.tex}
 \bottomrule
 \end{tabular}}}
+\end{table}
+
+\section*{S5. Agreement as a signal of shared lineage}
+This analysis is post hoc and descriptive. If related models share wrong answers, a pair's agreement should carry information about whether the two share a root. In the primary sample, agreement alone separates same-root from different-root pairs with an area under the receiver operating characteristic curve (AUC) of 0.95, and agreement net of the accuracy and release-gap terms of the pre-specified model with 0.88 (Fig.~\ref{fig:detection}). Above an agreement of 0.7 lie 68\% of same-root pairs but only 2.1\% of different-root pairs. Because different-root pairs outnumber same-root pairs by 85 to 1, however, most pairs above that threshold are still unrelated (about 3{,}600 against 1{,}400), so agreement on one benchmark flags candidate relatives rather than establishing them. AUC here is a descriptive summary, not the accuracy of a validated lineage detector.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_detection.pdf}
+\caption{\textbf{Agreement as a signal of shared lineage} (primary sample; 2{,}020 same-root and 171{,}735 different-root pairs; densities). (a) Observed agreement on wrong answers. (b) Agreement after removing the accuracy and release-gap terms of the pre-specified model. AUC: probability that a random same-root pair scores higher than a random different-root pair.}
+\label{fig:detection}
+\end{figure}
+
+\section*{S6. Post-hoc analyses from the third review}
+All analyses in this section were run after the main results were known and were not specified in advance. Code: \texttt{scripts/run\_exp04\_revision3.py}; outputs: \texttt{results/exp04\_revision3/}.
+
+\subsection*{Flexible accuracy control and answer-key errors}
+The pre-specified model controls accuracy through the linear sum and absolute difference of the two models' accuracies. TABLE~\ref{tab:r3} replaces them with a full quadratic surface, with fixed effects for every unordered pair of accuracy bins (deciles: 55 cells; 20 bins: 210 cells), and with the subset of pairs whose accuracies differ by at most 0.02 (plus decile cells). The answer-key check matches 5{,}698 of the 14{,}042 items to MMLU-Redux 2.0, which re-annotates 100 items per subject; 369 of the matched items are annotated as erroneous (wrong ground truth 106, no correct answer 36, several correct answers 39, unclear question or options 156, expert knowledge needed 32) and 5{,}329 as correct. Accuracy is recomputed on each item subset.
+
+\begin{table}[H]
+\caption{\textbf{Accuracy specification and answer-key errors} (post hoc; delete-one-root jackknife 95\% CIs).}
+\label{tab:r3}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{lcccc}
+\toprule
+ & Primary & Primary, S2 & Expanded & Expanded, S2 \\
+\midrule
+\tabinput{../tables/tab_revision3.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection*{Item fixed effects, bootstrap and permutation}
+The pair-level outcome conditions on items both models get wrong, so a pair of strong models is compared on harder items than a pair of weak models. The pair $\times$ item model regresses the indicator of the same wrong option on the pair covariates over every (pair, item) cell in which both models are wrong, with a fixed effect for each item; it is computed exactly from item-level aggregates and weights each pair by its number of jointly wrong items, so it is shown beside a weighted pair-level fit without item effects. The root cluster bootstrap resamples lineage roots with replacement (999 draws). The permutation test shuffles root labels among the models uploaded in the same quarter, preserving root sizes and the time structure (999 permutations, so the smallest attainable $p$ is 0.001). Across the 999 permutations the largest absolute shared-root coefficient is 1.2 points in the primary sample and 1.4 in the expanded sample. The bootstrap interval is asymmetric because resampling roots sometimes omits the two largest roots, whose coefficients are among the smallest.
+
+\begin{table}[H]
+\caption{\textbf{Item fixed effects and resampling inference} (post hoc; 95\% CIs).}
+\label{tab:r3inf}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{llcccc}
+\toprule
+ & & \multicolumn{2}{c}{Primary} & \multicolumn{2}{c}{Expanded} \\
+ & CI & Shared root & Same month & Shared root & Same month \\
+\midrule
+\tabinput{../tables/tab_revision3_inf.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection*{Dose-response within roots, and every root counted once}
+Parent--child pairs come disproportionately from small roots (82 of 177), and small roots show larger coefficients, so the tree-distance gradient could reflect root composition. The within-root model uses same-root pairs only, with a fixed effect for each root, so each distance class is compared with distance 3+ pairs of the same root. The pre-specified coefficient weights roots by their number of same-root pairs, so the two largest roots dominate it; the last two rows of TABLE~\ref{tab:r3dose} count roots instead.
+
+\begin{table}[H]
+\caption{\textbf{Within-root dose-response and per-root pooling} (primary sample; post hoc). Within-root rows: delete-one-root jackknife 95\% CIs over the roots contributing same-root pairs. Random-effects pooling uses DerSimonian--Laird weights with model-level dyadic SEs and is restricted to roots with at least 10 same-root pairs, because a root with a single same-root pair fits it exactly and has no usable SE. Unweighted mean: SE from the spread across roots.}
+\label{tab:r3dose}
+\centering
+\footnotesize
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{lcl}
+\toprule
+ & Estimate [95\% CI] & \\
+\midrule
+\tabinput{../tables/tab_revision3_dose.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection*{Simulation check with the real accuracies}
+The original check drew abilities independently of root and month. Here each model's ability is set so that its expected simulated accuracy equals its observed accuracy, so ability clusters by root and month exactly as in the data; the roster is the analysed primary sample (590 models), with 1{,}500 items and 200 replicates per scenario. A further scenario has no lineage or release-time effect, but the probability of choosing the common distractor rises with ability ($0.05 + 0.5\,\mathrm{acc}^2$), so agreement depends non-linearly on accuracy. Each replicate is fitted with the pre-specified model and with decile accuracy cells.
+
+\begin{table}[H]
+\caption{\textbf{Rejection rates (\%) with real accuracies} (Wilson 95\% intervals; model-level dyadic SEs; nominal 5\%).}
+\label{tab:simreal}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{Pre-specified accuracy terms} & \multicolumn{2}{c}{Decile accuracy cells} \\
+Scenario & Shared root & Same month & Shared root & Same month \\
+\midrule
+\tabinput{../tables/tab_sim_real.tex}
+\bottomrule
+\end{tabular}}
 \end{table}
 
 \end{document}
