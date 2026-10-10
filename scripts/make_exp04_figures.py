@@ -798,40 +798,63 @@ GAPS = [("same_root", "shared root"), ("gap0", "0 months"), ("gap1_2", "1–2 mo
 
 
 def fig_rawadj():
-    from matplotlib.colors import LogNorm
     from scipy.stats import pearsonr
     sys.path.insert(0, str(ROOT / "scripts"))
     from run_exp04_final import prepared
     d = prepared("primary")
     r = pd.read_csv(RES / "exp04_final/raw_vs_adjusted.csv")
     fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.55),
-                             gridspec_kw=dict(width_ratios=[1.35, 1, 1]))
-    # (a) every primary pair: agreement against the pair's mean accuracy
+                             gridspec_kw=dict(width_ratios=[1.2, 1, 1]))
+    # (a) every primary pair: agreement against the pair's mean accuracy, drawn as
+    # smoothed density regions (different roots) and binned means with interquartile
+    # ribbons (both groups)
+    from scipy.ndimage import gaussian_filter
     ax = axes[0]
     macc = (d["acc"][d["i"]] + d["acc"][d["j"]]) / 2
+    yv = d["y"]
     sr = d["rid"][d["i"]] == d["rid"][d["j"]]
-    hb = ax.hexbin(macc[~sr], d["y"][~sr], gridsize=(46, 30), extent=(0.2, 0.8, 0, 1),
-                   cmap="Greys", norm=LogNorm(), mincnt=1, lw=0.1, edgecolors="face")
-    ax.scatter(macc[sr], d["y"][sr], s=2.2, color=BLUE, alpha=0.45, lw=0, zorder=3)
-    edges = np.arange(0.2, 0.825, 0.025)
-    for mask, c, lab in ((~sr, ORANGE, "different roots"), (sr, BLUE, "same root")):
+    xb, yb = np.linspace(0.2, 0.8, 61), np.linspace(0, 1, 51)
+    xc, yc = (xb[1:] + xb[:-1]) / 2, (yb[1:] + yb[:-1]) / 2
+
+    def density(mask, smooth):
+        h = np.histogram2d(macc[mask], yv[mask], bins=[xb, yb])[0]
+        h = gaussian_filter(h, smooth).T
+        return h / h.sum()
+
+    def hdr(dd, probs):                        # density thresholds enclosing given mass
+        f = np.sort(dd.ravel())[::-1]
+        cum = np.cumsum(f)
+        return [f[np.searchsorted(cum, q)] for q in probs]
+
+    dd = density(~sr, 1.2)
+    lv = hdr(dd, (0.95, 0.8, 0.5))
+    ax.contourf(xc, yc, dd, levels=[*lv, dd.max() * 1.01],
+                colors=["#f6e1dd", "#eebfb8", "#e29a90"], zorder=1)
+    edges = np.arange(0.2, 0.801, 0.05)
+    for mask, c in ((~sr, ORANGE), (sr, BLUE)):
         k = np.digitize(macc[mask], edges)
-        mm = [(edges[t - 1] + 0.0125, d["y"][mask][k == t].mean()) for t in np.unique(k)
-              if (k == t).sum() >= 30]
-        ax.plot(*zip(*mm), color=c, lw=1.4, zorder=4, label=f"{lab}: binned mean")
-    rd, rs = pearsonr(macc[~sr], d["y"][~sr]).statistic, pearsonr(macc[sr], d["y"][sr]).statistic
-    ax.text(0.97, 0.05, f"different roots: r = {rd:.2f}, n = {(~sr).sum():,}\n"
-            f"same root: r = {rs:.2f}, n = {sr.sum():,}", transform=ax.transAxes, ha="right",
-            va="bottom", fontsize=6.8, linespacing=1.2,
-            bbox=dict(fc="white", ec=LGREY, lw=0.5, boxstyle="round,pad=0.25"), zorder=6)
+        rows = [(edges[t - 1] + 0.025, *np.percentile(yv[mask][k == t], [25, 75]),
+                 yv[mask][k == t].mean()) for t in np.unique(k)
+                if 0 < t < len(edges) and (k == t).sum() >= 30]
+        bx, q1, q3, mu = map(np.array, zip(*rows))
+        ax.fill_between(bx, q1, q3, color=c, alpha=0.18, lw=0, zorder=2)
+        ax.plot(bx, mu, "-o", color=c, lw=1.4, ms=2.8, mec="white", mew=0.4, zorder=4)
+    rd = pearsonr(macc[~sr], yv[~sr]).statistic
+    rs = pearsonr(macc[sr], yv[sr]).statistic
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    ax.legend(handles=[(Patch(fc="#eebfb8", ec="none"),
+                        Line2D([], [], color=ORANGE, lw=1.4, marker="o", ms=2.8, mec="white")),
+                       (Patch(fc=BLUE, alpha=0.18, ec="none"),
+                        Line2D([], [], color=BLUE, lw=1.4, marker="o", ms=2.8, mec="white"))],
+              labels=[f"different roots\nn = {(~sr).sum():,}, r = {rd:.2f}",
+                      f"same root\nn = {sr.sum():,}, r = {rs:.2f}"],
+              loc="lower right", frameon=False, fontsize=6.6, handlelength=1.3,
+              labelspacing=0.5, borderaxespad=0.2)
     ax.set_xlim(0.2, 0.8); ax.set_ylim(0, 1)
     ax.set_xlabel("Mean accuracy of the two models")
     ax.set_ylabel("P(same wrong | both wrong)")
     ax.set_title("(a) All primary pairs")
-    ax.legend(frameon=True, framealpha=0.9, edgecolor=LGREY, loc="upper left", fontsize=6.8,
-              handlelength=1.2).get_frame().set_linewidth(0.5)
-    cb = fig.colorbar(hb, ax=ax, fraction=0.05, pad=0.02)
-    cb.set_label("Different-root pairs per cell", fontsize=6.8); cb.ax.tick_params(labelsize=6)
     # (b, c) raw -> adjusted coefficients as dumbbells
     y = np.arange(len(GAPS))[::-1]
     for ax, pop, title in ((axes[1], "primary", "(b) Primary"), (axes[2], "expanded", "(c) Expanded")):
@@ -857,7 +880,8 @@ def fig_rawadj():
         ax.set_xlabel("Coefficient (95% CI)")
         ax.set_title(title)
         ax.set_yticks(y, [g for _, g in GAPS] if pop == "primary" else [])
-    axes[2].legend(frameon=False, loc="center right", fontsize=6.8, handlelength=1)
+    axes[2].legend(frameon=False, loc="center left", bbox_to_anchor=(0.42, 0.42), fontsize=6.8,
+                   handlelength=1)
     fig.tight_layout(pad=0.3, w_pad=1.6)
     return save(fig, "fig_raw_adjusted")
 
