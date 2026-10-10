@@ -107,10 +107,16 @@ the rebuilt frozen lists (`datasets/ollb/frozen_full/`, from
 `scripts/rebuild_frozen_lists.py`) and the validated answer files, so run the
 steps above first; neither is redistributed.
 
-Figures: `scripts/make_exp04_figures.py` draws every manuscript figure from
-`results/` (vector PDF, embedded fonts, no timestamp). Two of them also read the
-rebuilt frozen lists and validated answer files; the two diagrams take their
-counts from `results/`; Fig. 3 is the only illustration with hypothetical models.
+Figures: `scripts/make_exp04_figures.py` draws every manuscript figure (vector
+PDF, embedded fonts, no timestamp). Fourteen read only `results/` and rebuild
+byte-identical from a clean checkout (tested 10 October 2026). Six are drawn from
+pair-level data and also need the rebuilt frozen lists and validated answer
+files: the agreement heatmaps, accuracy, lineage-by-month map, agreement by gap
+and accuracy-adjustment figures, and the supplement's lineage-detection figure.
+Without those inputs the script still draws the other fourteen, names the
+skipped ones, and exits with status 1. The study-flow diagram takes its counts
+from `results/`; the predictors figure is the only illustration with
+hypothetical models.
 
 Root-level dyadic standard errors were corrected on 2026-10-09 (see
 `docs/08_Reviews/Revision_2026-10_Precision_Gate.md`, "Erratum"); model-level
