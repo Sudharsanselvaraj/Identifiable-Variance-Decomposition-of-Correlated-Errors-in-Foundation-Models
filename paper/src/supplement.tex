@@ -13,7 +13,7 @@
 \begin{document}
 \sloppy
 \maketitle
-\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), detailed robustness results for every sample (S4), the exploratory analysis of agreement as a signal of shared lineage (S5), and the post-hoc analyses added after the third review (S6). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
+\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), detailed robustness results for every sample (S4), the exploratory analysis of agreement as a signal of shared lineage (S5), the post-hoc analyses added after the third review (S6), and the record of the earlier per-model evaluation, which is not used for inference (S7). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
 
 \section*{S1. Why per-model variance decomposition is not enough}\label{sec:precision}
 
@@ -68,7 +68,7 @@ Item-level predictions; Qwen-7B accuracy 0.2294 & Code read only option~A's log-
 Sweep enforced crossing and connectedness & 100 of 105 crossed, 60 connected & Corrected \\
 LPM and GLMM both hit the era boundary in 20--60\% of replicates & Only the GLMM; LPM 0--6.7\% & Corrected \\
 Nested-design detector: ``zero silent coverage'' & Undefined: no replicate went undetected & Corrected \\
-Sixteen-model population as pre-specified & Four planned models not evaluated, no recorded reason; two DeepSeek models imputed & Arm not used for inference \\
+Sixteen-model population as pre-specified & Four planned models not run (GPU budget); the DeepSeek imputation was specified but not executed; per-question outputs invalid & Arm not used for inference (Section~S7) \\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -295,6 +295,38 @@ The original check drew abilities independently of root and month. Here each mod
 Scenario & Shared root & Same month & Shared root & Same month \\
 \midrule
 \tabinput{../tables/tab_sim_real.tex}
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\section*{S7. Record of the earlier per-model evaluation}
+This section documents an evaluation that preceded the pair-level design. It is reported as an audit record. None of its measurements enters any result of the main paper or of Sections~S3--S6, and it is not a second empirical study. Section~S1 uses only the family and quarter labels of its sixteen models to define one simulated design (the point labelled 16 in Fig.~4 of the main paper).
+
+\subsection*{Selection and plan}
+A 47-model candidate frame was reduced to a 22-model roster by a design gate that used only family $\times$ quarter occupancy, declared lineage edges, identifiability constraints and estimated cost, never measured traits (\texttt{datasets/coverage/minimum\_valid\_population.csv}, \texttt{g3\_report.md}; committed 3 August 2026, last revised 5 August). The two DeepSeek models of the roster (671B and 685B mixture-of-experts) did not fit the available compute; three re-gate variants that excluded them were infeasible because the gate then required other models of the same size class, and a rule to complete their traits by model-based multiple imputation (five draws, seed 2026) was recorded on 16 August 2026, before the first evaluation. The run plan, recorded the same day and also before the first evaluation, assigned the remaining 20 models to one rented NVIDIA A100 80\,GB (SXM4) GPU: 17 in bfloat16 and Qwen1.5-72B, Llama-3.1-70B and Llama-3.3-70B in 4-bit NF4, with MMLU 5-shot log-likelihood scoring on all 14{,}042 items through \texttt{lm-eval} 0.4.12 and \texttt{transformers} 4.57.6 (\texttt{docs/05\_Experiments/Exp02\_GPU\_Runbook.md}). The planned resources were a GPU disk of at least 300\,GB and about 604 GPU-minutes, estimated at USD 16--20 at about USD 1.60 per hour. These are planned values: no pod configuration, storage record or invoice is in the repository, so the attached disk, run time and cost actually incurred are not reported.
+
+\subsection*{What was recorded}
+Between 16 and 18 August 2026, results for 16 models were committed, one model per commit (\texttt{datasets/phase2\_eval\_results.csv}, \texttt{datasets/eval\_samples/}). TABLE~\ref{tab:runpod} compares them with the plan. Findings:
+\begin{itemize}
+\item Results for Qwen1.5-72B, Llama-3.1-70B, Llama-3.3-70B and Phi-4-reasoning-vision-15B were not run: the authors stopped the evaluation after 16 models because further GPU time could not be funded. No decision-log entry records the stop. None of the three models planned in 4-bit was therefore run.
+\item Mistral-Small-4, planned as a 32B model in bfloat16, was recorded from the repository \texttt{Mistral-Small-4-119B-2603} in 4-bit. No decision-log entry records the change; the reproducibility checklist of the earlier version notes only that the 119B model does not fit in bfloat16 on an 80\,GB GPU. Five further models were recorded from repositories other than those in the plan.
+\item Every per-question file stores one log-likelihood per item and predicts option~A on all 14{,}042 items: the extraction code read only the first option's score. The error was found and fixed in the code on 9 October 2026. No raw \texttt{lm-eval} output with all four scores per item was found in the repository, its full history (including stashes and unreachable commits) or the computer used for the analysis, so the per-question predictions cannot be reconstructed.
+\item The recorded accuracies are \texttt{lm-eval}'s own aggregates and do not pass through the faulty extraction, but they cannot be validated item by item. Qwen-7B's value equals the share of items whose correct answer is~A; the leaderboard's item-validated predictions give 0.584 for the same repository. Five other models score at chance level (0.23--0.25) for reasons not established, including three 24B instruction models. Mistral-Small-3.1 and 3.2 were re-run after their first results, following a loader change that registered their architecture (Mistral3) with the causal-language-model loader (commit \texttt{cca711c}; an earlier fix to quantization arguments and rotary-position parameters, \texttt{27886ef}, preceded both runs), and remained at chance (0.249 and 0.250 before, 0.234 and 0.231 after). Phi-1.5, the only other model also in the validated leaderboard data, agrees with it (0.422 against 0.424).
+\item The DeepSeek imputation was implemented but never executed on measured data.
+\end{itemize}
+No recorded measurement is therefore used. Completing this evaluation, which the authors do not plan to do, would require re-running all twenty planned models with the corrected extraction and resolving the chance-level results.
+
+\begin{table}[H]
+\caption{\textbf{Planned and recorded runs of the earlier per-model evaluation} (not used for inference). Planned: fidelity in the run plan. Recorded: repository and precision of the committed run, and \texttt{lm-eval}'s aggregate MMLU accuracy. Log-lik./item: log-likelihoods stored per item in the per-question file (four are needed). Leaderboard: item-validated accuracy of the same repository in the leaderboard data of the main paper. $^{a}$Repository differs from the run plan.}
+\label{tab:runpod}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{llllllp{0.3\textwidth}}
+\toprule
+Model & Quarter & Planned & Recorded repository & Precision & Accuracy & Status \\
+\midrule
+\tabinput{../tables/tab_runpod.tex}
 \bottomrule
 \end{tabular}}
 \end{table}

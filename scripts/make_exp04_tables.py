@@ -475,10 +475,59 @@ def tab_sim_real():
     write("tab_sim_real.tex", "\n".join(lines) + "\n")
 
 
+def tab_runpod():
+    """Record of the earlier per-model evaluation (not used for inference).
+
+    Planned roster and fidelity: datasets/coverage/trait_definition.csv.
+    Recorded runs: datasets/phase2_eval_results.csv (lm-eval aggregate accuracy)
+    and datasets/eval_samples/*.jsonl (per-question files). Leaderboard check:
+    results/exp04_validation/per_model.csv (item-validated leaderboard accuracy).
+    """
+    import json
+    plan = pd.read_csv(ROOT / "datasets/coverage/trait_definition.csv")
+    run = pd.read_csv(ROOT / "datasets/phase2_eval_results.csv").set_index("full_name")
+    lb = pd.read_csv(R / "exp04_validation/per_model.csv")
+    lb = lb[lb.category == "validated"].assign(key=lambda d: d.model.str.lower()) \
+        .set_index("key").accuracy
+    samples = {p.name.split("__")[0]: p for p in (ROOT / "datasets/eval_samples").glob("*.jsonl")}
+    tt = lambda x: "\\texttt{" + x.split("/")[-1].replace("_", "\\_") + "}"  # noqa: E731
+    lines = []
+    for _, r in plan.iterrows():
+        name = r.full_name
+        planned = {"bf16": "bf16", "4bit": "4-bit NF4", "imputed": "imputed"}[r.fidelity]
+        if name in run.index:
+            q = run.loc[name]
+            with open(samples[name]) as f:
+                first = json.loads(f.readline())
+            nlp = len(json.loads(first["choice_logprobs"]))
+            fid = {"bf16": "bf16", "4bit": "4-bit"}[q.fidelity]
+            repo = tt(q.hf_repo) + ("$^{a}$" if q.hf_repo != r.hf_repo else "")
+            notes = [f"{nlp} log-lik./item"]
+            acc = q.acc
+            with open(samples[name]) as f:
+                all_a = sum(json.loads(x)["answer"] == 0 for x in f) / 14042
+            if abs(acc - all_a) < 5e-4:
+                notes.append("equals the all-A rate")
+            elif acc < 0.26:
+                notes.append("chance level, unresolved")
+            k = q.hf_repo.lower()
+            if k in lb.index:
+                notes.append(f"leaderboard {lb[k]:.3f}")
+            lines.append(f"{name} & {r.quarter} & {planned} & {repo} & {fid} & {acc:.3f} & "
+                         + "; ".join(notes) + " \\\\")
+        elif r.fidelity == "imputed":
+            lines.append(f"{name} & {r.quarter} & {planned} & -- & -- & -- & "
+                         "imputation specified, not executed \\\\")
+        else:
+            lines.append(f"{name} & {r.quarter} & {planned} & -- & -- & -- & "
+                         "not run (evaluation stopped after 16 models: GPU budget) \\\\")
+    write("tab_runpod.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
               tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj,
               tab_revision2, tab_robust, tab_descriptives, tab_revision3,
-              tab_revision3_inf, tab_revision3_dose, tab_sim_real):
+              tab_revision3_inf, tab_revision3_dose, tab_sim_real, tab_runpod):
         f()
     print(sorted(p.name for p in T.glob("*.tex")))

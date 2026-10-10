@@ -1,0 +1,172 @@
+diff --git a/paper/src/ieee_access_manuscript.tex b/paper/src/ieee_access_manuscript.tex
+index e447eb9..90c8e92 100644
+--- a/paper/src/ieee_access_manuscript.tex
++++ b/paper/src/ieee_access_manuscript.tex
+@@ -142,5 +142,5 @@ Correlated errors, dyadic regression, ensemble learning, Hugging Face, large lan
+ Two explanations for shared errors compete. \emph{Lineage}: a model fine-tuned from another inherits its parameters and therefore, plausibly, its blind spots. \emph{Era}: models built in the same period draw on the same data, recipes and base models and may acquire the same mistakes without shared ancestry. The two are entangled, because a fine-tune is always released after its base. We measure era by \emph{release timing}: the month each model was uploaded to Hugging Face and, in a post-hoc analysis, the month its root base model was released.
+ 
+-This paper is a diagnostic study. It measures how shared wrong answers relate to lineage and release timing in a large population of open-weight models; it does not build or test ensembles, and whether the associations translate into better voting or routing is a separate question. Because shared errors are a property of \emph{pairs} of models, we model agreement on wrong answers between pairs, with lineage and release-month gap as pair-level predictors, in a design whose analysis and sample rules were fixed before any outcome was computed. Decomposing per-model accuracy into family and era variance components, the obvious alternative, is too imprecise with the few families and release quarters real populations offer (Supplementary Section~S1); an earlier version of this work attempted it, and its findings are withdrawn (Supplementary Section~S2).
++This paper is a diagnostic study. It measures how shared wrong answers relate to lineage and release timing in a large population of open-weight models; it does not build or test ensembles, and whether the associations translate into better voting or routing is a separate question. Because shared errors are a property of \emph{pairs} of models, we model agreement on wrong answers between pairs, with lineage and release-month gap as pair-level predictors, in a design whose analysis and sample rules were fixed before any outcome was computed. Decomposing per-model accuracy into family and era variance components, the obvious alternative, is too imprecise with the few families and release quarters real populations offer (Supplementary Section~S1); an earlier version of this work attempted it, and its findings are withdrawn (Supplementary Section~S2). That attempt recorded MMLU runs for 16 of 20 planned models on a single rented GPU; an extraction error invalidated every per-question output, and none of its measurements is used here (Supplementary Section~S7).
+ 
+ \subsection{Research Questions}
+@@ -276,5 +276,5 @@ The natural first design treats each model's accuracy as the outcome and decompo
+ \centering
+ \includegraphics[width=\columnwidth]{precision_scaling.pdf}
+-\caption{\textbf{Why per-model variance decomposition is too imprecise.} Worst-case Monte Carlo RMSE of the family or era variance share across four scenarios, for staggered designs with 8 or 14 release quarters and for five candidate designs from real populations (crosses, labelled by number of models). The dashed line marks 0.10. RMSE is the error of the estimated share, not a confidence-interval half-width.}
++\caption{\textbf{Why per-model variance decomposition is too imprecise.} Worst-case Monte Carlo RMSE of the family or era variance share across four scenarios, for staggered designs with 8 or 14 release quarters and for five candidate designs from real populations (crosses, labelled by number of models). The dashed line marks 0.10. RMSE is the error of the estimated share, not a confidence-interval half-width. Traits are simulated on each design's family and quarter structure; the design labelled 16 takes only the family and quarter labels of the 16 models run in the earlier per-model evaluation, not their measured accuracies, and the figure does not validate those measurements.}
+ \label{fig:scaling}
+ \end{figure}
+@@ -547,5 +547,5 @@ Among open-weight models on the first Open LLM Leaderboard, two models that shar
+ \section*{Data Availability}
+ {\sloppy
+-Code, frozen model lists with SHA-256 hashes, Hugging Face metadata caches, validation reports and all analysis outputs are available at \url{https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models}; the README lists the commands that regenerate every reported number, table and figure from these outputs. The leaderboard's per-item details and metadata declare no licence, so the derived item-level answer files and three copied metadata fields are not redistributed; released scripts regenerate them from the public source and verify them against the recorded hashes. The analysis plan and its amendments are in the repository. Supplementary material accompanies this article.\par}
++Code, frozen model lists with SHA-256 hashes, Hugging Face metadata caches, validation reports and all analysis outputs are available at \url{https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models}; the README lists the commands that regenerate every reported number, table and figure from these outputs. The leaderboard's per-item details and metadata declare no licence, so the derived item-level answer files and three copied metadata fields are not redistributed; released scripts regenerate them from the public source and verify them against the recorded hashes. The analysis plan and its amendments are in the repository, as are the records of the earlier per-model evaluation (Supplementary Section~S7), which are not used for inference. Supplementary material accompanies this article.\par}
+ 
+ \section*{Acknowledgment}
+diff --git a/paper/src/supplement.tex b/paper/src/supplement.tex
+index 5a3cd2f..c059f24 100644
+--- a/paper/src/supplement.tex
++++ b/paper/src/supplement.tex
+@@ -14,5 +14,5 @@
+ \sloppy
+ \maketitle
+-\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), detailed robustness results for every sample (S4), the exploratory analysis of agreement as a signal of shared lineage (S5), and the post-hoc analyses added after the third review (S6). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
++\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), detailed robustness results for every sample (S4), the exploratory analysis of agreement as a signal of shared lineage (S5), the post-hoc analyses added after the third review (S6), and the record of the earlier per-model evaluation, which is not used for inference (S7). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
+ 
+ \section*{S1. Why per-model variance decomposition is not enough}\label{sec:precision}
+@@ -69,5 +69,5 @@ Sweep enforced crossing and connectedness & 100 of 105 crossed, 60 connected & C
+ LPM and GLMM both hit the era boundary in 20--60\% of replicates & Only the GLMM; LPM 0--6.7\% & Corrected \\
+ Nested-design detector: ``zero silent coverage'' & Undefined: no replicate went undetected & Corrected \\
+-Sixteen-model population as pre-specified & Four planned models not evaluated, no recorded reason; two DeepSeek models imputed & Arm not used for inference \\
++Sixteen-model population as pre-specified & Four planned models have no recorded result or reason; the DeepSeek imputation was specified but not executed; per-question outputs invalid & Arm not used for inference (Section~S7) \\
+ \bottomrule
+ \end{tabular}}
+@@ -300,3 +300,35 @@ Scenario & Shared root & Same month & Shared root & Same month \\
+ \end{table}
+ 
++\section*{S7. Record of the earlier per-model evaluation}
++This section documents an evaluation that preceded the pair-level design. It is reported as an audit record. None of its measurements enters any result of the main paper or of Sections~S3--S6, and it is not a second empirical study. Section~S1 uses only the family and quarter labels of its sixteen models to define one simulated design (the point labelled 16 in Fig.~4 of the main paper).
++
++\subsection*{Selection and plan}
++A 47-model candidate frame was reduced to a 22-model roster by a design gate that used only family $\times$ quarter occupancy, declared lineage edges, identifiability constraints and estimated cost, never measured traits (\texttt{datasets/coverage/minimum\_valid\_population.csv}, \texttt{g3\_report.md}; committed 3 August 2026, last revised 5 August). The two DeepSeek models of the roster (671B and 685B mixture-of-experts) did not fit the available compute; three re-gate variants that excluded them were infeasible because the gate then required other models of the same size class, and a rule to complete their traits by model-based multiple imputation (five draws, seed 2026) was recorded on 16 August 2026, before the first evaluation. The run plan, recorded the same day and also before the first evaluation, assigned the remaining 20 models to one rented NVIDIA A100 80\,GB (SXM4) GPU: 17 in bfloat16 and Qwen1.5-72B, Llama-3.1-70B and Llama-3.3-70B in 4-bit NF4, with MMLU 5-shot log-likelihood scoring on all 14{,}042 items through \texttt{lm-eval} 0.4.12 and \texttt{transformers} 4.57.6 (\texttt{docs/05\_Experiments/Exp02\_GPU\_Runbook.md}). The planned resources were a GPU disk of at least 300\,GB and about 604 GPU-minutes, estimated at USD 16--20 at about USD 1.60 per hour. These are planned values: no pod configuration, storage record or invoice is in the repository, so the attached disk, run time and cost actually incurred are not reported.
++
++\subsection*{What was recorded}
++Between 16 and 18 August 2026, results for 16 models were committed, one model per commit (\texttt{datasets/phase2\_eval\_results.csv}, \texttt{datasets/eval\_samples/}). TABLE~\ref{tab:runpod} compares them with the plan. Findings:
++\begin{itemize}
++\item Results for Qwen1.5-72B, Llama-3.1-70B, Llama-3.3-70B and Phi-4-reasoning-vision-15B were not found in the available records, and the reason is unknown. None of the three models planned in 4-bit was recorded.
++\item Mistral-Small-4, planned as a 32B model in bfloat16, was recorded from the repository \texttt{Mistral-Small-4-119B-2603} in 4-bit. Five further models were recorded from repositories other than those in the plan.
++\item Every per-question file stores one log-likelihood per item and predicts option~A on all 14{,}042 items: the extraction code read only the first option's score. The error was found and fixed in the code on 9 October 2026. No raw \texttt{lm-eval} output with all four scores per item was found in the repository, its full history (including stashes and unreachable commits) or the computer used for the analysis, so the per-question predictions cannot be reconstructed.
++\item The recorded accuracies are \texttt{lm-eval}'s own aggregates and do not pass through the faulty extraction, but they cannot be validated item by item. Qwen-7B's value equals the share of items whose correct answer is~A; the leaderboard's item-validated predictions give 0.584 for the same repository. Five other models score at chance level (0.23--0.25) for reasons not established, including three 24B instruction models. Mistral-Small-3.1 and 3.2 were re-run after their first results (commit message: ``corrected config''; the change is not recorded) and remained at chance. Phi-1.5, the only other model also in the validated leaderboard data, agrees with it (0.422 against 0.424).
++\item The DeepSeek imputation was implemented but never executed on measured data.
++\end{itemize}
++No recorded measurement is therefore used. Completing this evaluation would require re-running all twenty planned models with the corrected extraction and resolving the chance-level results.
++
++\begin{table}[H]
++\caption{\textbf{Planned and recorded runs of the earlier per-model evaluation} (not used for inference). Planned: fidelity in the run plan. Recorded: repository and precision of the committed run, and \texttt{lm-eval}'s aggregate MMLU accuracy. Log-lik./item: log-likelihoods stored per item in the per-question file (four are needed). Leaderboard: item-validated accuracy of the same repository in the leaderboard data of the main paper. $^{a}$Repository differs from the run plan.}
++\label{tab:runpod}
++\centering
++\footnotesize
++\setlength{\tabcolsep}{2.5pt}
++\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{\begin{tabular}{llllllp{0.3\textwidth}}
++\toprule
++Model & Quarter & Planned & Recorded repository & Precision & Accuracy & Status \\
++\midrule
++\tabinput{../tables/tab_runpod.tex}
++\bottomrule
++\end{tabular}}
++\end{table}
++
+ \end{document}
+diff --git a/scripts/make_exp04_tables.py b/scripts/make_exp04_tables.py
+index f5f3ced..018cd21 100644
+--- a/scripts/make_exp04_tables.py
++++ b/scripts/make_exp04_tables.py
+@@ -476,9 +476,58 @@ def tab_sim_real():
+ 
+ 
++def tab_runpod():
++    """Record of the earlier per-model evaluation (not used for inference).
++
++    Planned roster and fidelity: datasets/coverage/trait_definition.csv.
++    Recorded runs: datasets/phase2_eval_results.csv (lm-eval aggregate accuracy)
++    and datasets/eval_samples/*.jsonl (per-question files). Leaderboard check:
++    results/exp04_validation/per_model.csv (item-validated leaderboard accuracy).
++    """
++    import json
++    plan = pd.read_csv(ROOT / "datasets/coverage/trait_definition.csv")
++    run = pd.read_csv(ROOT / "datasets/phase2_eval_results.csv").set_index("full_name")
++    lb = pd.read_csv(R / "exp04_validation/per_model.csv")
++    lb = lb[lb.category == "validated"].assign(key=lambda d: d.model.str.lower()) \
++        .set_index("key").accuracy
++    samples = {p.name.split("__")[0]: p for p in (ROOT / "datasets/eval_samples").glob("*.jsonl")}
++    tt = lambda x: "\\texttt{" + x.split("/")[-1].replace("_", "\\_") + "}"  # noqa: E731
++    lines = []
++    for _, r in plan.iterrows():
++        name = r.full_name
++        planned = {"bf16": "bf16", "4bit": "4-bit NF4", "imputed": "imputed"}[r.fidelity]
++        if name in run.index:
++            q = run.loc[name]
++            with open(samples[name]) as f:
++                first = json.loads(f.readline())
++            nlp = len(json.loads(first["choice_logprobs"]))
++            fid = {"bf16": "bf16", "4bit": "4-bit"}[q.fidelity]
++            repo = tt(q.hf_repo) + ("$^{a}$" if q.hf_repo != r.hf_repo else "")
++            notes = [f"{nlp} log-lik./item"]
++            acc = q.acc
++            with open(samples[name]) as f:
++                all_a = sum(json.loads(x)["answer"] == 0 for x in f) / 14042
++            if abs(acc - all_a) < 5e-4:
++                notes.append("equals the all-A rate")
++            elif acc < 0.26:
++                notes.append("chance level, unresolved")
++            k = q.hf_repo.lower()
++            if k in lb.index:
++                notes.append(f"leaderboard {lb[k]:.3f}")
++            lines.append(f"{name} & {r.quarter} & {planned} & {repo} & {fid} & {acc:.3f} & "
++                         + "; ".join(notes) + " \\\\")
++        elif r.fidelity == "imputed":
++            lines.append(f"{name} & {r.quarter} & {planned} & -- & -- & -- & "
++                         "imputation specified, not executed \\\\")
++        else:
++            lines.append(f"{name} & {r.quarter} & {planned} & -- & -- & -- & "
++                         "no result found; reason unknown \\\\")
++    write("tab_runpod.tex", "\n".join(lines) + "\n")
++
++
+ if __name__ == "__main__":
+     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
+               tab_pairgate, tab_exploratory, tab_itemnull, tab_gateaudit, tab_rawadj,
+               tab_revision2, tab_robust, tab_descriptives, tab_revision3,
+-              tab_revision3_inf, tab_revision3_dose, tab_sim_real):
++              tab_revision3_inf, tab_revision3_dose, tab_sim_real, tab_runpod):
+         f()
+     print(sorted(p.name for p in T.glob("*.tex")))
+diff --git a/paper/tables/tab_runpod.tex b/paper/tables/tab_runpod.tex
+new file mode 100644
+index 0000000..ead4975
+--- /dev/null
++++ b/paper/tables/tab_runpod.tex
+@@ -0,0 +1,23 @@
++% generated by scripts/make_exp04_tables.py -- do not edit
++Llama-1 & 2023Q1 & bf16 & \texttt{llama-7b}$^{a}$ & bf16 & 0.342 & 1 log-lik./item \\
++Phi-1 & 2023Q2 & bf16 & \texttt{phi-1} & bf16 & 0.248 & 1 log-lik./item; chance level, unresolved \\
++Mistral-7B & 2023Q3 & bf16 & \texttt{Mistral-7B-Instruct-v0.3} & bf16 & 0.619 & 1 log-lik./item \\
++Phi-1.5 & 2023Q3 & bf16 & \texttt{phi-1\_5} & bf16 & 0.422 & 1 log-lik./item; leaderboard 0.424 \\
++Qwen-7B & 2023Q3 & bf16 & \texttt{Qwen-7B} & bf16 & 0.229 & 1 log-lik./item; equals the all-A rate; leaderboard 0.584 \\
++Phi-2 & 2023Q4 & bf16 & \texttt{phi-2} & bf16 & 0.564 & 1 log-lik./item \\
++Qwen1.5 & 2024Q1 & 4-bit NF4 & -- & -- & -- & no result found; reason unknown \\
++Phi-3 & 2024Q2 & bf16 & \texttt{Phi-3-medium-4k-instruct} & bf16 & 0.780 & 1 log-lik./item \\
++Llama-3.1 & 2024Q3 & 4-bit NF4 & -- & -- & -- & no result found; reason unknown \\
++Llama-3.3 & 2024Q4 & 4-bit NF4 & -- & -- & -- & no result found; reason unknown \\
++Phi-4 & 2024Q4 & bf16 & \texttt{Phi-4-mini-instruct} & bf16 & 0.686 & 1 log-lik./item \\
++Mistral-Small-3 & 2025Q1 & bf16 & \texttt{Mistral-Small-24B-Instruct-2501}$^{a}$ & bf16 & 0.807 & 1 log-lik./item \\
++Mistral-Small-3.1 & 2025Q1 & bf16 & \texttt{Mistral-Small-3.1-24B-Instruct-2503} & bf16 & 0.234 & 1 log-lik./item; chance level, unresolved \\
++Gemma-3n & 2025Q2 & bf16 & \texttt{gemma-3n-E4B-it}$^{a}$ & bf16 & 0.636 & 1 log-lik./item \\
++Mistral-Small-3.2 & 2025Q2 & bf16 & \texttt{Mistral-Small-3.2-24B-Instruct-2506}$^{a}$ & bf16 & 0.231 & 1 log-lik./item; chance level, unresolved \\
++Phi-4-reasoning-plus & 2025Q2 & bf16 & \texttt{Phi-4-reasoning-plus} & bf16 & 0.778 & 1 log-lik./item \\
++DeepSeek-V3.1 & 2025Q3 & imputed & -- & -- & -- & imputation specified, not executed \\
++DeepSeek-V3.2 & 2025Q4 & imputed & -- & -- & -- & imputation specified, not executed \\
++Devstral-2 & 2025Q4 & bf16 & \texttt{Devstral-Small-2-24B-Instruct-2512}$^{a}$ & bf16 & 0.251 & 1 log-lik./item; chance level, unresolved \\
++Mistral-Small-4 & 2026Q1 & bf16 & \texttt{Mistral-Small-4-119B-2603}$^{a}$ & 4-bit & 0.243 & 1 log-lik./item; chance level, unresolved \\
++Phi-4-reasoning-vision-15B & 2026Q1 & bf16 & -- & -- & -- & no result found; reason unknown \\
++Gemma-4-12B & 2026Q2 & bf16 & \texttt{gemma-4-12b-it} & bf16 & 0.440 & 1 log-lik./item \\
