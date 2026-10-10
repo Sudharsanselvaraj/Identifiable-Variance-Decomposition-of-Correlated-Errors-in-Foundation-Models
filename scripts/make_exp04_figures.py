@@ -33,19 +33,29 @@ FIG = ROOT / "paper" / "figures"
 
 # ------------------------------------------------------------------ style
 COL, FULL = 3.5, 7.16                        # IEEE column / text width (in)
-BLUE, LBLUE = "#1f4e79", "#9fb8d3"           # lineage / primary
-ORANGE, LORANGE = "#b8652a", "#e3b48f"       # release time
-GREY, LGREY = "#595959", "#bfbfbf"
-BOX_FACE, BOX_EDGE = "#eef3f8", "#5b7a99"
-RED = "#a61c1c"
+# Palette and style follow the authors' earlier manuscript (colours sampled from
+# its figures): steel blue, salmon, sage green, light-grey boxes, DejaVu Sans.
+BLUE, LBLUE = "#6c8ebf", "#b5c7df"           # lineage / primary
+ORANGE, LORANGE = "#d8887f", "#ecc3be"       # release time (salmon)
+GREEN = "#8fbc94"
+GREY, LGREY = "#606060", "#c0c0c0"
+BOX_FACE, BOX_EDGE = "#f5f5f5", "#c0c0c0"
+HILITE = "#e9eef5"
+RED = "#c44e52"                              # criterion / threshold lines
+INK = "#333333"
 plt.rcParams.update({
-    "font.family": "STIXGeneral", "mathtext.fontset": "stix", "font.size": 8,
-    "axes.titlesize": 8.5, "axes.labelsize": 8, "xtick.labelsize": 8, "ytick.labelsize": 8,
-    "legend.fontsize": 8, "axes.linewidth": 0.6, "xtick.major.width": 0.6,
+    "font.family": "sans-serif", "font.sans-serif": ["Arial", "DejaVu Sans"], "font.size": 8,
+    "axes.titlesize": 9, "axes.labelsize": 8, "xtick.labelsize": 8, "ytick.labelsize": 8,
+    "legend.fontsize": 8, "axes.linewidth": 0.7, "axes.edgecolor": "#b0b0b0",
+    "axes.labelcolor": INK, "text.color": INK, "axes.titlecolor": INK,
+    "xtick.color": GREY, "ytick.color": GREY, "xtick.major.width": 0.6,
     "ytick.major.width": 0.6, "xtick.major.size": 2.5, "ytick.major.size": 2.5,
     "axes.spines.top": False, "axes.spines.right": False,
-    "pdf.fonttype": 42, "lines.linewidth": 0.9, "errorbar.capsize": 1.8,
-    "axes.titleweight": "bold", "axes.titlelocation": "left",
+    "axes.grid": True, "axes.grid.axis": "y", "grid.color": "#e5e5e5",
+    "grid.linewidth": 0.6, "axes.axisbelow": True,
+    "legend.frameon": False,
+    "pdf.fonttype": 42, "lines.linewidth": 1.0, "errorbar.capsize": 2.0,
+    "axes.titleweight": "bold", "axes.titlelocation": "center",
 })
 Z = 1.959964
 SAMPLES = {"primary": "Primary", "primary_S2": "Primary, acc ≥ 0.30",
@@ -59,7 +69,11 @@ def save(fig, name: str) -> str:
 
 
 def zero(ax, horizontal=False):
-    (ax.axhline if horizontal else ax.axvline)(0, color=GREY, lw=0.6, ls=(0, (3, 2)), zorder=0)
+    (ax.axhline if horizontal else ax.axvline)(0, color="#999999", lw=0.7, ls=(0, (4, 3)),
+                                               zorder=0)
+    if not horizontal:                       # estimates on x: grid on x, not y
+        ax.grid(axis="y", visible=False)
+        ax.grid(axis="x", visible=True)
 
 
 def box(ax, x, y, w, h, text, face=BOX_FACE, edge=BOX_EDGE, size=8.5, bold_first=True,
@@ -69,16 +83,16 @@ def box(ax, x, y, w, h, text, face=BOX_FACE, edge=BOX_EDGE, size=8.5, bold_first
     lines = text.split("\n")
     if bold_first:
         ax.text(x + w / 2, y + h - 0.13 * h, lines[0], ha="center", va="top", fontsize=size,
-                weight="bold", transform=ax.transAxes)
+                weight="bold", color=INK, transform=ax.transAxes)
         ax.text(x + w / 2, y + 0.40 * h, "\n".join(lines[1:]),
-                ha="center", va="center", fontsize=size - 0.4, transform=ax.transAxes,
-                linespacing=1.25)
+                ha="center", va="center", fontsize=size - 0.4, color="#505050",
+                transform=ax.transAxes, linespacing=1.25)
     else:
         ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=size,
                 transform=ax.transAxes, linespacing=1.25)
 
 
-def arrow(ax, p, q, color=BOX_EDGE, style="-|>", lw=0.8, rad=0.0):
+def arrow(ax, p, q, color="#999999", style="-|>", lw=0.8, rad=0.0):
     ax.add_patch(FancyArrowPatch(p, q, arrowstyle=style, mutation_scale=7, color=color,
                                  lw=lw, transform=ax.transAxes,
                                  connectionstyle=f"arc3,rad={rad}"))
@@ -159,16 +173,16 @@ def fig_precision():
 def fig_workflow():
     fig, ax = blank(FULL, 1.75)
     ax.set_xlim(0, 1); ax.set_ylim(0, 1)
-    steps = [("Source", "leaderboard\nper-item MMLU"), ("Lineage", "declared parent\nchain → root"),
-             ("Freeze", "≤ 40 per root,\nhashed lists"), ("Validate", "argmax = stored\ncorrectness"),
-             ("Pairs", "same wrong option\nif both wrong"), ("Estimate", "pair regression,\ndyadic SEs"),
-             ("Check", "robustness\n(partly post hoc)")]
+    steps = [("Source", "leaderboard,\nper-item MMLU"), ("Lineage", "declared\nparents → root"),
+             ("Freeze", "≤ 40 per root,\nhashed lists"), ("Validate", "every item vs\nstored answer"),
+             ("Pairs", "same wrong\noption"), ("Estimate", "pair model,\ndyadic SEs"),
+             ("Check", "robustness,\npartly post hoc")]
     n, gap = len(steps), 0.012
     w, y0, h = (1 - gap * (n - 1) - 0.004) / n, 0.08, 0.56
     for k, (t, body) in enumerate(steps):
         x = 0.002 + k * (w + gap)
         last = k == n - 1
-        box(ax, x, y0, w, h, f"{k + 1}  {t}\n{body}", size=8.6,
+        box(ax, x, y0, w, h, f"{k + 1}  {t}\n{body}", size=8.5,
             face="#f6f6f6" if last else BOX_FACE, edge=GREY if last else BOX_EDGE,
             ls="--" if last else "-")
         if k:
@@ -235,27 +249,27 @@ def fig_dataflow():
     ax.set_xlim(0, 1); ax.set_ylim(0, 1)
     W, H = 0.165, 0.24
     ys = {"p": 0.55, "x": 0.15}
-    box(ax, 0.0, 0.27, 0.15, 0.40, f"Leaderboard v1\n{fmt(d['total'])} models\n"
-        "MMLU, 14,042 items", size=8.6)
+    box(ax, 0.0, 0.27, 0.15, 0.40, f"Leaderboard\n{fmt(d['total'])} models\n"
+        "14,042 MMLU items", size=8.5)
     cols = [0.20, 0.405, 0.61]
     for x, t in zip(cols, ("Eligible", "Frozen sample (≤ 40 per root)", "Validated")):
         ax.text(x + W / 2, 0.86, t, ha="center", va="bottom", fontsize=8.5, weight="bold")
-    vals = {"p": ("Primary", [f"{fmt(d['elig_p'])} (card links)", f"{fmt(d['frozen_p'])}",
+    vals = {"p": ("Primary", [f"{fmt(d['elig_p'])} (card)", f"{fmt(d['frozen_p'])}",
                               f"{fmt(d['val_p'])} ({fmt(strict['primary_strict'])} strict)"]),
-            "x": ("Expanded", [f"{fmt(d['elig_x'])} (+ config links)", f"{fmt(d['frozen_x'])}",
+            "x": ("Expanded", [f"{fmt(d['elig_x'])} (+ config)", f"{fmt(d['frozen_x'])}",
                                f"{fmt(d['val_x'])} ({fmt(strict['expanded_strict'])} strict)"])}
     for key, (lab, vv) in vals.items():
         y = ys[key]
         arrow(ax, (0.15, 0.47), (0.20, y + H / 2))
         for k, x in enumerate(cols):
             box(ax, x, y, W, H, f"{lab}\n{vv[k]}", size=8.5,
-                face="#e3ecf5" if k == 2 else BOX_FACE)
+                face=HILITE if k == 2 else BOX_FACE, edge=BLUE if k == 2 else BOX_EDGE)
             if k:
                 arrow(ax, (cols[k - 1] + W + 0.001, y + H / 2), (x - 0.001, y + H / 2))
     ax.text(0.588, 0.47, "item-level checks", ha="center", va="center", fontsize=8, color=GREY,
             style="italic")
-    box(ax, 0.82, 0.25, 0.18, 0.44, f"Accepted\n{fmt(len(acc))} unique\nmodels "
-        f"({both} in both)", face="#dce8f4", edge=BLUE, lw=1.2, size=8.6)
+    box(ax, 0.82, 0.25, 0.18, 0.44, f"Accepted\n{fmt(len(acc))} models\n"
+        f"({both} in both)", face=GREEN, edge="#6f9a75", lw=0.9, size=8.5)
     for key in ys:
         arrow(ax, (0.61 + W, ys[key] + H / 2), (0.82, 0.47), color=BLUE)
     ax.text(0.5, 0.0, f"Excluded and logged, none replaced: {c.get('no_complete_run', 0)} no "
@@ -293,7 +307,7 @@ def fig_gate():
     ax.text(2.45, 10.3, "10% criterion", color=RED, fontsize=7.5, ha="right", va="bottom")
     ax.set_xticks(range(3), ["root", "0 mo", "1–2 mo"])
     ax.set_ylabel("Rejection rate (%)"); ax.set_ylim(0, 16)
-    ax.set_title("(a) Null: false rejection")
+    ax.set_title("(a) Null")
     # (b) leakage
     ax = axes[1]
     labs, xs = [], 0
@@ -315,7 +329,7 @@ def fig_gate():
                 (1.25, 15.2), fontsize=7.5, color=RED, arrowprops=dict(arrowstyle="-", color=RED,
                                                                      lw=0.6))
     ax.set_xticks(range(xs), labs, rotation=30, ha="right")
-    ax.set_ylim(0, 17); ax.set_title("(b) Cross-leakage: wrong term rejects")
+    ax.set_ylim(0, 17); ax.set_title("(b) Leakage")
     # (c) power
     ax = axes[2]
     labs, xs = [], 0
@@ -327,8 +341,7 @@ def fig_gate():
             labs.append(f"{lab} | λ={float(lam):.2f}"); xs += 1
     ax.axhline(80, color=RED, ls=(0, (3, 2)), lw=0.7)
     ax.set_xticks(range(xs), labs, rotation=30, ha="right")
-    ax.text(3.45, 81.5, "80% criterion (λ = 0.05)", color=RED, fontsize=7.5, ha="right",
-            va="bottom")
+    ax.text(3.45, 78, "80% criterion", color=RED, fontsize=7.5, ha="right", va="top")
     ax.set_ylim(0, 105); ax.set_title("(c) Power")
     for ax in axes:
         ax.set_xlim(-0.5, len(ax.get_xticks()) - 0.5)
@@ -383,7 +396,7 @@ def fig_forest():
                 label="sensitivity analysis")]
     fig.legend(handles=h, loc="upper center", ncol=2, frameon=False, fontsize=7.5,
                bbox_to_anchor=(0.6, 1.0))
-    fig.tight_layout(pad=0.3, w_pad=0.6, rect=(0, 0, 1, 0.95))
+    fig.tight_layout(pad=0.3, w_pad=0.6, rect=(0, 0, 1, 0.93))
     return save(fig, "exp04_forest")
 
 
@@ -548,9 +561,9 @@ def fig_controls():
     ax.set_yticks(y, [SAMPLES[p] for p in pops])
     ax.set_xlabel("Coefficient (95% CI, model-level dyadic)")
     fig.legend(*ax.get_legend_handles_labels(), frameon=False, fontsize=7.5,
-               loc="upper center", ncol=2, bbox_to_anchor=(0.55, 1.0), handletextpad=0.2)
+               loc="upper center", ncol=1, bbox_to_anchor=(0.55, 1.0), handletextpad=0.2)
     ax.set_xlim(-0.01, 0.16)
-    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.86))
+    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.80))
     return save(fig, "fig_controls")
 
 
@@ -569,7 +582,9 @@ def fig_heatmap(top: int = 10):
     data = tab.to_numpy().astype(float)
     masked = np.ma.masked_equal(data, 0)
     from matplotlib.colors import LogNorm
-    cmap = plt.get_cmap("Blues").copy(); cmap.set_bad("white")
+    from matplotlib.colors import LinearSegmentedColormap
+    cmap = LinearSegmentedColormap.from_list("steel", ["#eef3f9", "#b5c7df", BLUE, "#3f5f8f"])
+    cmap.set_bad("white")
     im = ax.imshow(masked, aspect="auto", cmap=cmap, norm=LogNorm(1, data.max()),
                    interpolation="none")
     for (r, c), v in np.ndenumerate(data):
@@ -584,6 +599,7 @@ def fig_heatmap(top: int = 10):
     ax.set_yticks(range(len(names)), names, fontsize=8.0)
     ax.set_xticks(np.arange(-0.5, len(months)), minor=True)
     ax.set_yticks(np.arange(-0.5, len(names)), minor=True)
+    ax.grid(False)
     ax.grid(which="minor", color="#e6e6e6", lw=0.3)
     ax.tick_params(which="minor", length=0)
     ax.axhline(len(keep) - 0.5, color=GREY, lw=0.6)
@@ -627,6 +643,7 @@ def fig_gap():
                             textcoords="offset points", xytext=(0, 3 if flag else -8),
                             ha="center", fontsize=7.5, color=c)
     ax.set_xticks(range(5), lab)
+    ax.set_xlim(-0.45, 4.45)
     ax.set_xlabel("Release-month gap between the two models")
     ax.set_ylabel("P(same wrong | both wrong)")
     ax.set_ylim(0.2, 1.0)
@@ -649,7 +666,7 @@ def fig_dose():
              "(a) Tree distance"),
             (axes[1], "lineage dose-response: relation type",
              ["ancestor-descendant", "siblings", "more distant"],
-             ["ancestor–\ndescendant", "siblings", "more\ndistant"], "(b) Relation")):
+             ["direct\nline", "siblings", "more\ndistant"], "(b) Relation")):
         d = rv[(rv.population == "primary") & (rv.analysis == analysis)].set_index("term").loc[terms]
         x = np.arange(len(terms))
         ax.errorbar(x, d.estimate, yerr=[d.estimate - d.ci95_low, d.ci95_high - d.estimate],
@@ -682,7 +699,7 @@ def fig_timing():
         r = rv[(rv.population == pop) & (rv.analysis ==
                "root release month in place of upload month")].set_index("term").loc[bins]
         ax.errorbar(x - 0.1, u.estimate, yerr=[u.estimate - u.ci_low, u.ci_high - u.estimate],
-                    fmt="o", ms=3.5, color=ORANGE, lw=1, label="upload month (pre-specified)")
+                    fmt="o", ms=3.5, color=ORANGE, lw=1, label="upload month")
         ax.errorbar(x + 0.1, r.estimate, yerr=[r.estimate - r.ci95_low, r.ci95_high - r.estimate],
                     fmt="s", ms=3.5, color=GREY, mfc="white", lw=1, label="root release month")
         zero(ax, horizontal=True)
@@ -751,7 +768,7 @@ def fig_heterogeneity():
     x = np.arange(len(c))
     ax.errorbar(x, c.estimate, yerr=[c.estimate - c.ci95_low, c.ci95_high - c.estimate],
                 fmt="s", ms=3.5, color=BLUE, lw=1)
-    ax.set_xticks(x, ["<0.30", "0.30–\n0.50", "0.50–\n0.60", "≥0.60"])
+    ax.set_xticks(x, ["<.30", ".30–\n.50", ".50–\n.60", "≥.60"])
     ax.set_xlabel("Lower accuracy of the pair")
     ax.set_title("(b) By capability")
     ax.set_ylim(0, 0.32)
@@ -783,7 +800,7 @@ def fig_detection():
     fig, axes = plt.subplots(1, 2, figsize=(COL, 2.3))
     for ax, f, xl, title, key in (
             (axes[0], "agreement_hist.csv", "P(same wrong | both wrong)", "(a) Agreement", "auc_raw"),
-            (axes[1], "residual_hist.csv", "Agreement net of accuracy and gap",
+            (axes[1], "residual_hist.csv", "Net of accuracy and gap",
              "(b) Adjusted", "auc_net_of_accuracy_and_gap")):
         h = pd.read_csv(RES / "exp04_heterogeneity" / f)
         w = h.bin_low.diff().iloc[1]
@@ -812,7 +829,7 @@ def fig_accuracy():
     ax.hist(pop.acc, bins=np.arange(0.2, 0.85, 0.025), color=LBLUE, edgecolor=BLUE, lw=0.5)
     ax.axvline(0.25, color=GREY, ls=(0, (3, 2)), lw=0.7)
     ax.axvline(0.30, color=RED, ls=(0, (3, 2)), lw=0.7)
-    ax.text(0.31, ax.get_ylim()[1] * 0.92, "S2 cut-off", color=RED, fontsize=7.5)
+    ax.text(0.32, ax.get_ylim()[1] * 0.92, "S2\ncut-off", color=RED, fontsize=7.5, va="top")
     ax.set_xlabel("Accuracy")
     ax.set_ylabel("Models")
     ax.set_title("(a) Distribution")
@@ -823,7 +840,7 @@ def fig_accuracy():
     g = pop.groupby(q).acc
     med = g.median()[g.size() >= 10]                 # quarters with at least 10 models
     qx = [(p.year - 2022) * 12 + p.end_time.month - 1 for p in med.index]
-    ax.plot(qx, med.values, "-", color=ORANGE, lw=1.4, label="quarterly median (≥ 10 models)")
+    ax.plot(qx, med.values, "-", color=ORANGE, lw=1.4, label="quarterly median")
     ax.axhline(0.25, color=GREY, ls=(0, (3, 2)), lw=0.7)
     ticks = [(y - 2022) * 12 + 1 for y in (2022, 2023, 2024)]
     ax.set_xticks(ticks, ["2022", "2023", "2024"])
