@@ -734,9 +734,9 @@ def fig_gap():
         ax.plot(x, m, marker=mk, ms=3.2, color=c, label=name)
         for k in range(5):
             if cnt[k] >= MIN_PAIRS:
-                ax.annotate(f"{cnt[k]:,}", (x[k], q[k, 1] if flag else q[k, 0]),
-                            textcoords="offset points", xytext=(0, 3 if flag else -8),
-                            ha="center", fontsize=7.5, color=c)
+                ax.annotate(f"{cnt[k]:,}", (x[k], q[k, 1] if flag else 0.215),
+                            textcoords="offset points", xytext=(0, 3 if flag else 0),
+                            ha="center", va="bottom", fontsize=7.5, color=c)
     ax.set_xticks(range(5), lab)
     ax.set_xlim(-0.45, 4.45)
     ax.set_xlabel("Release-month gap between the two models")
@@ -812,28 +812,23 @@ def fig_timing():
 
 # ------------------------------------------------------------------ item nulls (main text)
 def fig_itemnull_main():
+    """Shared-root coefficient under the item-level nulls (levels: supplement)."""
     n = pd.read_csv(RES / "exp04_item_null/item_null.csv")
     outs = [("pre-registered: same-wrong agreement", "observed", GREY, "o"),
             ("N1a: minus item distractor null (all models)", "N1a", BLUE, "s"),
             ("N1b: minus item distractor null (roots weighted equally)", "N1b", LBLUE, "D")]
     pops = list(SAMPLES)
     x = np.arange(len(pops))
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.45))
+    fig, ax = plt.subplots(figsize=(COL, 2.2))
     for k, (o, lab, c, mk) in enumerate(outs):
         d = n[(n.outcome == o) & (n.term == "same_root")].set_index("population").loc[pops]
-        axes[0].plot(x + (k - 1) * 0.18, d.outcome_mean, mk, color=c, ms=4.5, label=lab,
-                     mfc=c if k < 2 else "white")
-        axes[1].errorbar(x + (k - 1) * 0.18, d.estimate, yerr=Z * d.se_jackknife, fmt=mk,
-                         ms=3.5, color=c, lw=1, mfc=c if k < 2 else "white")
-    axes[0].set_ylim(-0.03, 0.62); axes[0].set_ylabel("Mean over pairs")
-    axes[0].set_title("(a) Level")
-    axes[1].set_ylim(0, 0.17); axes[1].set_ylabel("Shared-root coefficient")
-    axes[1].set_title("(b) Lineage contrast")
-    for ax in axes:
-        zero(ax, horizontal=True)
-        ax.set_xticks(x, ["P", "P-S2", "E", "E-S2"])
-    axes[0].legend(frameon=False, loc="center right", fontsize=8, handletextpad=0.2)
-    fig.tight_layout(pad=0.3, w_pad=0.8)
+        ax.errorbar(x + (k - 1) * 0.18, d.estimate, yerr=Z * d.se_jackknife, fmt=mk,
+                    ms=3.5, color=c, lw=1, mfc=c if k < 2 else "white", label=lab)
+    ax.set_ylim(0, 0.17); ax.set_ylabel("Shared-root coefficient")
+    zero(ax, horizontal=True)
+    ax.set_xticks(x, ["Primary", "Primary, S2", "Expanded", "Expanded, S2"])
+    ax.legend(frameon=False, loc="lower center", ncol=3, fontsize=8, handletextpad=0.2)
+    fig.tight_layout(pad=0.3)
     return save(fig, "fig_item_null_main")
 
 

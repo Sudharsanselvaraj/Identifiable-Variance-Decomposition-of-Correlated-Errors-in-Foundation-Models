@@ -7,13 +7,21 @@
 \renewcommand{\thefigure}{S\arabic{figure}}
 \graphicspath{{../figures/}}
 \makeatletter\newcommand{\tabinput}[1]{\@@input #1 }\makeatother
+\floatstyle{ruled}
+\newfloat{algorithm}{tbp}{loa}
+\floatname{algorithm}{Algorithm}
+\renewcommand{\thealgorithm}{S\arabic{algorithm}}
+\newcounter{algstep}
+\newenvironment{algsteps}{\footnotesize\setcounter{algstep}{0}\begin{list}{\textbf{\thealgstep:}}{\usecounter{algstep}\setlength{\labelwidth}{14pt}\setlength{\labelsep}{4pt}\setlength{\leftmargin}{20pt}\setlength{\itemsep}{1pt}\setlength{\parsep}{0pt}\setlength{\topsep}{3pt}}}{\end{list}}
+\newcommand{\algind}[1]{\hspace*{#1.1em}}
+\newcommand{\algkw}[1]{\textbf{#1}}
 \title{Supplementary Material\\[4pt]\large Lineage and Release Timing in Correlated Errors of Open-Weight Language Models: A Pair-Level Study}
 \author{Sudharsan S, S. Kanaga Suba Raja, Shree Harish V,\\ Chin-Shiuh Shieh, Mong-Fong Horng, Lavanya R}
 \date{}
 \begin{document}
 \sloppy
 \maketitle
-\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), detailed robustness results for every sample (S4), the exploratory analysis of agreement as a signal of shared lineage (S5), the post-hoc analyses added after the third review (S6), and the execution record and data-integrity audit of the earlier per-model evaluation, which is not used for inference (S7). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
+\noindent This supplement holds material moved from the main paper: the per-model precision analysis that motivates the pair-level design (S1), the record of findings withdrawn from the earlier version of this work (S2), the simulation check and its post-hoc audit (S3), detailed robustness results for every sample (S4), the exploratory analysis of agreement as a signal of shared lineage (S5), the post-hoc analyses added after the third review (S6), and the execution record and data-integrity audit of the earlier per-model evaluation, which is not used for inference (S7); and the lineage-resolution algorithm (S8). Every table and figure is generated from the committed outputs by the repository's table and figure scripts.
 
 \section*{S1. Why per-model variance decomposition is not enough}\label{sec:precision}
 
@@ -29,7 +37,7 @@ Y_i &= \mu + \alpha_{f(i)} + \beta_{e(i)} + u_i,\\
 so that $\operatorname{Var}(\mathbf{y}) = \sigma^2_L Z_F Z_F^\top + \sigma^2_E Z_E Z_E^\top + \sigma^2_U I$, with only the intercept as a fixed effect. The variance components are identified when the covariance basis $\{Z_F Z_F^\top, Z_E Z_E^\top, I\}$ is linearly independent. The rank of the fixed-effects dummy design $[\mathbf{1} \mid Z_F \mid Z_E]$, used as the gate in the earlier version of this work, is not the relevant condition for this model: for the sixteen models evaluated there, that design is rank-deficient (rank 14 of 15) while the covariance basis has full rank (3 of 3). Its condition number also depends on the arbitrary choice of reference level (TABLE~\ref{tab:precision}).
 
 \subsection*{Precision}
-Identification does not imply precision. For each design we compute the expected restricted-likelihood information $I_{jk} = \tfrac12\operatorname{tr}(P V_j P V_k)$ at four share scenarios (lineage-dominant 0.5/0.2/0.3, era-dominant 0.2/0.5/0.3, balanced, and low-signal 0.1/0.1/0.8), the delta-method standard error of each share, and, as the verdict, the Monte Carlo root-mean-square error (RMSE) of the share estimates under the same REML estimator (500 replicates per scenario). The analytic standard error tracks the Monte Carlo RMSE closely (e.g., 0.289 versus 0.285 for the sixteen-model design), so it can be used before any measurement.
+Identification does not imply precision. For each design we compute the expected restricted-likelihood information $I_{jk} = \tfrac12\operatorname{tr}(P V_j P V_k)$ at four share scenarios (lineage-dominant 0.5/0.2/0.3, era-dominant 0.2/0.5/0.3, balanced, and low-signal 0.1/0.1/0.8), the delta-method standard error of each share, and, as the verdict, the Monte Carlo root-mean-square error (RMSE) of the share estimates under the same REML estimator (500 replicates per scenario). The analytic standard error approximates the Monte Carlo RMSE (e.g., 0.289 versus 0.285 for the family share of the sixteen-model design in the lineage-dominant scenario) but overstates it in the low-signal scenario (era share: 0.411 versus 0.275), so it is a conservative screen before any measurement and the Monte Carlo RMSE is the verdict.
 
 \begin{table}[H]
 \caption{\textbf{Precision of family and era variance shares for per-model traits.} FE: fixed-effects dummy design used as a gate in the earlier version; $\kappa$ range is over every choice of reference levels. Covariance-basis rank 3/3 means the variance components are identified. The last column is the worst-case Monte Carlo RMSE of either share across four scenarios (500 replicates each).}
@@ -45,9 +53,17 @@ Design & Families & Quarters & FE full rank & $\kappa(X^\top X)$ range & Cov.\ b
 \end{tabular}}
 \end{table}
 
-No design reaches an RMSE of 0.10 for both shares (TABLE~\ref{tab:precision}): not the sixteen evaluated models (0.30), not the 47-model candidate frame (0.19), and not the 30-model configuration the earlier version described as sufficient (0.19). Removing the single model responsible for the fixed-effects rank deficiency leaves the RMSE unchanged (0.302). The binding constraint is the number of \emph{levels} of each factor: more models per level help only up to a point (with six families and fourteen quarters, 22 models give 0.256 and 47 give 0.189). In staggered designs (main paper, Fig.~4), bringing both shares within $\pm 0.10$ requires on the order of sixty families and fourteen quarters; with eight quarters the era share never falls below about 0.14. Because release quarters are few by construction, a per-model decomposition is a poor instrument for the paper's research questions in populations like those examined here. Within the designs and scenarios examined, this motivates the pair-level design; it does not show that the shares are inestimable under every design, only that the required numbers of families and quarters exceed those available.
+No design reaches an RMSE of 0.10 for both shares (TABLE~\ref{tab:precision}): not the sixteen evaluated models (0.30), not the 47-model candidate frame (0.19), and not the 30-model configuration the earlier version described as sufficient (0.19). Removing the single model responsible for the fixed-effects rank deficiency leaves the RMSE unchanged (0.302). The binding constraint is the number of \emph{levels} of each factor: more models per level help only up to a point (with six families and fourteen quarters, 22 models give 0.256 and 47 give 0.189). In staggered designs (Fig.~\ref{fig:scaling}), bringing both shares within $\pm 0.10$ requires on the order of sixty families and fourteen quarters; with eight quarters the era share never falls below about 0.14. Because release quarters are few by construction, a per-model decomposition is a poor instrument for the paper's research questions in populations like those examined here. Within the designs and scenarios examined, this motivates the pair-level design; it does not show that the shares are inestimable under every design, only that the required numbers of families and quarters exceed those available.
 
 
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.62\textwidth]{precision_scaling.pdf}
+\caption{\textbf{Why per-model variance decomposition is too imprecise.} Worst-case Monte Carlo RMSE of the family or era variance share across four scenarios, for staggered designs with 8 or 14 release quarters and for five candidate designs from real populations (crosses, labelled by number of models). The dashed line marks 0.10. RMSE is the error of the estimated share, not a confidence-interval half-width. Traits are simulated on each design's family and quarter structure; the design labelled 16 takes only the family and quarter labels of the 16 models run in the earlier per-model evaluation (Section~S7), not their measured accuracies, and the figure does not validate those measurements.}
+\label{fig:scaling}
+\end{figure}
 
 \section*{S2. Changes from the earlier version}\label{app:v1}
 The earlier version of this manuscript (archived in the repository as \texttt{paper/src/archive/}) reported a sixteen-model evaluation and an identifiability gate. TABLE~\ref{tab:v1} lists each finding of that version that is withdrawn or corrected, why, and how it is treated here.
@@ -74,7 +90,7 @@ Sixteen-model population as pre-specified & Four planned models not run (GPU bud
 \end{table}
 
 \section*{S3. Simulation check of separability}
-The main paper (Section~IV-F) describes the simulated data and criteria. Table~\ref{tab:pairgate} gives the pre-specified check (20 replicates per scenario) for three caps on the number of models per root; Table~\ref{tab:gateaudit} gives the post-hoc audit with 500 replicates, shown in the main paper's Fig.~6. With 20 replicates the rates move in steps of five points, which explains why the audit ranks the caps differently. Cap 40 remains the primary design because it was the dated choice made before any pair outcome was computed.
+The main paper (Section~IV-G) describes the simulated data and criteria. Table~\ref{tab:pairgate} gives the pre-specified check (20 replicates per scenario) for three caps on the number of models per root; Table~\ref{tab:gateaudit} gives the post-hoc audit with 500 replicates, shown in Fig.~\ref{fig:gateaudit}. With 20 replicates the rates move in steps of five points, which explains why the audit ranks the caps differently. Cap 40 remains the primary design because it was the dated choice made before any pair outcome was computed.
 
 \begin{table}[H]
 \caption{\textbf{Pre-specified simulation check} (primary roster, 14{,}042 simulated items, 20 replicates per scenario). Null: largest false-rejection rate. Leakage: largest rejection of the wrong coefficient. Power: rejection of the lineage / same-month coefficient at the stated effect weight.}
@@ -106,6 +122,13 @@ Sample & Cap & $N$ & Null & Leakage & L, $\lambda{=}0.05$ & E, $\lambda{=}0.05$ 
 
 
 
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{fig_gate_audit.pdf}
+\caption{\textbf{Post-hoc audit of the simulation check} (500 replicates per scenario; Wilson 95\% intervals). (a) False rejection of each coefficient under no effect. (b) Leakage: rejection of the lineage coefficient under release-time-only effects ($\lambda_E$), and the larger rejection rate of the 0- and 1--2-month coefficients under lineage-only effects ($\lambda_L$). (c) Power. Upper tick labels give the strength of the simulated effect; lower labels give the coefficient tested and the effect simulated. $\lambda_L$: lineage effect (probability of a root-specific wrong option); $\lambda_E$: release-time effect (probability of a month-specific wrong option); root: shared-root coefficient; month: the 0- or 1--2-month coefficient, whichever is rejected more often; 0 mo: same-month coefficient. Dashed lines: the pre-specified criteria. The chosen design (primary, cap 40) exceeds the 10\% leakage criterion at $\lambda_E = 0.10$ (10.8\%).}
+\label{fig:gateaudit}
+\end{figure}
 
 \section*{S4. Detailed robustness results}
 The main paper's robustness table reports the primary sample. The tables below give every sample; figures show the same estimates. ``Same month'' is the 0-month gap bin relative to 12 or more months. S2: models with accuracy $\geq 0.30$.
@@ -299,8 +322,8 @@ Scenario & Shared root & Same month & Shared root & Same month \\
 \end{tabular}}
 \end{table}
 
-\section*{S7. Earlier per-model evaluation: execution record and data-integrity audit}
-This section documents an evaluation that preceded the pair-level design. It is an audit record, not a second empirical study, and it does not validate or support any result of the main paper. None of its measurements enters any result of the main paper or of Sections~S3--S6. Section~S1 uses only the family and quarter labels of its sixteen recorded models to define one simulated design (the point labelled 16 in Fig.~4 of the main paper).
+\section*{S7. Earlier per-model evaluation: model roster, execution environment and data-integrity audit}
+This section documents an evaluation that preceded the pair-level design. It is an audit record, not a second empirical study, and it does not validate or support any result of the main paper. None of its measurements enters any result of the main paper or of Sections~S3--S6. Section~S1 uses only the family and quarter labels of its sixteen recorded models to define one simulated design (the point labelled 16 in Fig.~\ref{fig:scaling}). The Appendix of the main paper summarizes this section in two tables: the planned roster with the execution and data status of each entry, and the execution environment with the evidence (recorded, planned, author-reported or unknown) for each item.
 
 \subsection*{Selection and plan}
 A 47-model candidate frame was reduced to a 22-model roster by a design gate that used only family $\times$ quarter occupancy, declared lineage edges, identifiability constraints and estimated cost, never measured traits (\texttt{datasets/coverage/minimum\_valid\_population.csv}, \texttt{g3\_report.md}; committed 3 August 2026, last revised 5 August). The two DeepSeek models of the roster (671B and 685B mixture-of-experts) did not fit the available compute; three re-gate variants that excluded them were infeasible because the gate then required other models of the same size class, and a rule to complete their traits by model-based multiple imputation (five draws, seed 2026) was recorded on 16 August 2026, before the first evaluation. The run plan, recorded the same day and also before the first evaluation, assigned the remaining 20 models to one rented GPU. TABLE~\ref{tab:runpodplan} lists the planned roster. Earlier drafts of the runbook considered an eight-GPU H200 node and a split across several machines; neither was used.
@@ -324,7 +347,7 @@ Model & Family & Quarter & Size & Planned repository & Planned precision & Gated
 The planned configuration (\texttt{docs/05\_Experiments/Exp02\_GPU\_Runbook.md}, addendum of 16 August 2026) was:
 \begin{itemize}
 \item \emph{Hardware.} One RunPod pod with one NVIDIA A100 SXM4 80\,GB GPU, not a cluster. The authors report a host with 16 vCPUs and 117\,GB of RAM; no pod record in the repository confirms it.
-\item \emph{Software.} Python~3.11 PyTorch template; \texttt{lm-eval}~0.4.12; \texttt{transformers}~4.57.6 (pinned because version~5 removed the \texttt{load\_in\_4bit} argument that \texttt{lm-eval}~0.4.12 passes); \texttt{accelerate} and \texttt{bitsandbytes} (versions not pinned or recorded).
+\item \emph{Software.} Python~3.11 PyTorch template (PyTorch 2.8.0 as reported by the authors; not recorded); \texttt{lm-eval}~0.4.12; \texttt{transformers}~4.57.6 (pinned because version~5 removed the \texttt{load\_in\_4bit} argument that \texttt{lm-eval}~0.4.12 passes); \texttt{accelerate} and \texttt{bitsandbytes} (versions not pinned or recorded).
 \item \emph{Task.} MMLU, 5-shot, log-likelihood scoring of the four answer options (no generation), on the same 14{,}042 items for every model.
 \item \emph{Model arguments.} \texttt{--dtype bfloat16}, \texttt{--attn sdpa}, \texttt{--batch auto}; \texttt{--quant none} for the 17 models planned in bfloat16 and \texttt{--quant 4bit} for the three 70B-class models; \texttt{max\_length=2048,truncation=True} for Phi-1, Phi-1.5 and Phi-2; \texttt{trust\_remote\_code} where the repository requires it. The code's 4-bit path passes only \texttt{load\_in\_4bit=True}, which selects the \texttt{bitsandbytes} default 4-bit type (FP4), not the NF4 type named in the plan. A loader patch in force during the runs removed quantization arguments for one Mistral model class, so a run tagged 4-bit may not have been quantized as tagged.
 \item \emph{Procedure.} One model per invocation; check that 14{,}042 samples were scored; commit the result row and the per-question file; delete the model cache, so that the committed files are the durable record if the pod is reclaimed; previously completed models are skipped on resumption. A pilot (Phi-2, 100 items) failed before any measurement and wrote no data.
@@ -332,7 +355,7 @@ The planned configuration (\texttt{docs/05\_Experiments/Exp02\_GPU\_Runbook.md},
 \end{itemize}
 
 \subsection*{Resource provenance}
-The plan specified a GPU disk of at least 300\,GB (the 70B models were to be downloaded in bfloat16 before 4-bit loading, about 140\,GB each), about 604 GPU-minutes (about 10 hours) and an estimated cost of USD 16--20 at about USD 1.60 per hour. These are planned values. No pod configuration, storage record, event log or invoice is in the repository, so the attached disk, run time and cost actually incurred are not reported.
+The plan specified a GPU disk of at least 300\,GB (the 70B models were to be downloaded in bfloat16 before 4-bit loading, about 140\,GB each), about 604 GPU-minutes (about 10 hours) and an estimated cost of USD 16--20 at about USD 1.60 per hour. These are planned values. The commits of results span 16 August 18:08 to 18 August 09:12 UTC; that is wall-clock time including idle periods, not measured run time. No pod configuration, storage record, event log or invoice is in the repository, so the attached disk, run time and cost actually incurred are not reported.
 
 \subsection*{What was recorded}
 Between 16 and 18 August 2026, results for 16 models were committed, one model per commit (\texttt{datasets/phase2\_eval\_results.csv}, \texttt{datasets/eval\_samples/}). TABLE~\ref{tab:runpod} compares them with the plan. These are recorded runs, not validated measurements.
@@ -359,5 +382,25 @@ Model & Recorded repository & Precision & Accuracy & Status \\
 \bottomrule
 \end{tabular}}
 \end{table}
+
+\section*{S8. Lineage-resolution algorithm}
+Algorithm~\ref{alg:lineage} gives the exact rules used to resolve each model's declared parent chain to a lineage root (main paper, Section~III-B).
+
+\begin{algorithm}[H]
+\caption{Lineage root of a model}
+\label{alg:lineage}
+\begin{algsteps}
+\item $n \leftarrow$ canonical Hub identifier of the model (renames collapsed); $d \leftarrow 0$
+\item \algkw{while} $d < 20$:
+\item \algind{1}\algkw{if} $n$ declares several parents: \algkw{return} unresolved (merge)
+\item \algind{1}$p \leftarrow$ declared parent of $n$ (expanded population only: at $d = 0$, the configuration link if the card declares none)
+\item \algind{1}\algkw{if} $d > 0$ and $n$ no longer exists: \algkw{return} unresolved (missing ancestor)
+\item \algind{1}\algkw{if} $p$ is none and $n$ is a listed re-upload: $p \leftarrow$ the checkpoint it copies
+\item \algind{1}\algkw{if} $p$ is none: \algkw{if} the leaderboard lists $n$ as a fine-tune, \algkw{return} unresolved (undeclared parent); \algkw{else return} root $n$
+\item \algind{1}\algkw{if} $p$ was already visited: \algkw{return} unresolved (cycle)
+\item \algind{1}$n \leftarrow$ canonical identifier of $p$; $d \leftarrow d + 1$
+\item \algkw{return} unresolved (chain too deep)
+\end{algsteps}
+\end{algorithm}
 
 \end{document}

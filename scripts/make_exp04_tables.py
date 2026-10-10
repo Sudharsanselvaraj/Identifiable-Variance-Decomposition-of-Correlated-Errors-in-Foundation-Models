@@ -269,6 +269,10 @@ def tab_revision2():
         ("Tree distance 1", "lineage dose-response: tree distance", "distance 1", "ci"),
         ("Tree distance 2", "lineage dose-response: tree distance", "distance 2", "ci"),
         ("Tree distance 3+", "lineage dose-response: tree distance", "distance 3+", "ci"),
+        ("Upload and root month together: same upload month",
+         "upload month and root release month together", "gap0", "ci"),
+        ("Upload and root month together: same root month",
+         "upload month and root release month together", "root_gap0", "ci"),
     ]
     lines = [f"{lab} & " + " & ".join(cell(a, t, p, k) for p in pops) + " \\\\"
              for lab, a, t, k in spec]
@@ -525,6 +529,42 @@ def tab_runpod():
                              "models: GPU budget) \\\\")
     write("tab_runpod_plan.tex", "\n".join(plan_lines) + "\n")
     write("tab_runpod.tex", "\n".join(run_lines) + "\n")
+
+    # Main-paper appendix: one row per planned entry, execution and data status.
+    size_of = lambda repo: next((t for t in repo.replace("-", " ").split()  # noqa: E731
+                                 if t[:-1].replace(".", "").isdigit() and t[-1] in "Bb"), None)
+    main_lines = []
+    for _, r in plan.iterrows():
+        name = r.full_name
+        if name in run.index:
+            q = run.loc[name]
+            with open(samples[name]) as f:
+                rows = [json.loads(x) for x in f]
+            all_a = sum(x["answer"] == 0 for x in rows) / len(rows)
+            repo = tt(q.hf_repo) + ("$^{a}$" if q.hf_repo != r.hf_repo else "")
+            rec_size = size_of(q.hf_repo.split("/")[-1])
+            size = r.params if not rec_size or rec_size.upper() == str(r.params).upper() \
+                else f"{r.params} / {rec_size.upper()}"
+            rec = {"bf16": "bf16", "4bit": "4-bit tag$^{b}$"}[q.fidelity]
+            note = []
+            if abs(q.acc - all_a) < 5e-4:
+                note.append(f"acc.\\ {q.acc:.3f} = all-A rate")
+            elif q.acc < 0.26:
+                note.append(f"chance level ({q.acc:.3f})")
+            k = q.hf_repo.lower()
+            if k in lb.index:
+                if not note:
+                    note.append(f"acc.\\ {q.acc:.3f}")
+                note.append(f"leaderboard {lb[k]:.3f}")
+            main_lines.append(f"{name} & {r.family} & {repo} & {size} & {fid[r.fidelity]} & {rec} & "
+                              f"recorded & failed$^{{c}}$ & {'; '.join(note) or '--'} \\\\")
+        elif r.fidelity == "imputed":
+            main_lines.append(f"{name} & {r.family} & {tt(r.hf_repo)}$^{{d}}$ & {r.params} & "
+                              "imputed & -- & not imputed & none & -- \\\\")
+        else:
+            main_lines.append(f"{name} & {r.family} & {tt(r.hf_repo)}$^{{d}}$ & {r.params} & "
+                              f"{fid[r.fidelity]} & -- & not run (budget) & none & -- \\\\")
+    write("tab_runpod_main.tex", "\n".join(main_lines) + "\n")
 
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
