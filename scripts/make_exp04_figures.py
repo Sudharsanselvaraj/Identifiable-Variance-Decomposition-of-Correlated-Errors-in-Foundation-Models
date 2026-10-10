@@ -175,14 +175,7 @@ def flow() -> dict:
 
 def population(name: str):
     from lineage_era.ollb import analysis as A
-    try:
-        pop, _ = A.load_population(name, False)
-    except FileNotFoundError as err:
-        raise SystemExit(
-            f"{err}\nTwo figures need the rebuilt frozen lists and the validated answer "
-            "files, which are not redistributed: run the data steps of "
-            "docs/REPRODUCIBILITY_CHECKLIST.md section 4 first (fetch_v1_contents_meta, "
-            "roster_v1, rebuild_frozen_lists, download_ollb_v1, validation_report).") from None
+    pop, _ = A.load_population(name, False)
     return pop
 
 
@@ -1482,8 +1475,25 @@ def readme_assets() -> list[str]:
         save = orig
 
 
-def build_all(only=None) -> list[str]:
-    return [f() for k, f in ALL.items() if not only or k in only]
+NEEDS_DATA = ("Figures drawn from pair-level data need the rebuilt frozen lists and the "
+              "validated answer files, which are not redistributed: run the data steps of "
+              "docs/REPRODUCIBILITY_CHECKLIST.md section 4 first (fetch_v1_contents_meta, "
+              "roster_v1, rebuild_frozen_lists, download_ollb_v1, validation_report).")
+
+
+def build_all(only=None) -> tuple[list[str], list[str]]:
+    """Draw every requested figure; figures whose inputs are missing are skipped
+    and reported, so the ones that need only results/ are still produced."""
+    done, skipped = [], []
+    for k, f in ALL.items():
+        if only and k not in only:
+            continue
+        try:
+            done.append(f())
+        except (FileNotFoundError, SystemExit):
+            plt.close("all")
+            skipped.append(k)
+    return done, skipped
 
 
 if __name__ == "__main__":
@@ -1491,6 +1501,10 @@ if __name__ == "__main__":
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--readme", action="store_true", help="also write README PNGs")
     a = ap.parse_args()
-    print("\n".join(build_all(a.only)))
+    done, skipped = build_all(a.only)
+    print("\n".join(done))
+    if skipped:
+        print(f"\nSkipped (inputs missing): {', '.join(skipped)}\n{NEEDS_DATA}", file=sys.stderr)
+        raise SystemExit(1)
     if a.readme:
         print("\n".join(f"docs/assets/{n}.png" for n in readme_assets()))

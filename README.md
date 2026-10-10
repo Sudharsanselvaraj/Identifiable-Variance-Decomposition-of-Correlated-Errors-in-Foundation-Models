@@ -140,7 +140,7 @@ python -m pip install -e ".[test,ollb]"
 python -m pytest -m "not slow"   # quick tests; plain `python -m pytest` also runs the two slow optimizer searches
 ```
 
-Regenerate the tables and figures, then build the paper and supplement. Tables need only the committed results; two figures also need the rebuilt frozen lists and validated answer files (full reproduction below), and the script says so if they are missing:
+Regenerate the tables and figures, then build the paper and supplement. Tables and 14 of the 20 figures need only the committed results; the six figures drawn from pair-level data also need the rebuilt frozen lists and validated answer files (full reproduction below). Without them the script draws the other figures, names the skipped ones and exits with status 1:
 
 ```bash
 make -C paper tables figures
