@@ -141,7 +141,7 @@ Correlated errors, dyadic regression, error agreement, Hugging Face, large langu
 
 Two explanations for shared errors compete. \emph{Lineage}: a model fine-tuned from another inherits its parameters and therefore, plausibly, its blind spots. \emph{Era}: models built in the same period draw on the same data, recipes and base models and may acquire the same mistakes without shared ancestry. The two are entangled, because a fine-tune is always released after its base. We measure era by \emph{release timing}: the month each model was uploaded to Hugging Face and, in a post-hoc analysis, the month its root base model was released.
 
-This paper is a diagnostic study. It measures how shared wrong answers relate to lineage and release timing in a large population of open-weight models; it does not build or test ensembles, and whether the associations translate into better voting or routing is a separate question. Because shared errors are a property of \emph{pairs} of models, we model agreement on wrong answers between pairs, with lineage and release-month gap as pair-level predictors, in a design whose analysis and sample rules were fixed before any outcome was computed. Decomposing per-model accuracy into family and era variance components, the obvious alternative, is too imprecise with the few families and release quarters real populations offer (Supplementary Section~S1); an earlier version of this work attempted it, and its findings are withdrawn (Supplementary Section~S2). That attempt recorded MMLU runs for 16 of 20 planned models on a single rented GPU (one NVIDIA A100 80\,GB on RunPod) before it was stopped for budget reasons; an extraction error invalidated every per-question output, and none of its measurements is used here (Appendix; Supplementary Section~S7).
+This paper is a diagnostic study. It measures how shared wrong answers relate to lineage and release timing in a large population of open-weight models; it does not build or test ensembles, and whether the associations translate into better voting or routing is a separate question. Because shared errors are a property of \emph{pairs} of models, we model agreement on wrong answers between pairs, with lineage and release-month gap as pair-level predictors, in a design whose analysis and sample rules were fixed before any outcome was computed. Decomposing per-model accuracy into family and era variance components, the obvious alternative, is too imprecise with the few families and release quarters real populations offer (Supplementary Section~S1); an earlier version of this work attempted it, and its findings are withdrawn (Supplementary Section~S2). Its per-model evaluation (16 of 20 planned runs) is excluded: the extraction script kept one option score per item, so every saved per-item file predicts option~A, and none of its measurements is used here; its roster and integrity audit are in Supplementary Section~S7.
 
 \subsection{Research Questions}
 \begin{enumerate}
@@ -509,61 +509,14 @@ An exploratory analysis of how well agreement separates same-root from different
 \label{sec:conclusion}
 Among open-weight models on the first Open LLM Leaderboard, two models that share a declared lineage root choose the same wrong MMLU option, when both are wrong, about 13 percentage points more often than unrelated models of equal accuracy and release gap; an analysis run after review suggests that closer relatives agree more. The estimate is stable across the analyses fixed in advance, root-level inference, alternative outcomes, item-difficulty-aware nulls and cleaned samples. Net of accuracy, release proximity---of the models or of their base models---is associated with the choice of wrong option at most weakly: a few points or less, with a sign that depends on the specification. The next step is to test whether lineage diversity improves ensemble, voting or review performance on other benchmarks, evaluation pipelines and independently pretrained models.
 
-\section*{Appendix: Earlier Per-Model Evaluation---Model Roster, Execution Environment and Data-Integrity Audit}
-\label{app:runpod}
-This appendix summarizes the earlier per-model evaluation mentioned in the Introduction; Supplementary Section~S7 gives the full record. None of its measurements is used in this paper, and it does not validate any result reported here. Of 20 planned evaluations, 16 were run before the work was stopped for budget reasons; the two DeepSeek entries of the 22-entry roster were to be completed by imputation, which was never executed. TABLE~\ref{tab:runpodmain} lists every planned entry, and TABLE~\ref{tab:runpodenv} gives the execution environment with the evidence for each item. Every recorded per-question file fails the intake check: it stores one log-likelihood per item and predicts option~A on all 14{,}042 items, because the extraction code read only the first option's score. The recorded accuracies are \texttt{lm-eval}'s own aggregates and are not validated item by item; several are at chance level for reasons not established.
-
-\begin{table*}[!t]
-\caption{\textbf{Earlier per-model evaluation: planned roster, execution and data status} (not used for inference). Repository: the repository actually evaluated, or the planned one where no run exists. Size: as planned, and as named by the recorded repository where it differs. Planned: precision in the frozen run plan. Recorded: precision tag in the result file. Data: outcome of the intake check on the per-question file. Note: \texttt{lm-eval} aggregate accuracy flags and, where the same repository is in the item-validated leaderboard data of this paper, its accuracy there. $^{a}$Repository differs from the plan. $^{b}$Tag written by the run script; the 4-bit path selects the \texttt{bitsandbytes} default type (FP4, not the planned NF4), and a loader patch removed quantization arguments for one Mistral model class, so the precision actually used is not confirmed. $^{c}$One log-likelihood per item and a constant prediction (option A). $^{d}$Planned repository; no run exists.}
-\label{tab:runpodmain}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{2pt}
-\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{%
-\begin{tabular}{llllllllp{0.135\textwidth}}
-\toprule
-Model & Family & Repository & Size & Planned & Recorded & Execution & Data & Note \\
-\midrule
-\tabinput{../tables/tab_runpod_main.tex}
-\bottomrule
-\end{tabular}}
-\end{table*}
-
-\begin{table*}[!t]
-\caption{\textbf{Execution environment of the earlier per-model evaluation and the evidence for each item.} Recorded after run: stated in the project's reproducibility checklist of 19 August 2026, written after the runs; no pod log survives. Planned: stated in the run plan of 16 August 2026, before the first run. Author-reported: supplied by the authors; no record in the repository. Unknown: no record.}
-\label{tab:runpodenv}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{p{0.17\textwidth}p{0.36\textwidth}p{0.13\textwidth}p{0.26\textwidth}}
-\toprule
-Item & Value & Status & Source \\
-\midrule
-Provider and GPU & RunPod; one NVIDIA A100-SXM4, 80\,GB; one GPU, not a cluster & Recorded after run & Reproducibility checklist; run plan \\
-Host CPU and RAM & 16 vCPUs; 117\,GB RAM & Author-reported & -- \\
-Disk & At least 300\,GB GPU disk planned (70B weights downloaded in bfloat16 before 4-bit loading); actual attached storage not known & Planned only & Run plan \\
-Python & 3.11 (PyTorch template) & Planned only & Run plan \\
-PyTorch & 2.8.0 (pod template) & Author-reported & -- \\
-\texttt{lm-eval} & 0.4.12 & Planned; supported & Run plan; code fixes for the 0.4.12 output format made during the run \\
-\texttt{transformers} & 4.57.6 (pinned because version 5 removed the \texttt{load\_in\_4bit} argument) & Planned only & Run plan; pin committed before the first run \\
-\texttt{accelerate}, \texttt{bitsandbytes} & Installed, versions not pinned & Unknown version & Run plan \\
-Task and intended scoring & MMLU, 5-shot, log-likelihood scoring of the four answer options; 14{,}042 items per model. The saved per-question extraction is invalid and keeps one score per item, not the four option-level scores & Planned; items recorded & Run plan; result files (14{,}042 rows each) \\
-Model arguments & \texttt{dtype=bfloat16}, \texttt{attn\_implementation=sdpa}, automatic batch size; \texttt{load\_in\_4bit=True} for 4-bit runs; \texttt{max\_length=2048}, truncation for Phi-1, Phi-1.5, Phi-2 & Planned; in code & Run plan; run script (\texttt{phase2\_eval.py}) \\
-Run time & Not measured; commits of results span 16 Aug 18:08 to 18 Aug 09:12 UTC (wall-clock, including idle time) & Unknown & Commit history \\
-Cost & Estimated USD 16--20 for the full plan at about USD 1.60/h; amount billed not known & Planned only & Run plan \\
-Intake check & Fails: 4 planned models missing, \texttt{acc\_norm} empty, all 16 per-question files invalid & Verified & Check run on the committed files, 10 Oct 2026 \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
 \section*{Data Availability}
 {\sloppy
-Code, frozen model lists with SHA-256 hashes, Hugging Face metadata caches, validation reports and all analysis outputs are available at \url{https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models}; the README lists the commands that regenerate every reported number, table and figure from these outputs. The leaderboard's per-item details and metadata declare no licence, so the derived item-level answer files and three copied metadata fields are not redistributed; released scripts regenerate them from the public source and verify them against the recorded hashes. The analysis plan and its amendments are in the repository, as are the records of the earlier per-model evaluation (Appendix; Supplementary Section~S7), which are not used for inference. Supplementary material accompanies this article.\par}
+Code, frozen model lists with SHA-256 hashes, Hugging Face metadata caches, validation reports and all analysis outputs are available at \url{https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models}; the README lists the commands that rebuild every table from these outputs and, after the released scripts have re-downloaded the item-level answer files from the public source, every analysis and figure. The leaderboard's per-item details and metadata declare no licence, so the derived item-level answer files and three copied metadata fields are not redistributed; released scripts regenerate them from the public source and verify them against the recorded hashes. The analysis plan and its amendments are in the repository, as are the records of the earlier per-model evaluation (Supplementary Section~S7), which are not used for inference. Supplementary material accompanies this article.\par}
 
 \section*{Acknowledgment}
 This work was supported in part by the Department of Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli, India, and in part by the Research Institute of IoT Cybersecurity, National Kaohsiung University of Science and Technology, Kaohsiung, Taiwan.
 
-\textbf{Use of AI-generated content.} The authors used Claude (Anthropic; model Claude Opus 5.5, accessed through Claude Code)~\cite{claude2026} in October 2026, with substantial use. It wrote and debugged the analysis, simulation, data-extraction and figure/table-generation code, and drafted the text of every section of this revised manuscript (Sections~\ref{sec:introduction}--\ref{sec:conclusion}) and of the supplementary material. The authors directed the study, approved each analysis decision and analysis-plan amendment, reviewed and edited the text, and take full responsibility for the content; every reported number is produced by the released code from the committed outputs.
+The authors also acknowledge substantial generative-AI assistance, disclosed here as IEEE Access requires. Claude (Anthropic; Claude Opus 5.5, accessed through Claude Code in October 2026)~\cite{claude2026} wrote and debugged the data-extraction, analysis, simulation and figure- and table-generation code, and drafted the text of Sections~\ref{sec:introduction}--\ref{sec:conclusion} and of the supplementary material. The authors directed the study, approved each analysis decision and analysis-plan amendment, reviewed the outputs, revised the text, and take full responsibility for the methods, results and conclusions. Every reported number comes from the released code's outputs.
 
 \begin{thebibliography}{40}
 

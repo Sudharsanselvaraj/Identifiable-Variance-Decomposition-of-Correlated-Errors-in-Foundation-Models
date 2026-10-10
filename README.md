@@ -6,8 +6,8 @@
 
 **A pair-level study of Open LLM Leaderboard models: 977 validated models in two overlapping samples (primary: 590 models, 173,755 pairs)**
 
-[![Paper](https://img.shields.io/badge/paper-17_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
-[![Supplement](https://img.shields.io/badge/supplement-13_pages-5b7a99)](paper/build/supplement.pdf)
+[![Paper](https://img.shields.io/badge/paper-16_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
+[![Supplement](https://img.shields.io/badge/supplement-15_pages-5b7a99)](paper/build/supplement.pdf)
 [![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
 [![Python](https://img.shields.io/badge/python-3.11-3776AB)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-73_passing-2ea44f)](src/lineage_era)
@@ -202,7 +202,7 @@ See [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md) for
 - A single benchmark is used (MMLU, four options), scored by the leaderboard's evaluation pipeline.
 - Declared lineage may be incorrect; a configuration-file check agrees with the declared root for 74% of the models it could test.
 - Ensembles were not evaluated; whether lineage diversity improves voting or routing remains to be tested.
-- An earlier per-model evaluation (16 of 20 planned models on one rented A100 GPU) is not used: an extraction error invalidated every per-question output. Sections S2 and S7 of the supplement and the paper's Appendix document it.
+- An earlier per-model evaluation (16 of 20 planned models on one rented A100 GPU) is not used: an extraction error invalidated every per-question output. Sections S2 and S7 of the supplement document it.
 - The analysis plan was not registered externally; its timing rests on commit times within a single day.
 
 ## Citation

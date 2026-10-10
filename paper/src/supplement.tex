@@ -1,7 +1,7 @@
 \documentclass[10pt]{article}
 \usepackage[margin=1in]{geometry}
 
-\usepackage{amsmath,amssymb,bm,graphicx,booktabs,float,caption}
+\usepackage{amsmath,amssymb,bm,graphicx,booktabs,float,caption,rotating}
 \captionsetup{font=small,labelfont=bf}
 \renewcommand{\thetable}{S\Roman{table}}
 \renewcommand{\thefigure}{S\arabic{figure}}
@@ -332,7 +332,7 @@ Scenario & Shared root & Same month & Shared root & Same month \\
 \end{table}
 
 \section*{S7. Earlier per-model evaluation: model roster, execution environment and data-integrity audit}
-This section documents an evaluation that preceded the pair-level design. It is an audit record, not a second empirical study, and it does not validate or support any result of the main paper. None of its measurements enters any result of the main paper or of Sections~S3--S6. Section~S1 uses only the family and quarter labels of its sixteen recorded models to define one simulated design (the point labelled 16 in Fig.~\ref{fig:scaling}). The Appendix of the main paper summarizes this section in two tables: the planned roster with the execution and data status of each entry, and the execution environment with the evidence (recorded, planned, author-reported or unknown) for each item.
+This section documents an evaluation that preceded the pair-level design. It is an audit record, not a second empirical study, and it does not validate or support any result of the main paper. None of its measurements enters any result of the main paper or of Sections~S3--S6. Section~S1 uses only the family and quarter labels of its sixteen recorded models to define one simulated design (the point labelled 16 in Fig.~\ref{fig:scaling}). TABLE~\ref{tab:runpodplan} gives the planned roster, TABLE~\ref{tab:runpodenv} the execution environment with the evidence available for each item, TABLE~\ref{tab:runpod} the recorded runs and TABLE~\ref{tab:runpodmain} the execution and item-level output integrity of every planned entry; the item-level output of every recorded run is invalid.
 
 \subsection*{Selection and plan}
 A 47-model candidate frame was reduced to a 22-model roster by a design gate that used only family $\times$ quarter occupancy, declared lineage edges, identifiability constraints and estimated cost, never measured traits (\texttt{datasets/coverage/minimum\_valid\_population.csv}, \texttt{g3\_report.md}; committed 3 August 2026, last revised 5 August). The two DeepSeek models of the roster (671B and 685B mixture-of-experts) did not fit the available compute; three re-gate variants that excluded them were infeasible because the gate then required other models of the same size class, and a rule to complete their traits by model-based multiple imputation (five draws, seed 2026) was recorded on 16 August 2026, before the first evaluation. The run plan, recorded the same day and also before the first evaluation, assigned the remaining 20 models to one rented GPU. TABLE~\ref{tab:runpodplan} lists the planned roster. Earlier drafts of the runbook considered an eight-GPU H200 node and a split across several machines; neither was used.
@@ -363,6 +363,33 @@ The planned configuration (\texttt{docs/05\_Experiments/Exp02\_GPU\_Runbook.md},
 \item \emph{Intake check.} \texttt{lineage\_era.phase2\_eval\_check} with the 20-model manifest (\texttt{datasets/coverage/a100\_full\_subset.csv}) was to pass before any analysis. It requires one row per planned model, accuracy values in range, per-question row counts equal to the scored samples, valid correctness flags, a common item set, and, since the October 2026 fix, more than one log-likelihood per item and non-constant predictions. No passing run is recorded. Run on the committed outputs on 10 October 2026 it fails with 34 errors: four planned models missing; \texttt{acc\_norm} empty for all sixteen rows; and, for every one of the sixteen per-question files, a constant prediction and a single log-likelihood per item. Row counts (14{,}042), correctness flags and the common item set pass.
 \end{itemize}
 
+\begin{table}[H]
+\caption{\textbf{Execution-environment evidence for the excluded earlier evaluation.} Evidence available: what the surviving records show for each item. The post-run checklist of 19 August 2026 was written after the runs and no pod log survives; the run plan of 16 August 2026 predates the first run.}
+\label{tab:runpodenv}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{0.16\textwidth}p{0.36\textwidth}p{0.2\textwidth}p{0.2\textwidth}}
+\toprule
+Item & Value & Evidence available & Source \\
+\midrule
+Provider and GPU & RunPod; one NVIDIA A100-SXM4, 80\,GB; one GPU, not a cluster & Post-run checklist; no provider log retained & Reproducibility checklist; run plan \\
+Host CPU and RAM & 16 vCPUs; 117\,GB RAM & Author report; no repository record & -- \\
+Disk & At least 300\,GB GPU disk planned (70B weights downloaded in bfloat16 before 4-bit loading); actual attached storage not known & Specified in run plan; runtime not confirmed & Run plan \\
+Python & 3.11 (PyTorch template) & Specified in run plan; runtime not confirmed & Run plan \\
+PyTorch & 2.8.0 (pod template) & Author report; no repository record & -- \\
+\texttt{lm-eval} & 0.4.12 & Run plan; consistent with recorded output format & Run plan; code fixes for the 0.4.12 output format made during the run \\
+\texttt{transformers} & 4.57.6 (pinned because version 5 removed the \texttt{load\_in\_4bit} argument) & Specified in run plan; runtime not confirmed & Run plan; pin committed before the first run \\
+\texttt{accelerate}, \texttt{bitsandbytes} & Installed, versions not pinned & Version not recoverable from records & Run plan \\
+Task and intended scoring & MMLU, 5-shot, log-likelihood scoring of the four answer options; 14{,}042 items per model. The saved per-question extraction is invalid and keeps one score per item, not the four option-level scores & Run plan; result files & Run plan; result files (14{,}042 rows each) \\
+Model arguments & \texttt{dtype=bfloat16}, \texttt{attn\_implementation=sdpa}, automatic batch size; \texttt{load\_in\_4bit=True} for 4-bit runs; \texttt{max\_length=2048}, truncation for Phi-1, Phi-1.5, Phi-2 & Run plan; run script & Run plan; run script (\texttt{phase2\_eval.py}) \\
+Run time & Not measured; commits of results span 16 Aug 18:08 to 18 Aug 09:12 UTC (wall-clock, including idle time) & Not recoverable; commit times only & Commit history \\
+Cost & Estimated USD 16--20 for the full plan at about USD 1.60/h; amount billed not known & Specified in run plan; runtime not confirmed & Run plan \\
+Intake check & Fails: 4 planned models missing, \texttt{acc\_norm} empty, all 16 per-question files invalid & Verified by archive audit, 10 Oct 2026 & Check run on the committed files, 10 Oct 2026 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection*{Resource provenance}
 The plan specified a GPU disk of at least 300\,GB (the 70B models were to be downloaded in bfloat16 before 4-bit loading, about 140\,GB each), about 604 GPU-minutes (about 10 hours) and an estimated cost of USD 16--20 at about USD 1.60 per hour. These are planned values. The commits of results span 16 August 18:08 to 18 August 09:12 UTC; that is wall-clock time including idle periods, not measured run time. No pod configuration, storage record, event log or invoice is in the repository, so the attached disk, run time and cost actually incurred are not reported.
 
@@ -391,6 +418,23 @@ Model & Recorded repository & Precision & Accuracy & Status \\
 \bottomrule
 \end{tabular}}
 \end{table}
+
+\begin{sidewaystable}
+\caption{\textbf{Every planned entry of the earlier per-model evaluation: execution and item-level output integrity} (not used for inference). Repository: the repository actually evaluated, or the planned one where no run exists. Size: as planned, and as named by the recorded repository where it differs. Planned: precision in the frozen run plan. Recorded: precision tag in the result file. Item-level output: result of the intake check on the per-question file. Note: \texttt{lm-eval} aggregate accuracy flags and, where the same repository is in the item-validated leaderboard data of the main paper, its accuracy there. $^{a}$Repository differs from the plan. $^{b}$Tag written by the run script; the 4-bit path selects the \texttt{bitsandbytes} default type (FP4, not the planned NF4), and a loader patch removed quantization arguments for one Mistral model class, so the precision actually used is not confirmed. $^{c}$Invalid: one log-likelihood per item and a constant prediction (option~A). $^{d}$Planned repository; no run exists.}
+\label{tab:runpodmain}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\ifdim\width>\textheight\textheight\else\width\fi}{!}{%
+\begin{tabular}{llllllllp{0.22\textheight}}
+\toprule
+Model & Family & Repository & Size & Planned & Recorded & Execution & Item-level output & Note \\
+\midrule
+\tabinput{../tables/tab_runpod_main.tex}
+\bottomrule
+\end{tabular}}
+\end{sidewaystable}
+
 
 \section*{S8. Lineage-resolution algorithm}
 Algorithm~\ref{alg:lineage} gives the exact rules used to resolve each model's declared parent chain to a lineage root (main paper, Section~III-B).

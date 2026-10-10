@@ -558,7 +558,7 @@ def tab_runpod():
                     note.append(f"acc.\\ {q.acc:.3f}")
                 note.append(f"leaderboard {lb[k]:.3f}")
             main_lines.append(f"{name} & {r.family} & {repo} & {size} & {fid[r.fidelity]} & {rec} & "
-                              f"recorded & failed$^{{c}}$ & {'; '.join(note) or '--'} \\\\")
+                              f"recorded & invalid$^{{c}}$ & {'; '.join(note) or '--'} \\\\")
         elif r.fidelity == "imputed":
             main_lines.append(f"{name} & {r.family} & {tt(r.hf_repo)}$^{{d}}$ & {r.params} & "
                               "imputed & -- & not imputed & none & -- \\\\")
