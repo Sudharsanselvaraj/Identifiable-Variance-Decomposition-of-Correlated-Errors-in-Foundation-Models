@@ -26,7 +26,7 @@
 
 ## Summary
 
-In the primary sample (590 models, 173,755 pairs), models descended from the same declared base model choose the same wrong answer **13.3 percentage points** more often than unrelated models of equal accuracy and release gap (delete-one-root jackknife 95% CI 10.8–15.8; pairs weighted equally, so the two largest roots dominate; counting each root once gives larger estimates). In the expanded sample (928 models) the difference is 12.7 points (11.0–14.5). Release proximity shows only small associations once accuracy is controlled, and their sign depends on the specification: same-month pairs agree up to a few points more in several specifications and less among models above 0.30 accuracy. Within this population, lineage is associated with shared wrong answers far more strongly than release timing. The associations are observational.
+In the primary sample (590 leaderboard entries, 563 distinct repositories; 173,755 pairs), models descended from the same declared base model choose the same wrong answer **13.3 percentage points** more often than unrelated models of equal accuracy and release gap (delete-one-root jackknife 95% CI 10.8–15.8; pairs weighted equally, so the two largest roots dominate; counting each root once gives larger estimates). In the expanded sample (928 models) the difference is 12.7 points (11.0–14.5). Release proximity shows only small associations once accuracy is controlled, and their sign depends on the specification: same-month pairs agree up to a few points more in several specifications and less among models above 0.30 accuracy. Within this population, lineage is associated with shared wrong answers far more strongly than release timing. The associations are observational.
 
 > The repository name refers to the earlier per-model variance-decomposition study, whose findings are withdrawn. [RESEARCH_STATUS.md](RESEARCH_STATUS.md) says which files belong to the current study and which are kept as history.
 
@@ -38,6 +38,7 @@ In the primary sample (590 models, 173,755 pairs), models descended from the sam
 - **Release timing.** Unadjusted, same-month pairs agree 8.7 points more than pairs released a year or more apart; most of this is accounted for by accuracy similarity, which rose steeply over the period. Net of accuracy, same-month associations are a few points or less and change sign across specifications (for example +1.8 points when upload and base-model release month enter together, −1.5 among models above 0.30 accuracy).
 - **Lineage signal (exploratory).** A pair's agreement alone separates same-root from different-root pairs with an area under the ROC curve of 0.95; this is descriptive, not a validated lineage detector.
 - **Data quality.** The leaderboard lists some models more than once under different names (50 entries resolve to 23 repositories) and includes models that give one answer letter to almost every item. Neither affects the conclusions.
+- **Influence and developer checks (post hoc).** Removing the two largest roots raises the estimate to 16.0 points; controlling for a shared uploader account leaves 12.9 points.
 - **Pre-specified design.** The analysis, sample rules and a simulation check were fixed before any pairwise outcome was computed (the populations, cap and two sensitivity analyses through dated amendments; timing recorded by commit times); every later analysis is labelled as exploratory or post hoc.
 
 ---
@@ -156,6 +157,7 @@ The leaderboard's per-item files declare no licence, so they are regenerated rat
 python scripts/fetch_v1_contents_meta.py      # leaderboard metadata
 python -m lineage_era.ollb.roster_v1          # lineage roster
 python scripts/rebuild_frozen_lists.py        # frozen samples, checked against recorded hashes
+python scripts/compare_rosters.py             # re-draws the samples (seed 0, at most 40 per root); reproduces the recorded hashes
 python scripts/download_ollb_v1.py            # reference model first, then the answer files (about 11 GB read)
 python scripts/validation_report.py           # per-model validation manifest; the analysis reads only "validated" models
 python scripts/run_exp04_final.py             # pre-specified analyses and audits
@@ -165,10 +167,11 @@ python scripts/run_exp04_revision2.py         # timing, dose-response, CAPA and 
 python scripts/run_exp04_heterogeneity.py     # heterogeneity, lineage detection, descriptives
 python scripts/run_exp04_revision3.py         # flexible accuracy, item fixed effects, bootstrap, MMLU-Redux (needs datasets/mmlu_redux/, fetched separately)
 python scripts/run_exp04_matched_followup.py  # accuracy-matched pairs: composition and S1 (post hoc)
+python scripts/run_exp04_audit_followup.py    # largest-root influence, same-uploader control (post hoc)
 make -C paper tables figures && make -C paper
 ```
 
-See [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md) for the environment and seeds.
+On case-insensitive filesystems the 977 validated models occupy 973 answer files: four leaderboard entries differ from another only in letter case and are the same Hub repository. See [`docs/REPRODUCIBILITY_CHECKLIST.md`](docs/REPRODUCIBILITY_CHECKLIST.md) for the environment and seeds.
 </details>
 
 <details>

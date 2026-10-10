@@ -108,13 +108,15 @@ def prepared(pop_name: str, strict=False, min_acc=None):
 def jackknife_roots(X, y, rid, i, j):
     """Delete-one-root jackknife over roots (drops every pair touching it)."""
     G = rid.max() + 1
-    XtX, Xty = X.T @ X, X.T @ y
-    # per-root contributions of the pairs touching that root
-    betas = []
-    for g in range(G):
-        m = (rid[i] == g) | (rid[j] == g)
-        Xg, yg = X[m], y[m]
-        betas.append(np.linalg.solve(XtX - Xg.T @ Xg, Xty - Xg.T @ yg))
+    # macOS Accelerate raises spurious matmul flags; the products are exact
+    with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
+        XtX, Xty = X.T @ X, X.T @ y
+        # per-root contributions of the pairs touching that root
+        betas = []
+        for g in range(G):
+            m = (rid[i] == g) | (rid[j] == g)
+            Xg, yg = X[m], y[m]
+            betas.append(np.linalg.solve(XtX - Xg.T @ Xg, Xty - Xg.T @ yg))
     B = np.array(betas)
     return np.sqrt((G - 1) / G * ((B - B.mean(0)) ** 2).sum(0))
 

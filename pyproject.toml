@@ -13,13 +13,14 @@ dependencies = [
     "pandas==3.0.5",
     "statsmodels==0.14.6",
     "matplotlib==3.9.2",
-    "tabulate",
+    "tabulate==0.9.0",
 ]
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest==9.1.1"]
 # Leaderboard data (Exp04): Hub metadata + projected parquet reads.
-ollb = ["huggingface_hub>=0.36", "pyarrow>=15"]
+# Pinned to the versions of the 9 October 2026 download.
+ollb = ["huggingface_hub==0.36.2", "pyarrow==25.0.0"]
 # GPU evaluation of the original 16-model arm (not needed for analysis).
 eval = ["lm_eval", "torch", "transformers", "accelerate", "bitsandbytes"]
 

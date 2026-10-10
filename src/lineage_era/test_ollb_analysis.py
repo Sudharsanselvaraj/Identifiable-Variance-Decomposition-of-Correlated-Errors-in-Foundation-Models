@@ -102,13 +102,17 @@ def _toy(tmp_path, monkeypatch, n=4, categories=None):
     models = [f"org/m{k}" for k in range(n)]
     items = np.array([f"s:{k}" for k in range(K_TOY)])
     gold = rng.integers(0, 4, K_TOY).astype(np.int8)
-    for m in models:
+    preds = [rng.integers(0, 4, K_TOY).astype(np.int8) for _ in models]
+    for m, p in zip(models, preds):
         np.savez(A.answer_file(m), item=items, gold=gold, hash=np.array([""] * K_TOY),
-                 pred=rng.integers(0, 4, K_TOY).astype(np.int8))
+                 pred=p)
     pd.DataFrame({"model": models, "root": ["a", "a", "b", "b"][:n],
                   "created_month": ["2024-01"] * n, "root_verified": True}
                  ).to_csv(frozen / "primary_sample_cap40.csv", index=False)
-    pd.DataFrame({"model": models, "category": categories or ["validated"] * n}
+    pd.DataFrame({"model": models,
+                  "accuracy": [float((p == gold).mean()) for p in preds],
+                  "pred_sha256": [A.pred_sha256(p) for p in preds],
+                  "category": categories or ["validated"] * n}
                  ).to_csv(A.MANIFEST, index=False)
     return models, items, gold
 
@@ -173,6 +177,37 @@ def test_answer_file_missing_from_manifest_stops_analysis(tmp_path, monkeypatch)
     pd.read_csv(A.MANIFEST).iloc[:3].to_csv(A.MANIFEST, index=False)
     with pytest.raises(ValueError, match="not in the validation manifest"):
         A.load_population("primary", False)
+
+
+def test_swapped_answer_files_stop_analysis(tmp_path, monkeypatch):
+    """Two validated files exchanged after validation pass every alignment
+    check; only the manifest's prediction hash binds a file to its model."""
+    models, _, _ = _toy(tmp_path, monkeypatch)
+    a, b = A.answer_file(models[0]), A.answer_file(models[2])
+    tmp = a.with_suffix(".tmp")
+    a.rename(tmp)
+    b.rename(a)
+    tmp.rename(b)
+    pop, _ = A.load_population("primary", False)
+    with pytest.raises(ValueError, match="not_the_validated_file"):
+        A.choice_matrix(pop.model)
+
+
+def test_edited_answer_file_stops_analysis(tmp_path, monkeypatch):
+    models, _, _ = _toy(tmp_path, monkeypatch)
+    z = dict(np.load(A.answer_file(models[1])))
+    _rewrite(models[1], pred=((z["pred"] + 1) % 4).astype(np.int8))
+    pop, _ = A.load_population("primary", False)
+    with pytest.raises(ValueError, match="not_the_validated_file"):
+        A.choice_matrix(pop.model)
+
+
+def test_manifest_without_hashes_stops_analysis(tmp_path, monkeypatch):
+    _toy(tmp_path, monkeypatch)
+    pd.read_csv(A.MANIFEST).drop(columns="pred_sha256").to_csv(A.MANIFEST, index=False)
+    pop, _ = A.load_population("primary", False)
+    with pytest.raises(ValueError, match="no pred_sha256 column"):
+        A.choice_matrix(pop.model)
 
 
 def test_run_writes_nothing_when_checks_fail(tmp_path, monkeypatch):

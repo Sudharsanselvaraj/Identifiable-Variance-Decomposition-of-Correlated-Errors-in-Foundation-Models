@@ -18,6 +18,9 @@ File-level checks (independent of the download log):
   * gold vector identical to the reference;
   * where the run stores item hashes, they equal the reference hashes;
   * predictions are valid options 0..3.
+Each row with an answer file also records pred_sha256, the SHA-256 of its
+prediction vector; the analysis refuses any file whose hash or accuracy
+differs from this record (a file swapped or replaced after validation).
 The per-item agreement with the leaderboard's stored correctness was enforced
 at extraction (a file is only written when all 14,042 items agree).
 
@@ -37,6 +40,9 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from lineage_era.ollb.analysis import pred_sha256  # noqa: E402
 FROZEN = ROOT / "datasets" / "ollb" / "frozen"
 ANS = ROOT / "datasets" / "ollb" / "v1"
 LOG = ROOT / "datasets" / "ollb" / "fetch_v1_log.jsonl"
@@ -59,7 +65,8 @@ def last_log_status() -> dict[str, dict]:
 def check_file(path: Path, ref) -> tuple[bool, str, dict]:
     z = np.load(path)
     info = {"schema": str(z["schema"]) if "schema" in z.files else "legacy",
-            "run": str(z["run"]), "accuracy": float((z["pred"] == z["gold"]).mean())}
+            "run": str(z["run"]), "accuracy": float((z["pred"] == z["gold"]).mean()),
+            "pred_sha256": pred_sha256(z["pred"])}
     if len(z["pred"]) != N_ITEMS:
         return False, f"items={len(z['pred'])}", info
     if not np.array_equal(z["item"], ref["item"]):

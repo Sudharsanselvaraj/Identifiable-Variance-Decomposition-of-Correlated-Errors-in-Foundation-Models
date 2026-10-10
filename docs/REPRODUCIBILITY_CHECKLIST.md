@@ -1,8 +1,9 @@
 # Reproducibility Checklist (Exp04 manuscript)
 
 **Paper:** Lineage and Release Timing in Correlated Errors of Open-Weight Language
-Models: A Pre-Registered Pair-Level Study (manuscript-v3 carried the earlier title
-"... A Precision-Gated, Pre-Registered Study of 977 Models")
+Models: A Pair-Level Study (earlier drafts carried the titles "... A Pre-Registered
+Pair-Level Study" and "... A Precision-Gated, Pre-Registered Study of 977 Models";
+the plan was versioned in this repository, not externally registered, see Section 5)
 
 The checklist for the superseded 16-model study is archived in
 `docs/archive/REPRODUCIBILITY_CHECKLIST_v1_16model.md`.
@@ -72,6 +73,7 @@ python -m pip install -e ".[test,ollb]"
 python scripts/fetch_v1_contents_meta.py          # leaderboard metadata (hash-checked)
 python -m lineage_era.ollb.roster_v1              # roster (byte-identical to the analysed one)
 python scripts/rebuild_frozen_lists.py            # full frozen lists; must match the frozen SHA-256
+python scripts/compare_rosters.py                 # re-draws the cap-40 samples (shuffle seed 0, at most 40 per root); reproduces the four frozen SHA-256 hashes
 python -m lineage_era.ollb.hub_meta \
   --names datasets/ollb/v1_contents_meta.csv:fullname \
   --names datasets/kim/hugging_face.csv:name      # only if the cache is absent
@@ -84,6 +86,7 @@ python scripts/run_exp04_revision2.py             # second-review analyses (post
 python scripts/run_exp04_heterogeneity.py         # heterogeneity, lineage detection, descriptives (post hoc)
 python scripts/run_exp04_revision3.py            # third-review analyses (post hoc; needs datasets/mmlu_redux/)
 python scripts/run_exp04_matched_followup.py      # accuracy-matched pairs: composition and S1 (post hoc)
+python scripts/run_exp04_audit_followup.py        # largest-root influence and same-uploader control (post hoc, after the pre-submission audit)
 make -C paper tables figures && make -C paper     # tables and figures from outputs, then the PDF and supplement
 python -m pytest -m "not slow"                    # quick tests (skips the two slow optimizer searches)
 python -m pytest                                  # full suite, including the slow Monte Carlo tests
@@ -93,14 +96,27 @@ The download step needs the reference model's answers
 (`datasets/ollb/v1/meta-llama__Llama-2-7b-hf.npz`, 14,042 items) before the
 concurrent download: runs stored in the newer lighteval layout take their gold
 answers from it. `scripts/download_ollb_v1.py` fetches it on its own first and
-aborts if it is missing or incomplete.
+aborts if it is missing or incomplete. (Until 10 October 2026 the fetcher loaded
+the reference file before parsing any model, including the reference itself, so
+a download into an empty `datasets/ollb/v1/` stopped at this first step; the
+9 October run worked because the reference file had been fetched earlier. The
+reference is now loaded only for lighteval-layout runs.)
+
+On case-insensitive filesystems (macOS, Windows) the 977 validated models occupy
+973 files: four leaderboard entries differ from another only in letter case
+(e.g. `Facebook/OPT-125M` and `facebook/opt-125m`), are the same Hub repository
+with identical run ids, and share one answer file. Counts of models in the paper
+are leaderboard entries.
 
 The analysis is fail-closed. `lineage_era.ollb.analysis` analyses only models
 that `results/exp04_validation/per_model.csv` marks `validated`, stops if an
 answer file is not listed there (stale manifest), and stops before computing any
 pair outcome if a file's item order, gold vector, item hashes, length or option
-range disagree with the reference. Tests inject each failure
-(`src/lineage_era/test_ollb_analysis.py`).
+range disagree with the reference, or if a file is not the one validated for that
+model (its prediction SHA-256 or accuracy differs from the manifest's
+`pred_sha256` / `accuracy`, as when two files are swapped). Tests inject each
+failure (`src/lineage_era/test_ollb_analysis.py`); the delete-one-root jackknife
+and a toy end-to-end run are tested in `src/lineage_era/test_ollb_inference.py`.
 
 `make -C paper tables` needs only `results/`. `make -C paper figures` also needs
 the rebuilt frozen lists (`datasets/ollb/frozen_full/`, from
