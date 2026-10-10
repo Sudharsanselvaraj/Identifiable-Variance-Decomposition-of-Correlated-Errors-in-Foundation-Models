@@ -390,12 +390,12 @@ Analysis & Models & Pairs & Shared root & Same month & $p$ (same month) \\
 \subsection{Adjusting for Accuracy}
 Accuracy can mediate both associations: fine-tunes of one root tend to have similar accuracies, and so do models of one period. Accuracy rose steeply over the period (Fig.~\ref{fig:accuracy}): the median primary model scores 0.26 among models uploaded in 2022--2023 and 0.59 among those uploaded in 2024 (Spearman correlation with upload month 0.41), and models of similar accuracy agree more (in the pre-specified model, agreement rises with the accuracy sum and falls with the accuracy difference). Without the accuracy terms (Fig.~\ref{fig:rawadj}), the shared-root coefficient is 28.3 points and the release-gap coefficients are graded, from 8.7 points in the same month to 2.9 at 6--11 months. With them, the shared-root coefficient is 13.3 points and every release-gap coefficient is within 0.6 points of zero in both populations. If accuracy is a mediator, the unadjusted coefficients are total associations and the adjusted ones the part not running through accuracy; if accuracy and the predictor share a cause, adjustment removes a confounded component. The data cannot distinguish these readings. Under either, the predictors differ in the same way: once both accuracies are known, release proximity adds nothing of stable sign in the pre-specified model, while a shared root still adds about 13 points (Section~\ref{sec:robust} examines finer accuracy controls).
 
-\begin{figure}[!t]
+\begin{figure*}[!t]
 \centering
-\includegraphics[width=\columnwidth]{fig_accuracy.pdf}
-\caption{\textbf{Model accuracy} (primary sample; $n = 590$, median 0.415, 247 below 0.30). (a) Histogram, kernel density and rug; dashed lines: chance (0.25) and the S2 cut-off (0.30). (b) By upload month, with the quarterly median and interquartile range (quarters with $\geq 10$ models); Spearman $\rho = 0.41$.}
+\includegraphics[width=\textwidth]{fig_accuracy.pdf}
+\caption{\textbf{Model accuracy} (primary sample; $n = 590$, median 0.415, 247 below 0.30). (a) Histogram, kernel density and rug; dashed lines: chance (0.25) and the S2 cut-off (0.30). (b) By upload month, with the quarterly median and interquartile range (quarters with $\geq 10$ models; Spearman $\rho = 0.41$); diamonds: the base checkpoints of the largest roots.}
 \label{fig:accuracy}
-\end{figure}
+\end{figure*}
 
 \begin{figure*}[!t]
 \centering
@@ -413,7 +413,7 @@ Because this is an absence of evidence, we bound it. The 90\% jackknife interval
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{fig_timing.pdf}
-\caption{\textbf{Release-gap coefficients under two timing measures} (pre-specified model with accuracy terms; delete-one-root jackknife 95\% CIs). Upload month: the Hub creation month of each fine-tune. Root release month: that of its lineage root. Each bin is relative to a gap of 12 or more months.}
+\caption{\textbf{Release-gap coefficients} (points, relative to a gap of 12+ months; bold: 95\% CI excludes zero). (a) Upload month, all twelve analyses fixed before any pair outcome (model-level CIs, as in TABLE~\ref{tab:prereg}). (b) The roots' release month in place of upload month (jackknife CIs).}
 \label{fig:timing}
 \end{figure}
 

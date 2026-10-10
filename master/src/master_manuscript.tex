@@ -342,8 +342,8 @@ Accuracy can mediate both associations: fine-tunes of one root tend to have simi
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.65\textwidth]{fig_accuracy.pdf}
-\caption{\textbf{Model accuracy} (primary sample; $n = 590$, median 0.415, 247 below 0.30). (a) Histogram, kernel density and rug; dashed lines: chance (0.25) and the S2 cut-off (0.30). (b) By upload month, with the quarterly median and interquartile range (quarters with $\geq 10$ models); Spearman $\rho = 0.41$.}
+\includegraphics[width=\textwidth]{fig_accuracy.pdf}
+\caption{\textbf{Model accuracy} (primary sample; $n = 590$, median 0.415, 247 below 0.30). (a) Histogram, kernel density and rug; dashed lines: chance (0.25) and the S2 cut-off (0.30). (b) By upload month, with the quarterly median and interquartile range (quarters with $\geq 10$ models; Spearman $\rho = 0.41$); diamonds: the base checkpoints of the largest roots.}
 \label{fig:accuracy}
 \end{figure}
 
@@ -363,7 +363,7 @@ Because this is an absence of evidence, we bound it. The 90\% jackknife interval
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.65\textwidth]{fig_timing.pdf}
-\caption{\textbf{Release-gap coefficients under two timing measures} (pre-specified model with accuracy terms; delete-one-root jackknife 95\% CIs). Upload month: the Hub creation month of each fine-tune. Root release month: that of its lineage root. Each bin is relative to a gap of 12 or more months.}
+\caption{\textbf{Release-gap coefficients} (points, relative to a gap of 12+ months; bold: 95\% CI excludes zero). (a) Upload month, all twelve analyses fixed before any pair outcome (model-level CIs, as in Table~\ref{tab:prereg}). (b) The roots' release month in place of upload month (jackknife CIs).}
 \label{fig:timing}
 \end{figure}
 

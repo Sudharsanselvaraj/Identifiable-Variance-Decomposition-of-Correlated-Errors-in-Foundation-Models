@@ -607,7 +607,7 @@ def nice(a: str) -> str:
 def fig_forest():
     pre = pd.read_csv(RES / "exp04_final/prereg_12.csv")
     order = list(dict.fromkeys(pre.analysis))
-    fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.75), sharey=True,
+    fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.6), sharey=True,
                              gridspec_kw=dict(width_ratios=[1, 1, 0.9]))
     yy = np.arange(len(order))[::-1] + np.array([0.6 if a.startswith("primary") else 0
                                                  for a in order])
@@ -1019,31 +1019,60 @@ def fig_dose():
 
 # ------------------------------------------------------------------ timing measures
 def fig_timing():
-    raw = pd.read_csv(RES / "exp04_final/raw_vs_adjusted.csv")
+    """Release-gap coefficients as annotated diverging heatmaps (points)."""
+    from matplotlib.colors import TwoSlopeNorm
+    pre = pd.read_csv(RES / "exp04_final/prereg_12.csv")
     rv = pd.read_csv(RES / "exp04_revision2/revision2.csv")
     bins = ["gap0", "gap1_2", "gap3_5", "gap6_11"]
-    lab = ["0", "1–2", "3–5", "6–11"]
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.35), sharey=True)
-    x = np.arange(len(bins))
-    for ax, pop, title in ((axes[0], "primary", "(a) Primary"), (axes[1], "expanded", "(b) Expanded")):
-        u = raw[(raw.population == pop) & (raw.model == "adjusted (pre-registered)")] \
-            .set_index("term").loc[bins]
-        r = rv[(rv.population == pop) & (rv.analysis ==
-               "root release month in place of upload month")].set_index("term").loc[bins]
-        ax.errorbar(x - 0.1, u.estimate, yerr=[u.estimate - u.ci_low, u.ci_high - u.estimate],
-                    fmt="o", ms=3.5, color=ORANGE, lw=1, label="upload month")
-        ax.errorbar(x + 0.1, r.estimate, yerr=[r.estimate - r.ci95_low, r.ci95_high - r.estimate],
-                    fmt="s", ms=3.5, color=GREY, mfc="white", lw=1, label="root release month")
-        zero(ax, horizontal=True)
-        ax.set_xticks(x, lab)
-        ax.set_xlabel("Gap (months; vs 12+)")
-        ax.set_title(title)
-    axes[0].set_ylabel("Coefficient")
-    axes[0].set_ylim(-0.045, 0.045)
-    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2,
-               frameon=False, fontsize=8, bbox_to_anchor=(0.55, 1.0), handletextpad=0.2,
-               columnspacing=0.8)
-    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.9), w_pad=0.6)
+    order = list(dict.fromkeys(pre.analysis))
+    up = pre.set_index(["analysis", "term"])
+    A_ = np.array([[up.loc[(a, b), "estimate"] for b in bins] for a in order]) * 100
+    S_ = np.array([[(up.loc[(a, b), "ci_low"] > 0) or (up.loc[(a, b), "ci_high"] < 0)
+                    for b in bins] for a in order])
+    rows_b = [("primary", "Primary"), ("primary_S2", "Primary, S2"), ("expanded", "Expanded"),
+              ("expanded_S2", "Expanded, S2")]
+    rr = rv[rv.analysis == "root release month in place of upload month"].set_index(
+        ["population", "term"])
+    B_ = np.array([[rr.loc[(p_, b), "estimate"] for b in bins] for p_, _ in rows_b]) * 100
+    T_ = np.array([[(rr.loc[(p_, b), "ci95_low"] > 0) or (rr.loc[(p_, b), "ci95_high"] < 0)
+                    for b in bins] for p_, _ in rows_b])
+    lim = 3.0
+    norm = TwoSlopeNorm(vmin=-lim, vcenter=0, vmax=lim)
+    cmap = plt.get_cmap("RdBu_r")
+    fig = plt.figure(figsize=(COL, 3.45))
+    gs = fig.add_gridspec(2, 2, height_ratios=[len(order), len(rows_b)], width_ratios=[1, 0.05],
+                          hspace=0.4, wspace=0.06, left=0.4, right=0.86, top=0.94, bottom=0.11)
+    short = {"": "baseline", "strict": "strict root", "S1position": "S1", "S2acc0.3": "S2",
+             "S1position_S2acc0.3": "S1 + S2", "strict_S1position_S2acc0.3": "strict + S1 + S2"}
+    labels_a = [f"{a.partition('_')[0].capitalize()}, {short[a.partition('_')[2]]}" for a in order]
+    for k, (M, S, labs, title) in enumerate((
+            (A_, S_, labels_a, "(a) Upload month"),
+            (B_, T_, [l for _, l in rows_b], "(b) Root release month"))):
+        ax = fig.add_subplot(gs[k, 0])
+        im = ax.imshow(M, cmap=cmap, norm=norm, aspect="auto")
+        for (i_, j_), val in np.ndenumerate(M):
+            txt = "0.0" if abs(val) < 0.05 else f"{val:+.1f}".replace("-", "−")
+            ax.text(j_, i_, txt, ha="center", va="center", fontsize=8,
+                    weight="bold" if S[i_, j_] else "normal",
+                    color="white" if abs(val) > 0.62 * lim else INK)
+        ax.set_xticks(range(4), ["0", "1–2", "3–5", "6–11"])
+        ax.set_yticks(range(len(labs)), labs, fontsize=8)
+        ax.set_xticks(np.arange(-0.5, 4), minor=True)
+        ax.set_yticks(np.arange(-0.5, len(labs)), minor=True)
+        ax.grid(False)
+        ax.grid(which="minor", color="white", lw=1.2)
+        ax.tick_params(which="minor", length=0)
+        ax.tick_params(length=0)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+        if k == 0:
+            ax.axhline(5.5, color="white", lw=3)
+        ax.set_title(title, fontsize=8.5)
+        ax.set_xlabel("Release gap (months; vs 12+)" if k else "")
+    cax = fig.add_subplot(gs[:, 1])
+    cb = fig.colorbar(im, cax=cax, extend="both")
+    cb.set_label("Coefficient (points)", fontsize=8)
+    cb.ax.tick_params(labelsize=8)
     return save(fig, "fig_timing")
 
 
@@ -1133,37 +1162,79 @@ def fig_heterogeneity():
 # ------------------------------------------------------------------ detection
 def fig_detection():
     import json
+    from scipy.stats import rankdata
     info = json.loads((RES / "exp04_heterogeneity/info.json").read_text())["detection"]
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.3))
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from run_exp04_final import prepared
+    d = prepared("primary")
+    same = d["rid"][d["i"]] == d["rid"][d["j"]]
+    keepc = [k for k, n in enumerate(d["names"]) if n != "same_root"]
+    resid = d["y"] - d["X"][:, keepc] @ np.linalg.lstsq(d["X"][:, keepc], d["y"], rcond=None)[0]
+
+    def roc(score):
+        o = np.argsort(-score, kind="stable")
+        lab = same[o]
+        tpr = np.concatenate([[0], np.cumsum(lab) / lab.sum()])
+        fpr = np.concatenate([[0], np.cumsum(~lab) / (~lab).sum()])
+        r = rankdata(score)
+        n1, n0 = same.sum(), (~same).sum()
+        return fpr, tpr, (r[same].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)
+    fig, axes = plt.subplots(1, 3, figsize=(FULL * 0.78, 2.3),
+                             gridspec_kw=dict(width_ratios=[1, 1, 0.95]))
     for ax, f, xl, title, key in (
             (axes[0], "agreement_hist.csv", "P(same wrong | both wrong)", "(a) Agreement", "auc_raw"),
             (axes[1], "residual_hist.csv", "Net of accuracy and gap",
              "(b) Adjusted", "auc_net_of_accuracy_and_gap")):
         h = pd.read_csv(RES / "exp04_heterogeneity" / f)
         w = h.bin_low.diff().iloc[1]
-        for col, c, lab, ls in (("different_root", ORANGE, "different roots", "-"),
-                                ("same_root", BLUE, "same root", "-")):
+        for col, c, lab in (("different_root", ORANGE, "different roots"),
+                            ("same_root", BLUE, "same root")):
             dens = h[col] / h[col].sum() / w
             ax.step(h.bin_low + w, dens, where="pre", color=c, lw=1.1, label=lab)
             ax.fill_between(h.bin_low + w, dens, step="pre", color=c, alpha=0.15, lw=0)
         ax.set_xlabel(xl)
-        ax.set_title(f"{title}, AUC {info[key]:.2f}")
+        ax.set_title(title)
         ax.set_yticks([])
     axes[0].set_ylabel("Density")
-    h, l = axes[0].get_legend_handles_labels()
-    axes[1].legend(h, l, frameon=False, loc="upper right", fontsize=7.5, handlelength=1.2)
-    fig.tight_layout(pad=0.3, w_pad=0.6)
+    axes[1].legend(frameon=False, loc="upper right", fontsize=8, handlelength=1.2)
+    ax = axes[2]
+    for score, c, ls, lab, key in ((d["y"], GREY, (0, (4, 2)), "agreement", "auc_raw"),
+                                   (resid, BLUE, "-", "adjusted", "auc_net_of_accuracy_and_gap")):
+        fpr, tpr, a_ = roc(score)
+        assert abs(a_ - info[key]) < 1e-9, (key, a_, info[key])
+        ax.plot(fpr, tpr, color=c, ls=ls, lw=1.2, label=f"{lab}, AUC {a_:.2f}")
+    ax.plot([0, 1], [0, 1], color=LGREY, lw=0.6, ls=":")
+    ax.set_xlim(0, 1); ax.set_ylim(0, 1.01)
+    ax.set_xlabel("False-positive rate")
+    ax.set_ylabel("True-positive rate")
+    ax.set_title("(c) ROC, same root")
+    ax.legend(frameon=False, loc="lower right", fontsize=8, handlelength=1.6)
+    fig.tight_layout(pad=0.3, w_pad=0.8)
     return save(fig, "fig_detection")
 
 
 # ------------------------------------------------------------------ accuracy over time
+BASE_LABELS = {   # base checkpoints labelled in Fig. 7(b): offset (points) and alignment
+    "meta-llama/Llama-2-7b-hf": (-7, 0, "right"), "meta-llama/Llama-2-70b-hf": (-7, 0, "right"),
+    "openlm-research/open_llama_3b": (-7, 7, "right"),
+    "mistralai/Mistral-7B-v0.1": (-7, -2, "right"), "01-ai/Yi-34B-200K": (-7, 3, "right"),
+    "mistralai/Mixtral-8x7B-v0.1": (-7, -10, "right"), "Qwen/Qwen1.5-72B": (-7, 10, "right"),
+    "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T": (7, -11, "left"),
+    "google/gemma-2b": (8, 0, "left"), "google/gemma-7b": (-12, -14, "right"),
+    "mistral-community/Mistral-7B-v0.2": (34, -16, "left"),
+    "meta-llama/Meta-Llama-3-8B": (34, 2, "left"), "meta-llama/Meta-Llama-3-70B": (26, 8, "left"),
+    "mistralai/Mixtral-8x22B-v0.1": (26, -7, "left")}
+LABEL_EXTRA = {"meta-llama/Llama-2-70b-hf": "Llama-2-70B", "Qwen/Qwen1.5-72B": "Qwen1.5-72B",
+               "mistralai/Mixtral-8x22B-v0.1": "Mixtral-8x22B"}
+
+
 def fig_accuracy():
     from scipy.stats import gaussian_kde, spearmanr
     pop = population("primary")
     v = pd.read_csv(RES / "exp04_validation/per_model.csv").set_index("model")
     pop = pop.assign(acc=v.loc[pop.model, "accuracy"].to_numpy())
     per = pd.PeriodIndex(pop.created_month, freq="M")
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.45), gridspec_kw=dict(width_ratios=[1, 1.5]))
+    fig, axes = plt.subplots(1, 2, figsize=(FULL, 2.5), gridspec_kw=dict(width_ratios=[1, 2.7]))
     ax = axes[0]
     a = pop.acc.to_numpy()
     ax.hist(a, bins=np.arange(0.2, 0.85, 0.025), density=True, color=LBLUE, edgecolor=BLUE,
@@ -1186,8 +1257,8 @@ def fig_accuracy():
     xj = x + np.random.default_rng(1).uniform(-0.3, 0.3, len(x))   # spread one-month columns
     dens = gaussian_kde(np.vstack([x / 30, a]))(np.vstack([x / 30, a]))
     o = np.argsort(dens)
-    ax.scatter(xj[o], a[o], c=dens[o], cmap="Blues", vmin=-dens.max() * 0.3, s=6, lw=0,
-               alpha=0.9)
+    ax.scatter(xj[o], a[o], c=dens[o], cmap="Blues", vmin=-dens.max() * 0.3, s=7, lw=0,
+               alpha=0.85)
     q = pd.PeriodIndex(per.asfreq("Q"))
     gq = pop.groupby(q).acc
     ok = gq.size() >= 10                              # quarters with at least 10 models
@@ -1197,14 +1268,32 @@ def fig_accuracy():
                     label="quarterly IQR")
     ax.plot(qx, med.values, "-o", color=ORANGE, lw=1.3, ms=2.5, label="quarterly median")
     ax.axhline(0.25, color=GREY, ls=(0, (3, 2)), lw=0.7)
+    # base checkpoints of the largest roots, labelled
+    for m, (dx, dy, ha) in BASE_LABELS.items():
+        k = np.flatnonzero(pop.model.to_numpy() == m)
+        if not len(k):
+            continue
+        k = k[0]
+        ax.scatter(x[k], a[k], marker="D", s=16, fc="white", ec=INK, lw=0.8, zorder=5)
+        ax.annotate(LABEL_EXTRA.get(m, root_label(m)), (x[k], a[k]), xytext=(dx, dy),
+                    textcoords="offset points", ha=ha, va="center", fontsize=8, color=INK,
+                    zorder=6, bbox=dict(fc="white", ec="none", alpha=0.8, pad=0.4),
+                    arrowprops=dict(arrowstyle="-", color=GREY, lw=0.5, shrinkA=0, shrinkB=2))
     print(f"fig_accuracy: n={len(a)}, median={np.median(a):.3f}, below 0.30="
           f"{int((a < 0.30).sum())}, Spearman rho={spearmanr(x, a).statistic:.3f}")
-    ticks = [(y_ - 2022) * 12 + 1 for y_ in (2022, 2023, 2024)]
-    ax.set_xticks(ticks, ["2022", "2023", "2024"])
+    ticks = [(y_ - 2022) * 12 + m_ for y_ in (2022, 2023, 2024) for m_ in (1, 7)]
+    ax.set_xticks(ticks, [f"{'Jan' if m_ == 1 else 'Jul'} {y_}" for y_ in (2022, 2023, 2024)
+                          for m_ in (1, 7)])
+    ax.set_xlim(x.min() - 1, x.max() + 8.5)
+    ax.set_ylabel("Accuracy")
     ax.set_xlabel("Upload month")
-    ax.set_title("(b) Over time")
-    ax.legend(frameon=False, loc="upper left", fontsize=8, handlelength=1.2)
-    fig.tight_layout(pad=0.3, w_pad=0.6)
+    ax.set_title("(b) Over time; diamonds: base checkpoints of large roots")
+    from matplotlib.lines import Line2D
+    h, l = ax.get_legend_handles_labels()
+    h.append(Line2D([], [], marker="D", ls="", mfc="white", mec=INK, ms=4))
+    l.append("base checkpoint")
+    ax.legend(h, l, frameon=False, loc="upper left", fontsize=8, handlelength=1.2)
+    fig.tight_layout(pad=0.3, w_pad=1.0)
     return save(fig, "fig_accuracy")
 
 
