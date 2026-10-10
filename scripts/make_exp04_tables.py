@@ -476,12 +476,15 @@ def tab_sim_real():
 
 
 def tab_runpod():
-    """Record of the earlier per-model evaluation (not used for inference).
+    """Earlier per-model evaluation (not used for inference): two tables.
 
-    Planned roster and fidelity: datasets/coverage/trait_definition.csv.
-    Recorded runs: datasets/phase2_eval_results.csv (lm-eval aggregate accuracy)
-    and datasets/eval_samples/*.jsonl (per-question files). Leaderboard check:
-    results/exp04_validation/per_model.csv (item-validated leaderboard accuracy).
+    tab_runpod_plan.tex: the planned roster, from
+    datasets/coverage/trait_definition.csv (family, quarter, size, repository,
+    precision, gated).
+    tab_runpod.tex: what was recorded, from datasets/phase2_eval_results.csv
+    (lm-eval aggregate accuracy), datasets/eval_samples/*.jsonl (per-question
+    files) and results/exp04_validation/per_model.csv (item-validated
+    leaderboard accuracy of the same repository).
     """
     import json
     plan = pd.read_csv(ROOT / "datasets/coverage/trait_definition.csv")
@@ -490,39 +493,38 @@ def tab_runpod():
     lb = lb[lb.category == "validated"].assign(key=lambda d: d.model.str.lower()) \
         .set_index("key").accuracy
     samples = {p.name.split("__")[0]: p for p in (ROOT / "datasets/eval_samples").glob("*.jsonl")}
-    tt = lambda x: "\\texttt{" + x.split("/")[-1].replace("_", "\\_") + "}"  # noqa: E731
-    lines = []
+    tt = lambda x: "\\texttt{" + x.replace("_", "\\_") + "}"  # noqa: E731
+    fid = {"bf16": "bf16", "4bit": "4-bit NF4", "imputed": "imputed"}   # as planned
+    plan_lines, run_lines = [], []
     for _, r in plan.iterrows():
         name = r.full_name
-        planned = {"bf16": "bf16", "4bit": "4-bit NF4", "imputed": "imputed"}[r.fidelity]
+        plan_lines.append(f"{name} & {r.family} & {r.quarter} & {r.params} & {tt(r.hf_repo)} & "
+                          f"{fid[r.fidelity]} & {r.gated} \\\\")
         if name in run.index:
             q = run.loc[name]
             with open(samples[name]) as f:
-                first = json.loads(f.readline())
-            nlp = len(json.loads(first["choice_logprobs"]))
-            fid = {"bf16": "bf16", "4bit": "4-bit"}[q.fidelity]
+                rows = [json.loads(x) for x in f]
+            nlp = len(json.loads(rows[0]["choice_logprobs"]))
+            all_a = sum(x["answer"] == 0 for x in rows) / len(rows)
             repo = tt(q.hf_repo) + ("$^{a}$" if q.hf_repo != r.hf_repo else "")
-            notes = [f"{nlp} log-lik./item"]
-            acc = q.acc
-            with open(samples[name]) as f:
-                all_a = sum(json.loads(x)["answer"] == 0 for x in f) / 14042
-            if abs(acc - all_a) < 5e-4:
+            notes = [f"{len(rows):,} rows, {nlp} log-lik./item"]
+            if abs(q.acc - all_a) < 5e-4:
                 notes.append("equals the all-A rate")
-            elif acc < 0.26:
+            elif q.acc < 0.26:
                 notes.append("chance level, unresolved")
             k = q.hf_repo.lower()
             if k in lb.index:
                 notes.append(f"leaderboard {lb[k]:.3f}")
-            lines.append(f"{name} & {r.quarter} & {planned} & {repo} & {fid} & {acc:.3f} & "
-                         + "; ".join(notes) + " \\\\")
+            tag = {"bf16": "bf16", "4bit": "4-bit tag$^{b}$"}[q.fidelity]
+            run_lines.append(f"{name} & {repo} & {tag} & {q.acc:.3f} & "
+                             + "; ".join(notes) + " \\\\")
         elif r.fidelity == "imputed":
-            lines.append(f"{name} & {r.quarter} & {planned} & -- & -- & -- & "
-                         "imputation specified, not executed \\\\")
+            run_lines.append(f"{name} & -- & -- & -- & imputation specified, not executed \\\\")
         else:
-            lines.append(f"{name} & {r.quarter} & {planned} & -- & -- & -- & "
-                         "not run (evaluation stopped after 16 models: GPU budget) \\\\")
-    write("tab_runpod.tex", "\n".join(lines) + "\n")
-
+            run_lines.append(f"{name} & -- & -- & -- & not run (evaluation stopped after 16 "
+                             "models: GPU budget) \\\\")
+    write("tab_runpod_plan.tex", "\n".join(plan_lines) + "\n")
+    write("tab_runpod.tex", "\n".join(run_lines) + "\n")
 
 if __name__ == "__main__":
     for f in (tab_prereg, tab_inference, tab_outcome, tab_flow, tab_precision,
