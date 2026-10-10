@@ -251,8 +251,8 @@ OKABE = {"A": "#0072B2", "B": "#E69F00", "C": "#009E73", "D": "#D55E00"}   # col
 
 
 def fig_schematic():
-    fig, (ax, axm) = plt.subplots(1, 2, figsize=(FULL, 2.45),
-                                  gridspec_kw=dict(width_ratios=[1, 1.08], wspace=0.08))
+    fig, (ax, axm) = plt.subplots(2, 1, figsize=(COL, 4.55),
+                                  gridspec_kw=dict(height_ratios=[1, 1.02], hspace=0.38))
     # (a) the two predictors on a timeline
     ax.set_xlim(-0.8, 12.4); ax.set_ylim(0.0, 3.3)
     for sp in ("left", "right", "top"):
@@ -282,14 +282,13 @@ def fig_schematic():
     (xa, ya), (xb, yb) = pos["A3"], pos["B2"]
     ax.annotate("", (xb + 0.05, yb + 0.12), (xa + 0.05, ya - 0.42), arrowprops=dict(
         arrowstyle="<->", color=ORANGE, lw=0.9, mutation_scale=6))
-    ax.text(xa + 0.35, (ya + yb) / 2 - 0.1, "different roots,\nsame month\n(bin 0)",
-            color=ORANGE, fontsize=8, va="center")
+    ax.text(xa - 0.35, (ya + yb) / 2 - 0.1, "different roots,\nsame month\n(bin 0)",
+            color=ORANGE, fontsize=8, va="center", ha="right")
     ax.text(-0.6, 0.12, "arcs: declared fine-tune ancestry", fontsize=8, color=GREY, ha="left")
     # (b) the outcome on a toy item set: chosen option per item
     key = "BADCABCD"
     rows = [("A1", "BCBCDACA"), ("A2", "BCBADACB"), None, ("A3", "ACBCDACD"), ("B2", "CDBCCACD")]
-    axm.set_xlim(-1.6, 12.6); axm.set_ylim(-0.4, 6.9); axm.set_axis_off()
-    axm.set_title("(b) Outcome: same wrong option, given both wrong")
+    axm.set_xlim(-1.4, 13.9); axm.set_ylim(-0.6, 6.9); axm.set_axis_off()
     def cell(x, y, ch, wrong):
         axm.add_patch(Rectangle((x - 0.45, y - 0.42), 0.9, 0.84, lw=0.4,
                                 fc="white" if wrong else "#ececec",
@@ -322,13 +321,14 @@ def fig_schematic():
                                     ec=c, lw=1.3 if k in same else 0.6,
                                     ls="-" if k in same else (0, (2, 1.5))))
         rel = "shared root" if c == BLUE else "different roots"
-        axm.text(8.0, (y1 + y2) / 2, f"{m1}–{m2} ({rel})\nboth wrong: {len(both)} items\n"
+        axm.text(7.9, (y1 + y2) / 2, f"{m1}–{m2}: {rel}\nboth wrong: {len(both)}\n"
                  f"same option: {len(same)}\n$a$ = {len(same)}/{len(both)} = "
                  f"{len(same) / len(both):.2f}", ha="left", va="center", fontsize=8, color=c,
                  linespacing=1.15)
-    axm.text(-1.5, -0.25, "grey: correct;  dashed: both wrong;  solid: both wrong, same option",
-             ha="left", va="center", fontsize=8, color=GREY)
-    fig.subplots_adjust(left=0.01, right=0.995, top=0.9, bottom=0.17)
+    axm.text(-1.3, -0.35, "grey: correct; dashed: both wrong;\nsolid: both wrong, same option",
+             ha="left", va="center", fontsize=8, color=GREY, linespacing=1.1)
+    axm.set_title("(b) Outcome: same wrong option, both wrong", fontsize=9)
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.95, bottom=0.02)
     return save(fig, "fig_schematic")
 
 
@@ -1094,15 +1094,18 @@ def fig_dose():
     pre = pd.read_csv(RES / "exp04_final/inference_audit.csv")
     base = pre[(pre.population == "primary") & (pre.term == "same_root")
                & (pre.inference == "delete-one-root jackknife")].iloc[0]
-    fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.35),
-                             gridspec_kw=dict(width_ratios=[1, 1, 1.25], wspace=0.32))
+    fig = plt.figure(figsize=(COL, 4.1))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.25, 1], hspace=0.55, wspace=0.12,
+                          left=0.2, right=0.97, top=0.93, bottom=0.11)
+    axes = [fig.add_subplot(gs[0, 0])]
+    axes += [fig.add_subplot(gs[0, 1], sharey=axes[0]), fig.add_subplot(gs[1, :])]
     for ax, analysis, terms, labels, title in (
             (axes[0], "lineage dose-response: tree distance",
              ["distance 1", "distance 2", "distance 3+"], ["1", "2", "3+"],
-             "(a) Tree distance, vs different roots"),
+             "(a) Tree distance"),
             (axes[1], "lineage dose-response: relation type",
              ["ancestor-descendant", "siblings", "more distant"],
-             ["direct\nline", "siblings", "more\ndistant"], "(b) Relation, vs different roots")):
+             ["direct\nline", "sib-\nlings", "more\ndistant"], "(b) Relation")):
         d = rv[(rv.population == "primary") & (rv.analysis == analysis)].set_index("term").loc[terms]
         x = np.arange(len(terms))
         ax.axhspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
@@ -1113,13 +1116,13 @@ def fig_dose():
         ax.scatter(x, d.estimate, s=10 + 70 * np.sqrt(d.pairs / 1200), color=BLUE, ec="white",
                    lw=0.6, zorder=4)
         for k, n in enumerate(d.pairs):
-            ax.annotate(f"n = {int(n):,}", (x[k], d.ci95_high.iloc[k]), textcoords="offset points",
+            ax.annotate(f"{int(n):,}", (x[k], d.ci95_high.iloc[k]), textcoords="offset points",
                         xytext=(0, 3), ha="center", fontsize=8, color=GREY)
         ax.set_xticks(x, labels)
         ax.set_xlim(-0.5, len(terms) - 0.5)
         ax.set_ylim(0.08, 0.235)
         ax.set_title(title, fontsize=8.5)
-    axes[0].set_ylabel("Coefficient")
+    axes[0].set_ylabel("vs different roots")
     axes[1].tick_params(labelleft=False)
     # (c) within roots only: closer relatives against more distant ones in the same root
     ax = axes[2]
@@ -1137,15 +1140,14 @@ def fig_dose():
         ax.text(d.ci95_high * 100 + 0.4, yy, f"{d.estimate * 100:+.1f}", va="center",
                 fontsize=8, color=ORANGE)
     ax.axhline(1.6, color=LGREY, lw=0.6)
-    ax.text(9.5, 3.75, "vs distance 3+", ha="right", fontsize=8, color=GREY, style="italic")
-    ax.text(9.5, 1.32, "vs more distant", ha="right", fontsize=8, color=GREY, style="italic")
+    ax.text(-0.8, 3.68, "vs distance 3+", ha="left", fontsize=8, color=GREY, style="italic")
+    ax.text(-0.8, 1.3, "vs more distant", ha="left", fontsize=8, color=GREY, style="italic")
     ax.set_yticks(yv, [lab for _, _, lab in items])
     ax.set_ylim(-0.6, 4.1)
     ax.set_xlim(-1, 10)
     zero(ax)
     ax.set_xlabel("Points, same root only")
-    ax.set_title("(c) Within roots", fontsize=8.5)
-    fig.subplots_adjust(left=0.075, right=0.99, top=0.88, bottom=0.2)
+    ax.set_title("(c) Within roots, vs more distant relatives", fontsize=8.5)
     return save(fig, "fig_dose")
 
 
@@ -1370,14 +1372,11 @@ def fig_detection():
 # ------------------------------------------------------------------ accuracy over time
 BASE_LABELS = {   # base checkpoints labelled in Fig. 7(b): offset (points) and alignment
     "meta-llama/Llama-2-7b-hf": (-7, 0, "right"), "meta-llama/Llama-2-70b-hf": (-7, 0, "right"),
-    "openlm-research/open_llama_3b": (-7, 7, "right"),
-    "mistralai/Mistral-7B-v0.1": (-7, -2, "right"), "01-ai/Yi-34B-200K": (-7, 3, "right"),
-    "mistralai/Mixtral-8x7B-v0.1": (-7, -10, "right"), "Qwen/Qwen1.5-72B": (-7, 10, "right"),
-    "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T": (7, -11, "left"),
-    "google/gemma-2b": (8, 0, "left"), "google/gemma-7b": (-12, -14, "right"),
-    "mistral-community/Mistral-7B-v0.2": (34, -16, "left"),
-    "meta-llama/Meta-Llama-3-8B": (34, 2, "left"), "meta-llama/Meta-Llama-3-70B": (26, 8, "left"),
-    "mistralai/Mixtral-8x22B-v0.1": (26, -7, "left")}
+    "openlm-research/open_llama_3b": (-7, 8, "right"),
+    "mistralai/Mistral-7B-v0.1": (-7, -4, "right"), "01-ai/Yi-34B-200K": (-7, 4, "right"),
+    "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T": (6, -11, "left"),
+    "google/gemma-2b": (8, 0, "left"),
+    "meta-llama/Meta-Llama-3-8B": (24, -8, "left"), "meta-llama/Meta-Llama-3-70B": (18, 6, "left")}
 LABEL_EXTRA = {"meta-llama/Llama-2-70b-hf": "Llama-2-70B", "Qwen/Qwen1.5-72B": "Qwen1.5-72B",
                "mistralai/Mixtral-8x22B-v0.1": "Mixtral-8x22B"}
 
@@ -1388,7 +1387,7 @@ def fig_accuracy():
     v = pd.read_csv(RES / "exp04_validation/per_model.csv").set_index("model")
     pop = pop.assign(acc=v.loc[pop.model, "accuracy"].to_numpy())
     per = pd.PeriodIndex(pop.created_month, freq="M")
-    fig, axes = plt.subplots(1, 2, figsize=(FULL, 2.5), gridspec_kw=dict(width_ratios=[1, 2.7]))
+    fig, axes = plt.subplots(2, 1, figsize=(COL, 4.3), gridspec_kw=dict(height_ratios=[1, 1.7]))
     ax = axes[0]
     a = pop.acc.to_numpy()
     ax.hist(a, bins=np.arange(0.2, 0.85, 0.025), density=True, color=LBLUE, edgecolor=BLUE,
@@ -1435,19 +1434,19 @@ def fig_accuracy():
                     arrowprops=dict(arrowstyle="-", color=GREY, lw=0.5, shrinkA=0, shrinkB=2))
     print(f"fig_accuracy: n={len(a)}, median={np.median(a):.3f}, below 0.30="
           f"{int((a < 0.30).sum())}, Spearman rho={spearmanr(x, a).statistic:.3f}")
-    ticks = [(y_ - 2022) * 12 + m_ for y_ in (2022, 2023, 2024) for m_ in (1, 7)]
-    ax.set_xticks(ticks, [f"{'Jan' if m_ == 1 else 'Jul'} {y_}" for y_ in (2022, 2023, 2024)
-                          for m_ in (1, 7)])
-    ax.set_xlim(x.min() - 1, x.max() + 8.5)
+    ticks = [(y_ - 2022) * 12 + 1 for y_ in (2022, 2023, 2024)]
+    ax.set_xticks(ticks, ["2022", "2023", "2024"])
+    ax.set_xlim(x.min() - 1, x.max() + 9)
     ax.set_ylabel("Accuracy")
     ax.set_xlabel("Upload month")
-    ax.set_title("(b) Over time; diamonds: base checkpoints of large roots")
+    ax.set_title("(b) Over time")
     from matplotlib.lines import Line2D
     h, l = ax.get_legend_handles_labels()
     h.append(Line2D([], [], marker="D", ls="", mfc="white", mec=INK, ms=4))
     l.append("base checkpoint")
-    ax.legend(h, l, frameon=False, loc="upper left", fontsize=8, handlelength=1.2)
-    fig.tight_layout(pad=0.3, w_pad=1.0)
+    ax.legend(h, l, frameon=False, loc="upper left", bbox_to_anchor=(0.0, 0.66), fontsize=8,
+              handlelength=1.2)
+    fig.tight_layout(pad=0.3, h_pad=0.8)
     return save(fig, "fig_accuracy")
 
 
