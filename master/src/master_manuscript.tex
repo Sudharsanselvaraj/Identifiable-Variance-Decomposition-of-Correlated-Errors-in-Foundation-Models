@@ -233,8 +233,8 @@ estimated by ordinary least squares (OLS), where $s_{ij}$ indicates a shared lin
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.65\textwidth]{fig_schematic.pdf}
-\caption{\textbf{The two pair-level predictors} (hypothetical models). Squares are lineage roots, circles fine-tunes at their upload month, arcs declared ancestry. A1 and A2 share a root, one month apart (gap bin 1--2); A3 and B2 have different roots, same month (gap bin 0). The outcome is agreement on wrong answers, adjusted for both accuracies.}
+\includegraphics[width=\textwidth]{fig_schematic.pdf}
+\caption{\textbf{Predictors and outcome} (hypothetical models). (a) Squares are lineage roots, circles fine-tunes at their upload month, arcs declared ancestry; A1--A2 share a root one month apart, A3--B2 have different roots in the same month. (b) The outcome on eight toy items: of the items both models get wrong, the share on which they choose the same option.}
 \label{fig:schematic}
 \end{figure}
 
@@ -309,7 +309,7 @@ Fig.~\ref{fig:gap} shows the finding before any modelling. At every release gap 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.65\textwidth]{exp04_agreement_by_gap.pdf}
-\caption{\textbf{Agreement on wrong answers by release-month gap} (primary sample, unadjusted). Half-violins: density across pairs (left, different roots; right, same root); markers: means; bars: interquartile ranges; labels: pairs. Dashed line: 1/3, uniform choice among three wrong options.}
+\caption{\textbf{Agreement on wrong answers by release-month gap} (primary sample, unadjusted). Half-violins: density across pairs (left, different roots; right, same root); markers: means; bars: interquartile ranges; labels: pairs; $\Delta$: difference of the means. Dashed line: 1/3, uniform choice among three wrong options.}
 \label{fig:gap}
 \end{figure}
 
@@ -350,7 +350,7 @@ Accuracy can mediate both associations: fine-tunes of one root tend to have simi
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_raw_adjusted.pdf}
-\caption{\textbf{Why accuracy is adjusted for.} (a) Mean agreement and interquartile range of primary pairs by their mean accuracy (bins of 0.05 with $\geq 30$ pairs; 171{,}735 different-root and 2{,}020 same-root pairs), with pairs per bin below. (b, c) Coefficients without and with the accuracy terms (jackknife 95\% CIs; gaps relative to 12+ months).}
+\caption{\textbf{Why accuracy is adjusted for.} (a) Mean agreement and interquartile range of primary pairs by their mean accuracy (bins of 0.05 with $\geq 30$ pairs; 171{,}735 different-root and 2{,}020 same-root pairs), with pairs per bin below. (b, c) Coefficients without and with the accuracy terms (jackknife 95\% CIs; gaps relative to 12+ months); $\Delta$: change in points.}
 \label{fig:rawadj}
 \end{figure}
 
@@ -378,7 +378,7 @@ Table~\ref{tab:robust} collects every robustness check for the primary sample; d
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.65\textwidth]{fig_inference.pdf}
-\caption{\textbf{Sensitivity of the intervals to the unit of dependence} (95\% CIs). Model-level dyadic (pre-specified): pairs sharing a model may be correlated; root-level dyadic: pairs touching a common root; jackknife: one root, with its pairs, omitted at a time. Numbers: jackknife width relative to model-level.}
+\caption{\textbf{Sensitivity of the intervals to the unit of dependence} (95\% CIs). Model-level dyadic (pre-specified): pairs sharing a model may be correlated; root-level dyadic: pairs touching a common root; jackknife: one root, with its pairs, omitted at a time. (c) Interval width relative to the model-level interval. P: primary; E: expanded.}
 \label{fig:inference}
 \end{figure}
 
@@ -407,12 +407,12 @@ Check & Status & SE & Shared root & Same month \\
 \end{table}
 
 \subsection{Lineage Dose-Response}
-If shared errors are inherited, closer relatives should agree more. The tree-distance predictor was specified in the analysis plan as secondary but first run after review, when the main results were known, so we treat it as supporting rather than confirmatory evidence. Replacing the shared-root indicator by tree distance gives a monotone gradient (Table~\ref{tab:robust}): 18.5 points for parent--child pairs (177 pairs), 13.6 at distance two (699, mostly siblings) and 11.5 for more distant relatives (1{,}112). Classified by relation, ancestor--descendant pairs agree 17.3 points more than unrelated pairs, siblings 13.5 and more distant relatives 11.5 (Fig.~\ref{fig:dose}). The 32 same-root pairs at distance zero, one Hub repository listed under two leaderboard names, have their own indicator and are not shown. Parent--child pairs come disproportionately from small roots (82 of 177), which show larger coefficients (Section~\ref{sec:hetero}), so the gradient could reflect root composition. Estimated within roots (post hoc; same-root pairs only, with a fixed effect for each root), parent--child pairs agree 5.5 points more than distance-3+ pairs of the same root (jackknife CI 4.1--6.8) and distance-two pairs 2.3 points more (0.3--4.2); the gradient is smaller within roots than across them, but present. Closer relatives are also uploaded closer together and often by the same developer, so the gradient is consistent with inheritance but does not isolate it.
+If shared errors are inherited, closer relatives should agree more. The tree-distance predictor was specified in the analysis plan as secondary but first run after review, when the main results were known, so we treat it as supporting rather than confirmatory evidence. Replacing the shared-root indicator by tree distance gives a monotone gradient (Table~\ref{tab:robust}): 18.5 points for parent--child pairs (177 pairs), 13.6 at distance two (699, mostly siblings) and 11.5 for more distant relatives (1{,}112). Classified by relation, ancestor--descendant pairs agree 17.3 points more than unrelated pairs, siblings 13.5 and more distant relatives 11.5 (Fig.~\ref{fig:dose}). The 32 same-root pairs at distance zero, one Hub repository listed under two leaderboard names, have their own indicator and are not shown. Parent--child pairs come disproportionately from small roots (82 of 177), which show larger coefficients (Section~\ref{sec:hetero}), so the gradient could reflect root composition. Estimated within roots (post hoc; same-root pairs only, with a fixed effect for each root; Fig.~\ref{fig:dose}c), parent--child pairs agree 5.5 points more than distance-3+ pairs of the same root (jackknife CI 4.1--6.8) and distance-two pairs 2.3 points more (0.3--4.2); the gradient is smaller within roots than across them, but present. Closer relatives are also uploaded closer together and often by the same developer, so the gradient is consistent with inheritance but does not isolate it.
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.65\textwidth]{fig_dose.pdf}
-\caption{\textbf{Lineage dose-response} (primary sample; in the analysis plan, first run after review; jackknife 95\% CIs; labels: pairs). Each coefficient compares one kind of related pair with different-root pairs. Tree distance: declared links through the nearest common ancestor (32 distance-zero pairs not shown). Band and dashed line: the pre-specified shared-root coefficient and interval.}
+\includegraphics[width=\textwidth]{fig_dose.pdf}
+\caption{\textbf{Lineage dose-response} (primary sample; in the analysis plan, first run after review; jackknife 95\% CIs). (a, b) Each kind of related pair against different-root pairs (marker area and labels: pairs; 32 distance-zero pairs not shown; band: the pre-specified shared-root coefficient). (c) Within roots only, closer relatives against more distant ones (post hoc).}
 \label{fig:dose}
 \end{figure}
 
@@ -423,7 +423,7 @@ The contrast is identified by 63 roots, two of which contribute 39 and 37 models
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_heterogeneity.pdf}
-\caption{\textbf{Heterogeneity of the lineage association} (primary sample; post hoc; band and dashed line: the pre-specified estimate and its jackknife interval). (a) Roots with $\geq 8$ models and the remaining multi-model roots pooled (labels and marker area: same-root pairs; model-level CIs, as a single-root jackknife is undefined). (b) By the pair's lower accuracy (jackknife CIs). (c) The 57 MMLU subjects (model-level CIs, unadjusted for multiplicity).}
+\caption{\textbf{Heterogeneity of the lineage association} (primary sample; post hoc; band and dashed line: the pre-specified estimate and its jackknife interval). (a) Roots with $\geq 8$ models and the remaining multi-model roots pooled, with their same-root pairs (model-level CIs). (b) By the pair's lower accuracy (jackknife CIs). (c) The 57 MMLU subjects by category (model-level CIs, unadjusted for multiplicity).}
 \label{fig:heterogeneity}
 \end{figure}
 

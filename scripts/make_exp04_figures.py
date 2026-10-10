@@ -75,6 +75,32 @@ ROOT_LABEL = {
     "openlm-research/open_llama_3b": "OpenLLaMA-3B"}
 
 
+# MMLU subject -> category, as tagged in lm-evaluation-harness 0.4.12 (tasks/mmlu/default);
+# shown with marker shape and a colour-blind-safe colour together.
+MMLU_CATEGORY = {**{s_: "STEM" for s_ in (
+    "abstract_algebra anatomy astronomy college_biology college_chemistry "
+    "college_computer_science college_mathematics college_physics computer_security "
+    "conceptual_physics electrical_engineering elementary_mathematics high_school_biology "
+    "high_school_chemistry high_school_computer_science high_school_mathematics "
+    "high_school_physics high_school_statistics machine_learning").split()},
+    **{s_: "humanities" for s_ in (
+        "formal_logic high_school_european_history high_school_us_history "
+        "high_school_world_history international_law jurisprudence logical_fallacies "
+        "moral_disputes moral_scenarios philosophy prehistory professional_law "
+        "world_religions").split()},
+    **{s_: "social sciences" for s_ in (
+        "econometrics high_school_geography high_school_government_and_politics "
+        "high_school_macroeconomics high_school_microeconomics high_school_psychology "
+        "human_sexuality professional_psychology public_relations security_studies sociology "
+        "us_foreign_policy").split()},
+    **{s_: "other" for s_ in (
+        "business_ethics clinical_knowledge college_medicine global_facts human_aging "
+        "management marketing medical_genetics miscellaneous nutrition professional_accounting "
+        "professional_medicine virology").split()}}
+CAT_STYLE = {"STEM": ("#0072B2", "o"), "humanities": ("#D55E00", "s"),
+             "social sciences": ("#009E73", "^"), "other": ("#555555", "D")}
+
+
 def root_label(root: str) -> str:
     return ROOT_LABEL.get(root, root.split("/")[-1])
 
@@ -221,13 +247,19 @@ def fig_workflow():
 
 
 # ------------------------------------------------------------------ 3 schematic
+OKABE = {"A": "#0072B2", "B": "#E69F00", "C": "#009E73", "D": "#D55E00"}   # colour-blind safe
+
+
 def fig_schematic():
-    fig, ax = plt.subplots(figsize=(COL, 2.25))
+    fig, (ax, axm) = plt.subplots(1, 2, figsize=(FULL, 2.45),
+                                  gridspec_kw=dict(width_ratios=[1, 1.08], wspace=0.08))
+    # (a) the two predictors on a timeline
     ax.set_xlim(-0.8, 12.4); ax.set_ylim(0.0, 3.3)
     for sp in ("left", "right", "top"):
         ax.spines[sp].set_visible(False)
     ax.set_yticks([]); ax.set_xticks(range(0, 13, 2))
-    ax.set_xlabel("Upload month (illustration; hypothetical models)")
+    ax.set_xlabel("Upload month (hypothetical models)")
+    ax.set_title("(a) Predictors of a pair")
     GREEN, LGREEN = "#4f6f52", "#a9c3a6"
     lanes = {"A": (2.35, 0.0, [("A1", 5), ("A2", 6), ("A3", 10)], BLUE, LBLUE),
              "B": (0.75, 7.0, [("B1", 9), ("B2", 10)], GREEN, LGREEN)}
@@ -243,19 +275,60 @@ def fig_schematic():
             ax.scatter(m, y, s=24, color=lc, ec=c, lw=0.6, zorder=3)
             ax.text(m, y - 0.3, name, ha="center", fontsize=8.5)
             pos[name] = (m, y)
-    def bracket(a, b, y, txt, c):
-        x1, x2 = pos[a][0], pos[b][0]
-        ax.plot([x1, x1, x2, x2], [y + 0.1, y, y, y + 0.1], color=c, lw=0.8)
-        ax.text((x1 + x2) / 2, y - 0.08, txt, color=c, ha="center", va="top", fontsize=8.0)
-    bracket("A1", "A2", 1.72, "shared root,\ngap 1 (bin 1–2)", BLUE)
+    x1, x2 = pos["A1"][0], pos["A2"][0]
+    ax.plot([x1, x1, x2, x2], [1.82, 1.72, 1.72, 1.82], color=BLUE, lw=0.8)
+    ax.text((x1 + x2) / 2, 1.64, "shared root,\ngap 1 (bin 1–2)", color=BLUE, ha="center",
+            va="top", fontsize=8)
     (xa, ya), (xb, yb) = pos["A3"], pos["B2"]
     ax.annotate("", (xb + 0.05, yb + 0.12), (xa + 0.05, ya - 0.42), arrowprops=dict(
         arrowstyle="<->", color=ORANGE, lw=0.9, mutation_scale=6))
     ax.text(xa + 0.35, (ya + yb) / 2 - 0.1, "different roots,\nsame month\n(bin 0)",
-            color=ORANGE, fontsize=8.0, va="center")
-    ax.text(-0.6, 0.12, "arcs: declared fine-tune ancestry", fontsize=7.5, color=GREY,
-            ha="left")
-    fig.tight_layout(pad=0.3)
+            color=ORANGE, fontsize=8, va="center")
+    ax.text(-0.6, 0.12, "arcs: declared fine-tune ancestry", fontsize=8, color=GREY, ha="left")
+    # (b) the outcome on a toy item set: chosen option per item
+    key = "BADCABCD"
+    rows = [("A1", "BCBCDACA"), ("A2", "BCBADACB"), None, ("A3", "ACBCDACD"), ("B2", "CDBCCACD")]
+    axm.set_xlim(-1.6, 12.6); axm.set_ylim(-0.4, 6.9); axm.set_axis_off()
+    axm.set_title("(b) Outcome: same wrong option, given both wrong")
+    def cell(x, y, ch, wrong):
+        axm.add_patch(Rectangle((x - 0.45, y - 0.42), 0.9, 0.84, lw=0.4,
+                                fc="white" if wrong else "#ececec",
+                                ec=OKABE[ch] if wrong else "#d4d4d4"))
+        axm.text(x, y, ch, ha="center", va="center", fontsize=8.5,
+                 weight="bold" if wrong else "normal", color=OKABE[ch] if wrong else GREY)
+    ytop = 6.0
+    axm.text(-0.7, ytop, "Key", ha="right", va="center", fontsize=8.5, weight="bold")
+    for k, ch in enumerate(key):
+        axm.text(k, ytop + 0.72, str(k + 1), ha="center", va="center", fontsize=7.8, color=GREY)
+        cell(k, ytop, ch, False)
+    yy = {}
+    y = ytop - 1.05
+    for r in rows:
+        if r is None:
+            y -= 0.45
+            continue
+        name, ans = r
+        axm.text(-0.7, y, name, ha="right", va="center", fontsize=8.5)
+        for k, ch in enumerate(ans):
+            cell(k, y, ch, ch != key[k])
+        yy[name] = (y, ans)
+        y -= 1.0
+    for (m1, m2), c in ((("A1", "A2"), BLUE), (("A3", "B2"), ORANGE)):
+        (y1, s1), (y2, s2) = yy[m1], yy[m2]
+        both = [k for k in range(8) if s1[k] != key[k] and s2[k] != key[k]]
+        same = [k for k in both if s1[k] == s2[k]]
+        for k in both:
+            axm.add_patch(Rectangle((k - 0.5, y2 - 0.5), 1.0, y1 - y2 + 1.0, fill=False,
+                                    ec=c, lw=1.3 if k in same else 0.6,
+                                    ls="-" if k in same else (0, (2, 1.5))))
+        rel = "shared root" if c == BLUE else "different roots"
+        axm.text(8.0, (y1 + y2) / 2, f"{m1}–{m2} ({rel})\nboth wrong: {len(both)} items\n"
+                 f"same option: {len(same)}\n$a$ = {len(same)}/{len(both)} = "
+                 f"{len(same) / len(both):.2f}", ha="left", va="center", fontsize=8, color=c,
+                 linespacing=1.15)
+    axm.text(-1.5, -0.25, "grey: correct;  dashed: both wrong;  solid: both wrong, same option",
+             ha="left", va="center", fontsize=8, color=GREY)
+    fig.subplots_adjust(left=0.01, right=0.995, top=0.9, bottom=0.17)
     return save(fig, "fig_schematic")
 
 
@@ -704,6 +777,11 @@ def fig_rawadj():
         raw = r[(r.population == pop) & (r.model == "raw (no accuracy terms)")].set_index("term")
         adj = r[(r.population == pop) & (r.model == "adjusted (pre-registered)")].set_index("term")
         for k, (t, _) in enumerate(GAPS):
+            if k % 2 == 0:
+                axc.axhspan(y[k] - 0.5, y[k] + 0.5, color="#f4f6f9", zorder=0, lw=0)
+            axc.text(0.325, y[k] - 0.34,
+                     f"Δ {100 * (adj.estimate[t] - raw.estimate[t]):+.1f}".replace("-", "−"),
+                     ha="right", va="center", fontsize=8, color=GREY, style="italic")
             yr, ya = y[k] + 0.16, y[k] - 0.16
             axc.plot([raw.estimate[t], adj.estimate[t]], [yr, ya], color=LGREY, lw=0.7, zorder=1)
             axc.errorbar(raw.estimate[t], yr, xerr=[[raw.estimate[t] - raw.ci_low[t]],
@@ -738,34 +816,54 @@ def fig_rawadj():
 # ------------------------------------------------------------------ 9 inference
 def fig_inference():
     inf = pd.read_csv(RES / "exp04_final/inference_audit.csv")
-    kinds = [("model-dyadic (pre-registered)", "model-level dyadic (pre-specified)", BLUE, "o"),
+    kinds = [("model-dyadic (pre-registered)", "model-level (pre-specified)", BLUE, "o"),
              ("root-dyadic", "root-level dyadic", GREY, "s"),
-             ("delete-one-root jackknife", "delete-one-root jackknife", ORANGE, "^")]
+             ("delete-one-root jackknife", "root jackknife", ORANGE, "^")]
     pops = list(SAMPLES)
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.55), sharey=True)
+    fig = plt.figure(figsize=(COL, 3.75))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.45, 1], hspace=0.62, wspace=0.08,
+                          left=0.3, right=0.98, top=0.86, bottom=0.1)
     y = np.arange(len(pops))[::-1]
-    for ax, t, title in zip(axes, ("same_root", "gap0"),
-                            ("(a) Shared root", "(b) Same month")):
-        base = inf[(inf.term == t) & (inf.inference == kinds[0][0])].set_index("population")
+    axes = [fig.add_subplot(gs[0, 0])]
+    axes.append(fig.add_subplot(gs[0, 1], sharey=axes[0]))
+    for ax, t, title in zip(axes, ("same_root", "gap0"), ("(a) Shared root", "(b) Same month")):
         for k, (kind, lab, c, mk) in enumerate(kinds):
             d = inf[(inf.term == t) & (inf.inference == kind)].set_index("population").loc[pops]
             ax.errorbar(d.estimate, y + (0.22 - 0.22 * k), xerr=[d.estimate - d.ci_low,
                         d.ci_high - d.estimate], fmt=mk, ms=2.8, color=c, lw=0.8, label=lab,
                         mfc="white" if k else c)
-            if k == 2:                                # width relative to the model-level CI
-                ratio = (d.ci_high - d.ci_low) / (base.ci_high - base.ci_low).loc[pops]
-                for yy, rr in zip(y, ratio):
-                    ax.text(0.162 if t == "same_root" else 0.033, yy - 0.22, f"×{rr:.2f}",
-                            fontsize=8, color=c, va="center", ha="left")
         zero(ax)
-        ax.set_title(title); ax.set_xlabel("Coefficient (95% CI)")
-    axes[0].set_xlim(0.06, 0.19)
-    axes[1].set_xlim(-0.05, 0.055)
+        ax.set_title(title, fontsize=9); ax.set_xlabel("Coefficient")
+    axes[0].set_xlim(0.08, 0.17)
+    axes[1].set_xlim(-0.04, 0.025)
     axes[0].set_yticks(y, [SAMPLES[p] for p in pops])
+    axes[1].tick_params(labelleft=False)
     fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2,
                frameon=False, fontsize=8, bbox_to_anchor=(0.5, 1.0), handletextpad=0.2,
                columnspacing=0.8)
-    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.83), w_pad=0.5)
+    # (c) interval width relative to the model-level interval
+    ax = fig.add_subplot(gs[1, :])
+    width = lambda t, kind: (inf[(inf.term == t) & (inf.inference == kind)]  # noqa: E731
+                             .set_index("population").loc[pops].eval("ci_high - ci_low"))
+    groups = [(t, p_) for t in ("same_root", "gap0") for p_ in pops]
+    xg = np.array([k + (0.6 if k >= 4 else 0) for k in range(len(groups))])
+    for j, (kind, lab, c, mk) in enumerate(kinds[1:]):
+        rel = [(width(t, kind) / width(t, kinds[0][0]))[p_] for t, p_ in groups]
+        ax.bar(xg + (j - 0.5) * 0.36, rel, width=0.34, color=c, alpha=0.8 if j else 0.6,
+               ec=c, lw=0.5)
+        if j == 1:
+            for xx, rr in zip(xg + 0.18, rel):
+                ax.text(xx, rr + 0.03, f"{rr:.2f}", ha="center", va="bottom", fontsize=7.6,
+                        color=ORANGE, rotation=90)
+    ax.axhline(1, color=BLUE, lw=0.8, ls=(0, (3, 2)))
+    ax.set_ylim(0.8, 2.05)
+    short = {"primary": "P", "primary_S2": "P, S2", "expanded": "E", "expanded_S2": "E, S2"}
+    ax.set_xticks(xg, [short[p_] for _, p_ in groups], fontsize=7.8)
+    ax.text(1.5, 2.0, "shared root", ha="center", va="top", fontsize=8, weight="bold")
+    ax.text(6.1, 2.0, "same month", ha="center", va="top", fontsize=8, weight="bold")
+    ax.set_ylabel("Width / model-level", fontsize=8)
+    ax.set_title("(c) Interval width relative to model-level", fontsize=9)
+    ax.grid(axis="x", visible=False)
     return save(fig, "fig_inference")
 
 
@@ -965,9 +1063,14 @@ def fig_gap():
         ax.plot(np.arange(5) + side * 0.05, m, marker=mk, ms=3.2, color=c, lw=0.9,
                 mec="white", mew=0.4, zorder=5, label=name)
     ax.axhline(1 / 3, color=GREY, lw=0.7, ls=(0, (4, 3)), zorder=0)
-    ax.set_xticks(range(5), lab)
+    dl = []
+    for k in range(5):
+        a_, b_ = (b == k) & same, (b == k) & ~same
+        dl.append(f"{lab[k]}\nΔ {100 * (d['y'][a_].mean() - d['y'][b_].mean()):+.1f}"
+                  if a_.sum() >= MIN_PAIRS else f"{lab[k]}\n")
+    ax.set_xticks(range(5), dl)
     ax.set_xlim(-0.55, 4.55)
-    ax.set_xlabel("Release-month gap between the two models")
+    ax.set_xlabel("Release-month gap; Δ: same-root minus different-root mean (points)")
     ax.set_ylabel("P(same wrong | both wrong)")
     ax.set_ylim(0, 1.08)
     ax.set_yticks(np.arange(0, 1.01, 0.2))
@@ -987,33 +1090,62 @@ def fig_gap():
 # ------------------------------------------------------------------ dose-response
 def fig_dose():
     rv = pd.read_csv(RES / "exp04_revision2/revision2.csv")
+    r8 = pd.read_csv(RES / "exp04_revision3/R8.csv")
     pre = pd.read_csv(RES / "exp04_final/inference_audit.csv")
     base = pre[(pre.population == "primary") & (pre.term == "same_root")
                & (pre.inference == "delete-one-root jackknife")].iloc[0]
-    fig, axes = plt.subplots(1, 2, figsize=(COL, 2.3), sharey=True,
-                             gridspec_kw=dict(width_ratios=[1, 1]))
+    fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.35),
+                             gridspec_kw=dict(width_ratios=[1, 1, 1.25], wspace=0.32))
     for ax, analysis, terms, labels, title in (
             (axes[0], "lineage dose-response: tree distance",
              ["distance 1", "distance 2", "distance 3+"], ["1", "2", "3+"],
-             "(a) Tree distance"),
+             "(a) Tree distance, vs different roots"),
             (axes[1], "lineage dose-response: relation type",
              ["ancestor-descendant", "siblings", "more distant"],
-             ["direct\nline", "siblings", "more\ndistant"], "(b) Relation")):
+             ["direct\nline", "siblings", "more\ndistant"], "(b) Relation, vs different roots")):
         d = rv[(rv.population == "primary") & (rv.analysis == analysis)].set_index("term").loc[terms]
         x = np.arange(len(terms))
-        ax.errorbar(x, d.estimate, yerr=[d.estimate - d.ci95_low, d.ci95_high - d.estimate],
-                    fmt="o", ms=4, color=BLUE, lw=1)
-        for k, n in enumerate(d.pairs):
-            ax.annotate(f"{int(n):,}", (x[k], d.ci95_high.iloc[k]), textcoords="offset points",
-                        xytext=(0, 3), ha="center", fontsize=7.5, color=GREY)
         ax.axhspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
         ax.axhline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
+        ax.plot(x, d.estimate, color=LGREY, lw=0.8, zorder=1)
+        ax.errorbar(x, d.estimate, yerr=[d.estimate - d.ci95_low, d.ci95_high - d.estimate],
+                    fmt="none", color=BLUE, lw=1, capsize=2)
+        ax.scatter(x, d.estimate, s=10 + 70 * np.sqrt(d.pairs / 1200), color=BLUE, ec="white",
+                   lw=0.6, zorder=4)
+        for k, n in enumerate(d.pairs):
+            ax.annotate(f"n = {int(n):,}", (x[k], d.ci95_high.iloc[k]), textcoords="offset points",
+                        xytext=(0, 3), ha="center", fontsize=8, color=GREY)
         ax.set_xticks(x, labels)
         ax.set_xlim(-0.5, len(terms) - 0.5)
-        ax.set_title(title)
-    axes[0].set_ylabel("Coefficient vs different roots")
-    axes[0].set_ylim(0.08, 0.235)
-    fig.tight_layout(pad=0.3, w_pad=0.6)
+        ax.set_ylim(0.08, 0.235)
+        ax.set_title(title, fontsize=8.5)
+    axes[0].set_ylabel("Coefficient")
+    axes[1].tick_params(labelleft=False)
+    # (c) within roots only: closer relatives against more distant ones in the same root
+    ax = axes[2]
+    w = r8[r8.analysis.str.startswith("within root")]
+    items = [("within root: tree distance (ref. 3+)", "distance 1", "distance 1"),
+             ("within root: tree distance (ref. 3+)", "distance 2", "distance 2"),
+             ("within root: relation (ref. more distant)", "ancestor-descendant", "direct line"),
+             ("within root: relation (ref. more distant)", "siblings", "siblings")]
+    yv = np.array([3.2, 2.2, 1.0, 0.0])
+    for (a_, t, lab), yy in zip(items, yv):
+        d = w[(w.analysis == a_) & (w.term == t)].iloc[0]
+        ax.errorbar(d.estimate * 100, yy, xerr=[[(d.estimate - d.ci95_low) * 100],
+                    [(d.ci95_high - d.estimate) * 100]], fmt="o", ms=4.5, color=ORANGE, lw=1,
+                    capsize=2)
+        ax.text(d.ci95_high * 100 + 0.4, yy, f"{d.estimate * 100:+.1f}", va="center",
+                fontsize=8, color=ORANGE)
+    ax.axhline(1.6, color=LGREY, lw=0.6)
+    ax.text(9.5, 3.75, "vs distance 3+", ha="right", fontsize=8, color=GREY, style="italic")
+    ax.text(9.5, 1.32, "vs more distant", ha="right", fontsize=8, color=GREY, style="italic")
+    ax.set_yticks(yv, [lab for _, _, lab in items])
+    ax.set_ylim(-0.6, 4.1)
+    ax.set_xlim(-1, 10)
+    zero(ax)
+    ax.set_xlabel("Points, same root only")
+    ax.set_title("(c) Within roots", fontsize=8.5)
+    fig.subplots_adjust(left=0.075, right=0.99, top=0.88, bottom=0.2)
     return save(fig, "fig_dose")
 
 
@@ -1100,62 +1232,84 @@ def fig_itemnull_main():
 
 # ------------------------------------------------------------------ heterogeneity
 def fig_heterogeneity():
+    from matplotlib.lines import Line2D
     h = pd.read_csv(RES / "exp04_heterogeneity/heterogeneity.csv")
     sub = pd.read_csv(RES / "exp04_heterogeneity/per_subject.csv").sort_values("same_root")
+    sub = sub.reset_index(drop=True)
     base = pd.read_csv(RES / "exp04_final/inference_audit.csv")
     base = base[(base.population == "primary") & (base.term == "same_root")
                 & (base.inference == "delete-one-root jackknife")].iloc[0]
-    fig, axes = plt.subplots(1, 3, figsize=(FULL, 2.6),
-                             gridspec_kw=dict(width_ratios=[1.25, 0.8, 1.35]))
-    # (a) per root
-    ax = axes[0]
+    fig = plt.figure(figsize=(FULL, 2.75))
+    gs = fig.add_gridspec(1, 5, width_ratios=[1.1, 0.36, 0.2, 0.8, 1.45], wspace=0.06,
+                          left=0.135, right=0.995, top=0.88, bottom=0.2)
+    ax, axb = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
+    # (a) per root, with same-root pairs as bars
     r = h[h.analysis == "per root"].reset_index(drop=True)
     y = np.arange(len(r))[::-1]
+    ax.axvspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
+    ax.axvline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
     ax.errorbar(r.estimate, y, xerr=[r.estimate - r.ci95_low, r.ci95_high - r.estimate],
-                fmt="none", color=BLUE, lw=1)
+                fmt="none", color=BLUE, lw=1, capsize=2)
     ax.scatter(r.estimate, y, s=6 + 60 * np.sqrt(r.pairs / r.pairs.max()), color=BLUE,
                ec="white", lw=0.5, zorder=4)
     lab = [root_label(g) if g != "other multi-model roots" else "56 smaller roots"
            for g in r.group]
-    ax.set_yticks(y, [f"{l} ({int(n)})" for l, n in zip(lab, r.pairs)])
+    ax.set_yticks(y, lab)
+    ax.set_xlim(0, 0.28)
     ax.set_xlabel("Shared-root coefficient")
-    ax.set_title("(a) By root (same-root pairs)")
-    # (b) by capability
-    ax = axes[1]
+    ax.set_title("(a) By root", fontsize=9)
+    axb.barh(y, r.pairs, color=LBLUE, ec=BLUE, lw=0.5, height=0.6)
+    for yy, n in zip(y, r.pairs):
+        axb.text(12, yy, f"{int(n)}", va="center", ha="left", fontsize=7.6, color=INK)
+    axb.set_xscale("log"); axb.set_xlim(10, 1500)
+    axb.set_xticks([10, 100, 1000], ["10", "100", "1k"])
+    axb.minorticks_off()
+    axb.tick_params(labelleft=False, length=0, axis="y")
+    axb.set_ylim(ax.get_ylim())
+    axb.grid(axis="y", visible=False)
+    axb.set_xlabel("Pairs")
+    axb.set_title("pairs", fontsize=8, color=GREY, weight="normal")
+    # (b) by capability, with same-root pairs per band
+    ax = fig.add_subplot(gs[3])
     c = h[h.analysis == "by capability"].reset_index(drop=True)
     x = np.arange(len(c))
+    ax.axhspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
+    ax.axhline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
     ax.errorbar(x, c.estimate, yerr=[c.estimate - c.ci95_low, c.ci95_high - c.estimate],
-                fmt="s", ms=3.5, color=BLUE, lw=1)
-    ax.set_xticks(x, ["<.30", ".30–\n.50", ".50–\n.60", "≥.60"])
-    ax.set_xlabel("Lower accuracy of the pair")
-    ax.set_title("(b) By capability")
+                fmt="none", color=BLUE, lw=1, capsize=2)
+    ax.scatter(x, c.estimate, s=6 + 60 * np.sqrt(c.pairs / c.pairs.max()), marker="s",
+               color=BLUE, ec="white", lw=0.5, zorder=4)
+    ax.set_xticks(x, [f"{b_}\n({int(n):,})" for b_, n in
+                      zip(["<.30", ".30–.50", ".50–.60", "≥.60"], c.pairs)], fontsize=7.6)
+    ax.set_xlim(-0.5, len(c) - 0.5)
+    ax.set_xlabel("Lower accuracy (pairs)")
+    ax.set_title("(b) By capability", fontsize=9)
     ax.set_ylim(0, 0.32)
-    # (c) per subject
-    ax = axes[2]
+    ax.yaxis.set_label_position("left")
+    # (c) per subject, category by marker shape and colour
+    ax = fig.add_subplot(gs[4])
+    ax.axhspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
+    ax.axhline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
     x = np.arange(len(sub))
-    ax.errorbar(x, sub.same_root, yerr=Z * sub.same_root_se, fmt="o", ms=2.3, color=BLUE,
-                lw=0.6, elinewidth=0.6)
-    for k, ha in ((0, "left"), (len(sub) - 1, "right")):
-        ax.annotate(sub.subject.iloc[k].replace("_", " "), (x[k], sub.same_root.iloc[k]),
-                    xytext=(4 if ha == "left" else -4, -12 if ha == "left" else 8),
-                    textcoords="offset points", ha=ha, fontsize=8, color=INK,
-                    arrowprops=dict(arrowstyle="-", color=GREY, lw=0.4))
+    cat = sub.subject.map(MMLU_CATEGORY)
+    for name, (col, mk) in CAT_STYLE.items():
+        m = (cat == name).to_numpy()
+        ax.errorbar(x[m], sub.same_root[m], yerr=Z * sub.same_root_se[m], fmt=mk, ms=2.8,
+                    color=col, lw=0.5, elinewidth=0.5, mec=col, mfc="white" if mk != "o" else col)
+    for k, dy in ((0, -13), (len(sub) - 1, 10)):
+        ha = "left" if k < 5 else "right"
+        ax.annotate(sub.subject.iloc[k].replace("_", " ").replace("high school", "HS"),
+                    (x[k], sub.same_root.iloc[k]), xytext=(5 if ha == "left" else -5, dy),
+                    textcoords="offset points", ha=ha, fontsize=7.8, color=INK,
+                    arrowprops=dict(arrowstyle="-", color=GREY, lw=0.4, shrinkA=0, shrinkB=1))
+    ax.legend(handles=[Line2D([], [], marker=mk, ls="", color=col, mfc="white" if mk != "o" else col,
+                              ms=4, label=n) for n, (col, mk) in CAT_STYLE.items()],
+              frameon=False, loc="upper left", fontsize=7.8, ncol=2, handletextpad=0.2,
+              columnspacing=0.6, borderaxespad=0.2)
     ax.set_xticks([])
     ax.set_xlabel(f"{len(sub)} MMLU subjects, sorted")
-    ax.set_title("(c) By subject")
+    ax.set_title("(c) By subject (exploratory, unadjusted)", fontsize=9)
     ax.set_ylim(0, 0.25)
-    ax.text(0.02, 0.97, "exploratory: 57 tests, no multiplicity adjustment",
-            transform=ax.transAxes, ha="left", va="top", fontsize=8, color=GREY,
-            style="italic")
-    for a in axes:
-        if a is axes[0]:
-            a.axvspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
-            a.axvline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
-            a.set_xlim(0, 0.28)
-        else:
-            a.axhspan(base.ci_low, base.ci_high, color=LBLUE, alpha=0.35, lw=0)
-            a.axhline(base.estimate, color=BLUE, lw=0.6, ls=(0, (3, 2)))
-    fig.tight_layout(pad=0.3, w_pad=0.8)
     return save(fig, "fig_heterogeneity")
 
 
