@@ -6,7 +6,7 @@
 
 **A pair-level study of Open LLM Leaderboard models: 977 validated models in two overlapping samples (primary: 590 models, 173,755 pairs)**
 
-[![Paper](https://img.shields.io/badge/paper-18_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
+[![Paper](https://img.shields.io/badge/paper-17_pages-1f4e79)](paper/build/ieee_access_manuscript.pdf)
 [![Supplement](https://img.shields.io/badge/supplement-13_pages-5b7a99)](paper/build/supplement.pdf)
 [![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
 [![Python](https://img.shields.io/badge/python-3.11-3776AB)](pyproject.toml)
