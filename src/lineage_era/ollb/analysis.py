@@ -7,9 +7,17 @@ For one frozen population sample:
 with two-way (model i, model j) cluster-robust SEs. Gap bins 0, 1-2, 3-5,
 6-11 months; 12+ is the reference.
 
-Inputs: the frozen sample CSV (root, created_month, root_verified) and the
-validated per-model answer files in datasets/ollb/v1/. Models whose download
-was rejected are reported, never replaced.
+Inputs: the frozen sample CSV (root, created_month, root_verified), the
+validation manifest results/exp04_validation/per_model.csv written by
+scripts/validation_report.py, and the per-model answer files in
+datasets/ollb/v1/. Models whose download was rejected are reported, never
+replaced.
+
+Fail-closed: only models the manifest marks "validated" are analysed; an
+answer file for a model the manifest does not list stops the analysis (stale
+manifest: re-run the validation report), and choice_matrix() raises before
+any pair outcome is computed if an answer file's item order, gold vector,
+item hashes, length or option range disagree with the reference.
 
 Usage (repo root):
     python3 -m lineage_era.ollb.analysis --population primary
@@ -32,6 +40,8 @@ ROOT = Path(__file__).resolve().parents[3]
 # scripts/rebuild_frozen_lists.py, which verifies them against the frozen hashes.
 FROZEN = ROOT / "datasets" / "ollb" / "frozen_full"
 ANSWERS = ROOT / "datasets" / "ollb" / "v1"
+MANIFEST = ROOT / "results" / "exp04_validation" / "per_model.csv"
+N_ITEMS = 14042
 OUT = ROOT / "results" / "exp04_analysis"
 
 
@@ -47,21 +57,43 @@ def load_population(name: str, strict: bool) -> tuple[pd.DataFrame, dict]:
     sample = pd.read_csv(path)
     if strict:
         sample = sample[sample.root_verified]
+    if not MANIFEST.exists():
+        raise FileNotFoundError(f"{MANIFEST} missing: run scripts/validation_report.py")
+    manifest = pd.read_csv(MANIFEST, keep_default_na=False)
+    category = dict(zip(manifest.model, manifest.category))
     have = sample.model.map(lambda m: answer_file(m).exists())
+    unlisted = sorted(sample.model[have & ~sample.model.isin(category)])
+    if unlisted:
+        raise ValueError(f"{len(unlisted)} answer file(s) not in the validation manifest "
+                         f"(re-run scripts/validation_report.py): {unlisted[:5]}")
+    valid = sample.model.map(lambda m: category.get(m) == "validated")
     info = {"frozen_sample": int(len(sample)), "with_answers": int(have.sum()),
             "missing_answers": sorted(sample.model[~have])}
-    return sample[have].reset_index(drop=True), info
+    if (have & ~valid).any():   # documented exclusions (failed_check etc.)
+        info["excluded_not_validated"] = sorted(sample.model[have & ~valid])
+    return sample[have & valid].reset_index(drop=True), info
 
 
 def choice_matrix(models: pd.Series) -> tuple[np.ndarray, np.ndarray, dict]:
-    """N x K chosen options and the common gold vector; checks item alignment."""
+    """N x K chosen options and the common gold vector.
+
+    Raises ValueError, before any outcome is computed, if any file's item
+    order, gold vector or stored item hashes differ from the first model's,
+    or if its length or option range is invalid. The returned checks are then
+    all empty; they are kept for the summary record.
+    """
     ref = np.load(answer_file(models.iloc[0]))
     items, gold = ref["item"], ref["gold"]
+    if len(items) != N_ITEMS:
+        raise ValueError(f"{models.iloc[0]}: {len(items)} items, expected {N_ITEMS}")
     ref_hash = None
     pred = np.empty((len(models), len(items)), dtype=np.int8)
     checks = {"item_order_mismatch": [], "gold_mismatch": [], "hash_mismatch": []}
     for r, m in enumerate(models):
         z = np.load(answer_file(m))
+        p = z["pred"]
+        if len(p) != len(items) or p.min() < 0 or p.max() > 3:
+            raise ValueError(f"{m}: {len(p)} items or options outside 0..3")
         if not np.array_equal(z["item"], items):
             checks["item_order_mismatch"].append(m)
         if not np.array_equal(z["gold"], gold):
@@ -72,7 +104,11 @@ def choice_matrix(models: pd.Series) -> tuple[np.ndarray, np.ndarray, dict]:
                 ref_hash = h
             elif not np.array_equal(h, ref_hash):
                 checks["hash_mismatch"].append(m)
-        pred[r] = z["pred"]
+        pred[r] = p
+    bad = {k: v for k, v in checks.items() if v}
+    if bad:
+        raise ValueError("answer files fail the alignment checks: "
+                         + "; ".join(f"{k}: {len(v)} ({v[:3]})" for k, v in bad.items()))
     return pred, gold, checks
 
 

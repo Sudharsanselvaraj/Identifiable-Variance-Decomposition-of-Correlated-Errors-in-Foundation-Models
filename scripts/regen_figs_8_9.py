@@ -119,21 +119,21 @@ for r in rows:
 # Mark passing config
 ax9.scatter(passing_30['N'], passing_30['kappa'], c='#2ca02c', marker='*',
             s=120, edgecolors='black', linewidths=0.5, zorder=5,
-            label='Pass (N=30, $\kappa$=93)')
+            label='Pass (N=30, $\\kappa$=93)')
 
 # Mark 16-model measured (off-scale, at top)
 ax9.scatter(measured_16['N'], 1e17, c='red', marker='*', s=120,
             edgecolors='black', linewidths=0.5, zorder=5,
-            label='16-model ($\kappa$=4.7$\\times10^{16}$)')
+            label='16-model ($\\kappa$=4.7$\\times10^{16}$)')
 
 # Mark 22-model candidate
 ax9.scatter(candidate_22['N'], candidate_22['kappa'], c='#d4a017', marker='*',
             s=120, edgecolors='black', linewidths=0.5, zorder=5,
-            label='22-model ($\kappa$=1100)')
+            label='22-model ($\\kappa$=1100)')
 
 # kappa = 100 threshold line
 ax9.axhline(y=100, color='red', linestyle='--', linewidth=0.8, alpha=0.7,
-            label='$\kappa$ = 100 threshold', zorder=3)
+            label='$\\kappa$ = 100 threshold', zorder=3)
 
 ax9.set_yscale('log')
 ax9.set_xlabel('Population size (N)', fontsize=8)

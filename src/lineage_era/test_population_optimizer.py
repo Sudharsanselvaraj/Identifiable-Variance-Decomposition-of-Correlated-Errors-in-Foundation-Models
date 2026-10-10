@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lineage_era.analysis import population_optimizer as po  # noqa: E402
@@ -53,6 +54,7 @@ def test_validation_deterministic_per_reps() -> None:
     assert a == b
 
 
+@pytest.mark.slow
 def test_search_minimum_below_full_and_valid() -> None:
     # Relax the confirmation margin so the baseline (B bias ~ -4.5pp at 100
     # reps) clears confirmation at test speed; the margin value itself is
@@ -165,6 +167,7 @@ def test_write_outputs_roundtrip_consistent() -> None:
     assert "| 22 | 22 | True | True | True | 2.44 | 98.0 | -0.78 | 99.0 | 2.19 | -2.36 |" in txt
 
 
+@pytest.mark.slow
 def test_fallback_returns_full_when_search_blocked() -> None:
     real = po._milp_solve
     real_margin = po.CONFIRM_BIAS_PP_MAX

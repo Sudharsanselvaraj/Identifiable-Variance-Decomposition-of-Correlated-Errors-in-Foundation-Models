@@ -350,6 +350,7 @@ def tab_robust():
     r3 = pd.concat([_r3(k) for k in ("R7", "R9", "R10", "R12")])
     for a, lab, se_lab in (
             ("quadratic accuracy surface", "Quadratic accuracy surface", "jackknife"),
+            ("accuracy cells: deciles (55 cells)", "Accuracy-cell fixed effects (55 decile cells)", "jackknife"),
             ("accuracy cells: 20 bins (210 cells)", "Accuracy-cell fixed effects (210 cells)", "jackknife"),
             ("accuracy-matched pairs (|diff| <= 0.02) + decile cells",
              "Accuracy-matched pairs ($|\\Delta\\mathrm{acc}| \\leq 0.02$)", "jackknife"),

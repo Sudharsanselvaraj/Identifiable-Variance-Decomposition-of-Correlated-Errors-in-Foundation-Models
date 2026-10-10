@@ -23,6 +23,8 @@ at extraction (a file is only written when all 14,042 items agree).
 
 Usage (repo root): python3 scripts/validation_report.py
 Outputs: results/exp04_validation/{per_model.csv, report.md}
+Exit status 1 if any model is failed_check or unresolved. per_model.csv is the
+manifest the analysis reads: only rows marked "validated" are analysed.
 """
 from __future__ import annotations
 
@@ -126,7 +128,9 @@ def main() -> int:
     ]
     (OUT / "report.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines[:20]))
-    return 0 if not (df.category == "unresolved").any() else 1
+    # Fail closed: a file that fails a check, or a model never resolved,
+    # needs a person to look at it before any analysis is run.
+    return 0 if not df.category.isin(["unresolved", "failed_check"]).any() else 1
 
 
 if __name__ == "__main__":

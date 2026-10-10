@@ -44,7 +44,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from lineage_era.ollb import analysis as A  # noqa: E402
 from lineage_era.ollb.pair_gate import (GAP_BINS, Truth, design, month_index,  # noqa: E402
-                                        ols_twoway, pair_agreement)
+                                        ols_twoway, pair_agreement,
+                                        root_bootstrap_pairs)
 from run_exp04_final import jackknife_roots, prepared  # noqa: E402
 
 OUT = ROOT / "results" / "exp04_revision3"
@@ -316,11 +317,7 @@ def r10(B=999, seed=20261010):
         boot = []
         for _ in range(B):
             draw = rng.integers(0, len(members), len(members))
-            idx = np.concatenate([members[g] for g in draw])
-            ii, jj = np.triu_indices(len(idx), 1)
-            a, c = idx[ii], idx[jj]
-            ok = a != c
-            a, c = a[ok], c[ok]
+            a, c = root_bootstrap_pairs(members, draw)   # weights: see its docstring
             yy = Y[a, c]
             fin = np.isfinite(yy)
             X, _ = design(a[fin], c[fin], rid, mon, acc)

@@ -75,16 +75,37 @@ python scripts/rebuild_frozen_lists.py            # full frozen lists; must matc
 python -m lineage_era.ollb.hub_meta \
   --names datasets/ollb/v1_contents_meta.csv:fullname \
   --names datasets/kim/hugging_face.csv:name      # only if the cache is absent
-python scripts/download_ollb_v1.py                # 977 validated answer files (~11 GB read)
-python scripts/validation_report.py               # reconciled per-model categories
+python scripts/download_ollb_v1.py                # fetches the reference model first, then 977 validated answer files (~11 GB read); exit 1 if any model still errors (re-run to resume)
+python scripts/validation_report.py               # reconciled per-model categories = the analysis manifest; exit 1 on failed_check/unresolved
 python scripts/run_exp04_final.py                 # 12 pre-registered analyses + audits; diffs vs committed outputs
 python scripts/run_exp04_item_null.py             # item-difficulty-aware nulls (post hoc)
 python scripts/run_pair_gate_audit.py --population primary --cap 40 --reps 500   # post-hoc gate audit
 python scripts/run_exp04_revision2.py             # second-review analyses (post hoc; reads config.json read-only)
 python scripts/run_exp04_heterogeneity.py         # heterogeneity, lineage detection, descriptives (post hoc)
+python scripts/run_exp04_revision3.py            # third-review analyses (post hoc; needs datasets/mmlu_redux/)
+python scripts/run_exp04_matched_followup.py      # accuracy-matched pairs: composition and S1 (post hoc)
 make -C paper tables figures && make -C paper     # tables and figures from outputs, then the PDF and supplement
-python -m pytest                                  # test suite
+python -m pytest -m "not slow"                    # quick tests (skips the two slow optimizer searches)
+python -m pytest                                  # full suite, including the slow Monte Carlo tests
 ```
+
+The download step needs the reference model's answers
+(`datasets/ollb/v1/meta-llama__Llama-2-7b-hf.npz`, 14,042 items) before the
+concurrent download: runs stored in the newer lighteval layout take their gold
+answers from it. `scripts/download_ollb_v1.py` fetches it on its own first and
+aborts if it is missing or incomplete.
+
+The analysis is fail-closed. `lineage_era.ollb.analysis` analyses only models
+that `results/exp04_validation/per_model.csv` marks `validated`, stops if an
+answer file is not listed there (stale manifest), and stops before computing any
+pair outcome if a file's item order, gold vector, item hashes, length or option
+range disagree with the reference. Tests inject each failure
+(`src/lineage_era/test_ollb_analysis.py`).
+
+`make -C paper tables` needs only `results/`. `make -C paper figures` also needs
+the rebuilt frozen lists (`datasets/ollb/frozen_full/`, from
+`scripts/rebuild_frozen_lists.py`) and the validated answer files, so run the
+steps above first; neither is redistributed.
 
 Figures: `scripts/make_exp04_figures.py` draws every manuscript figure from
 `results/` (vector PDF, embedded fonts, no timestamp). Two of them also read the
@@ -98,7 +119,22 @@ results, which include every pre-registered analysis, are unaffected.
 ## 5. Pre-registration
 
 `docs/05_Experiments/Exp04_Leaderboard_Lineage_Era.md`: plan, three dated
-amendments, and a post-freeze provenance note. Post-hoc analyses added after the
+amendments, and a post-freeze provenance note. The plan was versioned in this
+repository; it was not registered with an external registry. Its chronology is
+recorded only by these public commits (committer times, IST, 9 October 2026):
+
+| Commit | Time | Content |
+|---|---|---|
+| `898c223` | 11:27 | plan (Option B) and outcome-independent roster builder |
+| `d84bee5` | 12:06 | amendment 1: primary arm switched to the v1 leaderboard; pair-level analysis plan and simulation check |
+| `6ef5daa` | 13:09 | amendment 2: per-root cap 40 and item count, chosen by the simulation check |
+| `3cb6308` | 13:15 | frozen rosters and cap-40 samples (SHA-256 in `results/exp04_rosters/`) |
+| `fa62a53` | 13:48 | analysis code, not yet run on real data |
+| `e266d17` | 14:44 | amendment 3: S1 position covariate and S2 above-chance subset |
+| `679c5b7` | 15:55 | first pairwise outcomes: the 12 analyses |
+
+Commit times show when files were committed, not when anything was computed,
+and can be set by the committer; they are not an external timestamp. Post-hoc analyses added after the
 results (item-difficulty nulls, high-replication gate audit, exploratory E1/E2)
 are labelled as such in the manuscript.
 
