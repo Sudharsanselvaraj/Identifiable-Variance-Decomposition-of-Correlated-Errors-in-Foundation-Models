@@ -5,8 +5,13 @@
    results/exp04_rosters/comparison.md; aborts on any mismatch.
 2. Writes the download list (union of the two samples) with membership flags
    to datasets/ollb/frozen/download_union.csv.
-3. Runs lineage_era.ollb.fetch_v1 on that list (resumable; every outcome is
-   appended to datasets/ollb/fetch_v1_log.jsonl).
+3. Fetches the reference model (meta-llama/Llama-2-7b-hf) first, on its own,
+   and aborts unless its answer file has 14,042 items: runs in the newer
+   lighteval layout take their gold answers from it, so it must exist before
+   the concurrent download starts.
+4. Runs lineage_era.ollb.fetch_v1 on that list (resumable; every outcome is
+   appended to datasets/ollb/fetch_v1_log.jsonl). Exit status 1 if any model
+   is still erroring after the retries (re-run to resume).
 
 Usage (repo root):
     python3 scripts/download_ollb_v1.py --limit 10     # pilot batch
@@ -16,10 +21,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -63,6 +70,18 @@ def main() -> int:
     print(f"download list: {len(union)} models "
           f"(primary {union.in_primary_sample.sum()}, "
           f"expanded {union.in_expanded_sample.sum()})")
+
+    ref_repo = "details_" + fetch_v1.REFERENCE.stem
+    if not fetch_v1.REFERENCE.exists():
+        rec = fetch_v1.fetch_model(ref_repo)
+        fetch_v1.REFERENCE.parent.mkdir(parents=True, exist_ok=True)
+        with open(fetch_v1.OUT.parent / "fetch_v1_log.jsonl", "a") as fh:
+            fh.write(json.dumps(rec) + "\n")
+        print(f"reference {ref_repo}: {rec['status']}")
+    if not (fetch_v1.REFERENCE.exists()
+            and len(np.load(fetch_v1.REFERENCE)["item"]) == fetch_v1.N_ITEMS):
+        print(f"ABORT: reference answers {fetch_v1.REFERENCE} missing or incomplete")
+        return 2
 
     repos = union.repo.tolist()
     if args.limit:

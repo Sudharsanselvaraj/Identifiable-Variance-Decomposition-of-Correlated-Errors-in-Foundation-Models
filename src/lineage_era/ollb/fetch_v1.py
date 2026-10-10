@@ -288,7 +288,7 @@ def main(argv: list[str] | None = None) -> int:
         repos += pd.read_csv(args.models)["repo"].tolist()
     log = OUT.parent / "fetch_v1_log.jsonl"
     log.parent.mkdir(parents=True, exist_ok=True)
-    done = 0
+    done = errors = 0
     with ThreadPoolExecutor(args.workers) as pool, open(log, "a") as fh:
         futures = [pool.submit(fetch_model, r) for r in repos]
         for fut in as_completed(futures):
@@ -296,9 +296,15 @@ def main(argv: list[str] | None = None) -> int:
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
             done += 1
+            errors += rec["status"] == "error"
             if done % 25 == 0 or done == len(repos):
                 print(f"{done}/{len(repos)} last={rec['status']}", flush=True)
-    return 0
+    # Documented outcomes (no_complete_run, repo_missing, *_mismatch,
+    # schema_error) are reported by scripts/validation_report.py; a model
+    # still erroring after the retries is unresolved and fails the run.
+    if errors:
+        print(f"{errors} model(s) still erroring: re-run to resume", flush=True)
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":

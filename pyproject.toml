@@ -28,3 +28,4 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["src/lineage_era"]
+markers = ["slow: Monte Carlo / optimizer searches (several seconds each); deselect with -m \"not slow\""]

@@ -133,7 +133,14 @@ def flow() -> dict:
 
 def population(name: str):
     from lineage_era.ollb import analysis as A
-    pop, _ = A.load_population(name, False)
+    try:
+        pop, _ = A.load_population(name, False)
+    except FileNotFoundError as err:
+        raise SystemExit(
+            f"{err}\nTwo figures need the rebuilt frozen lists and the validated answer "
+            "files, which are not redistributed: run the data steps of "
+            "docs/REPRODUCIBILITY_CHECKLIST.md section 4 first (fetch_v1_contents_meta, "
+            "roster_v1, rebuild_frozen_lists, download_ollb_v1, validation_report).") from None
     return pop
 
 

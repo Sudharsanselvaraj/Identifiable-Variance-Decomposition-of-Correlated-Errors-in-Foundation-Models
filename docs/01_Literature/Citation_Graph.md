@@ -1,3 +1,5 @@
+> **Superseded: earlier study (notice added 2026-10-10).** This document belongs to the earlier per-model variance-decomposition study. That study's item-level predictions were invalid (the extraction code read only option A's log-likelihood) and its findings are withdrawn or corrected (Supplementary Section S2 of the current manuscript). It is kept as research history and is not evidence for the current pair-level study: see [RESEARCH_STATUS.md](../../RESEARCH_STATUS.md).
+
 # Citation Graph
 
 Directed edges: influence / dependence between works, from our perspective. Arrow = "built on / responds to / presupposes". This is our working model of how the literature relates, for positioning and rebuttal prep — not a claim about authors' actual reading history.

@@ -129,6 +129,26 @@ def ols_twoway(X: np.ndarray, y: np.ndarray, i: np.ndarray, j: np.ndarray,
     return beta, np.sqrt(np.clip(np.diag(V), 0, None))
 
 
+def root_bootstrap_pairs(members: list[np.ndarray],
+                         draw: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Model pairs of one root-cluster bootstrap replicate (vertex scheme).
+
+    members[g] lists the models of root g; draw lists the roots drawn with
+    replacement. The drawn copies are stacked and every pair of positions is
+    kept unless both positions are the same model. Hence a pair of models
+    from a root drawn k times enters k^2 times and stays a same-root pair
+    (copies of one root are not relabelled as different roots), and a pair
+    spanning roots drawn k and m times enters k*m times: the "pigeonhole"
+    bootstrap for exchangeable (dyadic) arrays applied to root clusters.
+    Returns the original model indices (a, c) of the kept pairs.
+    """
+    idx = np.concatenate([members[g] for g in draw])
+    ii, jj = np.triu_indices(len(idx), 1)
+    a, c = idx[ii], idx[jj]
+    ok = a != c
+    return a[ok], c[ok]
+
+
 def run(roster: pd.DataFrame, truth: Truth, K: int = 1500, reps: int = 20,
         seed: int = 0) -> pd.DataFrame:
     root_id = pd.factorize(roster["root"])[0]

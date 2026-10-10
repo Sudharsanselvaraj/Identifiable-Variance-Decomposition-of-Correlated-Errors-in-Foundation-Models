@@ -10,7 +10,7 @@
 [![Supplement](https://img.shields.io/badge/supplement-13_pages-5b7a99)](paper/build/supplement.pdf)
 [![Venue](https://img.shields.io/badge/target-IEEE_Access-00629B)](paper/build/ieee_access_manuscript.pdf)
 [![Python](https://img.shields.io/badge/python-3.11-3776AB)](pyproject.toml)
-[![Tests](https://img.shields.io/badge/tests-63_passing-2ea44f)](src/lineage_era)
+[![Tests](https://img.shields.io/badge/tests-73_passing-2ea44f)](src/lineage_era)
 [![Status](https://img.shields.io/badge/status-in_preparation-orange)]()
 [![License](https://img.shields.io/badge/license-not_yet_specified-lightgrey)](docs/release/LICENSING_NOTES.md)
 
@@ -27,6 +27,8 @@
 ## Summary
 
 In the primary sample (590 models, 173,755 pairs), models descended from the same declared base model choose the same wrong answer **13.3 percentage points** more often than unrelated models of equal accuracy and release gap (delete-one-root jackknife 95% CI 10.8–15.8; pairs weighted equally, so the two largest roots dominate; counting each root once gives larger estimates). In the expanded sample (928 models) the difference is 12.7 points (11.0–14.5). Release proximity shows only small associations once accuracy is controlled, and their sign depends on the specification: same-month pairs agree up to a few points more in several specifications and less among models above 0.30 accuracy. Within this population, lineage is associated with shared wrong answers far more strongly than release timing. The associations are observational.
+
+> The repository name refers to the earlier per-model variance-decomposition study, whose findings are withdrawn. [RESEARCH_STATUS.md](RESEARCH_STATUS.md) says which files belong to the current study and which are kept as history.
 
 ## Key Findings
 
@@ -101,7 +103,7 @@ Because every model appears in many pairs, inference uses dyadic cluster-robust 
 
 | Quantity | Primary sample (590 models, 173,755 pairs) |
 |---|---|
-| Shared lineage root | **+13.3 points** (jackknife 95% CI 10.8–15.8); 11.7–13.4 across the 12 analyses fixed in advance; 16.6 when the 16 roots with at least 10 same-root pairs are weighted equally |
+| Shared lineage root | **+13.3 points** (jackknife 95% CI 10.8–15.8); 11.7–13.4 across the 12 analyses fixed in advance; counting each root once (post hoc, high between-root heterogeneity): unweighted mean of the 63 per-root estimates 25.3; random-effects (DerSimonian–Laird) pooled estimate over the 16 roots with at least 10 same-root pairs 16.6 (95% CI 12.5–20.8) |
 | Dose-response | parent–child +18.5; distance two +13.6; more distant +11.5 |
 | Same release month, adjusted for accuracy | +0.4 points (pre-specified model); −2.2 to +3.3 across other primary-sample specifications |
 | Same release month, unadjusted | +8.7 points, mostly accounted for by accuracy similarity |
@@ -135,10 +137,10 @@ Coefficients are differences in probability. Complete tables for all four sample
 git clone https://github.com/Sudharsanselvaraj/Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models.git
 cd Identifiable-Variance-Decomposition-of-Correlated-Errors-in-Foundation-Models
 python -m pip install -e ".[test,ollb]"
-python -m pytest
+python -m pytest -m "not slow"   # quick tests; plain `python -m pytest` also runs the two slow optimizer searches
 ```
 
-Regenerate every table and figure from the committed results, then build the paper and supplement:
+Regenerate the tables and figures, then build the paper and supplement. Tables need only the committed results; two figures also need the rebuilt frozen lists and validated answer files (full reproduction below), and the script says so if they are missing:
 
 ```bash
 make -C paper tables figures
@@ -154,8 +156,8 @@ The leaderboard's per-item files declare no licence, so they are regenerated rat
 python scripts/fetch_v1_contents_meta.py      # leaderboard metadata
 python -m lineage_era.ollb.roster_v1          # lineage roster
 python scripts/rebuild_frozen_lists.py        # frozen samples, checked against recorded hashes
-python scripts/download_ollb_v1.py            # validated answer files (about 11 GB read)
-python scripts/validation_report.py           # per-model validation report
+python scripts/download_ollb_v1.py            # reference model first, then the answer files (about 11 GB read)
+python scripts/validation_report.py           # per-model validation manifest; the analysis reads only "validated" models
 python scripts/run_exp04_final.py             # pre-specified analyses and audits
 python scripts/run_exp04_item_null.py         # item-difficulty-aware nulls
 python scripts/run_pair_gate_audit.py --population primary --cap 40 --reps 500
