@@ -24,7 +24,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle  # noqa: E402
+from matplotlib.patches import Ellipse, FancyArrowPatch, FancyBboxPatch, Rectangle  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -263,78 +263,280 @@ def fig_schematic():
 
 
 # ------------------------------------------------------------------ 3 data flow
+# Drawing helpers for the study-flow diagram (inch coordinates, equal aspect).
+def _cyl(ax, cx, top, w, h, label, size=7.6):
+    """Database cylinder; label in the upper body, room for an arrow below."""
+    eh = 0.09
+    ax.add_patch(Ellipse((cx, top - h), w, eh, fc="#d4d4d4", ec="black", lw=0.6, zorder=2))
+    ax.add_patch(Rectangle((cx - w / 2, top - h), w, h, fc="white", ec="none", zorder=3))
+    ax.add_patch(Rectangle((cx - w / 2, top - h), w, h * 0.3, fc="#ececec", ec="none", zorder=3))
+    for xx in (cx - w / 2, cx + w / 2):
+        ax.plot([xx, xx], [top - h, top], color="black", lw=0.6, zorder=4)
+    ax.add_patch(Ellipse((cx, top), w, eh, fc="white", ec="black", lw=0.6, zorder=4))
+    ax.text(cx, top - 0.09 - 0.06 * (label.count("\n") + 1), label, ha="center", va="center", fontsize=size, zorder=5,
+            linespacing=1.05)
+
+
+def _down(ax, x, y0, y1):
+    """Thick grey block arrow, as in the cylinders' outputs."""
+    from matplotlib.patches import FancyArrow
+    ax.add_patch(FancyArrow(x, y0, 0, y1 - y0, width=0.055, head_width=0.14, head_length=0.08,
+                            length_includes_head=True, fc="#a9a9a9", ec="#4d4d4d", lw=0.5,
+                            zorder=6))
+
+
+def _line_arrow(ax, pts, color="black", lw=0.7):
+    """Polyline whose last segment ends in an arrow head."""
+    xs, ys = zip(*pts)
+    ax.plot(xs[:-1], ys[:-1], color=color, lw=lw, zorder=1, solid_capstyle="butt")
+    ax.annotate("", pts[-1], pts[-2], arrowprops=dict(arrowstyle="-|>", color=color, lw=lw,
+                                                      mutation_scale=7, shrinkA=0, shrinkB=0))
+
+
+def _doc(ax, x, y, w, h, ls="-"):
+    from matplotlib.path import Path as MPath
+    from matplotlib.patches import PathPatch
+    a = 0.03
+    verts = [(x, y + a), (x, y + h), (x + w, y + h), (x + w, y + a),
+             (x + 0.65 * w, y + 3 * a), (x + 0.35 * w, y - 2 * a), (x, y + a), (x, y + a)]
+    codes = [MPath.MOVETO, MPath.LINETO, MPath.LINETO, MPath.LINETO,
+             MPath.CURVE4, MPath.CURVE4, MPath.CURVE4, MPath.CLOSEPOLY]
+    ax.add_patch(PathPatch(MPath(verts, codes), fc="white", ec="black", lw=0.6, ls=ls, zorder=4))
+
+
+def _stack(ax, x, y, w, h, text, size=7.8, ls="-"):
+    """Stack of three documents with a count, as in the reference diagram."""
+    for k in (2, 1, 0):
+        _doc(ax, x + k * 0.028, y + k * 0.028, w, h, ls=ls)
+    ax.text(x + w / 2, y + h / 2 + 0.015, text, ha="center", va="center", fontsize=size,
+            zorder=5, linespacing=1.1)
+
+
+def _folder(ax, x, y, w, h):
+    from matplotlib.patches import Polygon
+    ax.add_patch(Polygon([(x, y), (x, y + h), (x + 0.36 * w, y + h), (x + 0.44 * w, y + 0.88 * h),
+                          (x + w, y + 0.88 * h), (x + w, y)], fc="#d99a20", ec="black", lw=0.6,
+                         zorder=3))
+    for k, fc in ((0, "#dcdcdc"), (1, "white")):
+        ax.add_patch(Rectangle((x + 0.12 * w + k * 0.03, y + 0.22 * h - k * 0.03), 0.7 * w,
+                               0.72 * h, fc=fc, ec="#555555", lw=0.5, zorder=4))
+        for t in range(3):
+            yy = y + 0.8 * h - k * 0.03 - t * 0.1 * h
+            ax.plot([x + 0.2 * w + k * 0.03, x + 0.62 * w + k * 0.03], [yy, yy], color="#8a8a8a",
+                    lw=0.5, zorder=4)
+    ax.add_patch(Polygon([(x, y), (x + 0.06 * w, y + 0.6 * h), (x + 1.03 * w, y + 0.6 * h),
+                          (x + w, y)], fc="#f6cf55", ec="black", lw=0.6, zorder=5))
+    ax.add_patch(Rectangle((x + 0.55 * w, y + 0.22 * h), 0.28 * w, 0.11 * h, fc="#e0524e",
+                           ec="black", lw=0.5, zorder=6))
+
+
+def _icon_monitor(ax, cx, cy):
+    from matplotlib.patches import Polygon
+    ax.add_patch(FancyBboxPatch((cx - 0.25, cy - 0.12), 0.5, 0.32,
+                                boxstyle="round,pad=0,rounding_size=0.03", fc="#2c3e50",
+                                ec="#1b2631", lw=0.6, zorder=3))
+    ax.add_patch(Rectangle((cx - 0.215, cy - 0.085), 0.43, 0.25, fc="#e8f1fa", ec="none", zorder=4))
+    for k, (hh, c) in enumerate(zip((0.07, 0.12, 0.09, 0.17), ("#e74c3c", "#f39c12", "#27ae60",
+                                                              "#3498db"))):
+        ax.add_patch(Rectangle((cx + 0.0 + k * 0.045, cy - 0.065), 0.032, hh, fc=c, ec="#1b2631",
+                               lw=0.4, zorder=5))
+    ax.add_patch(plt.Circle((cx - 0.12, cy + 0.06), 0.055, fc="#f39c12", ec="#1b2631", lw=0.4,
+                            zorder=5))
+    from matplotlib.patches import Wedge
+    ax.add_patch(Wedge((cx - 0.12, cy + 0.06), 0.055, 0, 120, fc="#3498db", ec="#1b2631", lw=0.4,
+                       zorder=6))
+    for t in range(3):
+        ax.plot([cx - 0.19, cx - 0.06], [cy - 0.02 - t * 0.022] * 2, color="#2c3e50", lw=0.7,
+                zorder=5)
+    ax.add_patch(Rectangle((cx - 0.03, cy - 0.17), 0.06, 0.05, fc="#2c3e50", ec="none", zorder=3))
+    ax.add_patch(Polygon([(cx - 0.11, cy - 0.19), (cx + 0.11, cy - 0.19), (cx + 0.08, cy - 0.165),
+                          (cx - 0.08, cy - 0.165)], fc="#2c3e50", ec="none", zorder=3))
+
+
+def _icon_tree(ax, cx, cy):
+    """Lineage icon: a root checkpoint and its declared fine-tunes."""
+    root = (cx, cy + 0.12)
+    kids = [(cx - 0.17, cy - 0.01), (cx + 0.17, cy - 0.01)]
+    grand = [(cx - 0.25, cy - 0.14), (cx - 0.09, cy - 0.14), (cx + 0.17, cy - 0.14)]
+    for a, b in [(root, kids[0]), (root, kids[1]), (kids[0], grand[0]), (kids[0], grand[1]),
+                 (kids[1], grand[2])]:
+        ax.plot([a[0], b[0]], [a[1], b[1]], color="#2c3e50", lw=0.9, zorder=3)
+    ax.add_patch(Rectangle((root[0] - 0.05, root[1] - 0.05), 0.1, 0.1, fc=BLUE, ec="#1b2631",
+                           lw=0.6, zorder=4))
+    for (x, y) in kids + grand:
+        ax.add_patch(plt.Circle((x, y), 0.042, fc=LBLUE, ec="#1b2631", lw=0.6, zorder=4))
+
+
+def _icon_clipboard(ax, cx, cy):
+    from matplotlib.patches import Polygon
+    ax.add_patch(FancyBboxPatch((cx - 0.15, cy - 0.19), 0.3, 0.38,
+                                boxstyle="round,pad=0,rounding_size=0.025", fc="#5b7fb0",
+                                ec="#1b2631", lw=0.6, zorder=3))
+    ax.add_patch(Rectangle((cx - 0.12, cy - 0.16), 0.24, 0.3, fc="white", ec="#1b2631", lw=0.5,
+                           zorder=4))
+    ax.add_patch(FancyBboxPatch((cx - 0.06, cy + 0.15), 0.12, 0.06,
+                                boxstyle="round,pad=0,rounding_size=0.015", fc="#95a5a6",
+                                ec="#1b2631", lw=0.5, zorder=5))
+    for t in range(4):
+        yy = cy + 0.08 - t * 0.065
+        ax.add_patch(Rectangle((cx - 0.095, yy - 0.018), 0.036, 0.036, fc="white", ec="#1b2631",
+                               lw=0.45, zorder=5))
+        ax.plot([cx - 0.04, cx + 0.09], [yy, yy], color="#2c3e50", lw=0.7, zorder=5)
+    ax.add_patch(Polygon([(cx + 0.17, cy - 0.12), (cx + 0.21, cy - 0.12), (cx + 0.21, cy + 0.15),
+                          (cx + 0.17, cy + 0.15)], fc="#f4c542", ec="#1b2631", lw=0.5, zorder=5))
+    ax.add_patch(Polygon([(cx + 0.17, cy - 0.12), (cx + 0.21, cy - 0.12), (cx + 0.19, cy - 0.18)],
+                         fc="#e8d5b0", ec="#1b2631", lw=0.5, zorder=5))
+    ax.add_patch(Rectangle((cx + 0.17, cy + 0.15), 0.04, 0.035, fc="#e74c3c", ec="#1b2631",
+                           lw=0.5, zorder=5))
+
+
+def _panel(ax, x0, y0, x1, y1, title, fc):
+    ax.add_patch(Rectangle((x0, y0), x1 - x0, y1 - y0, fc=fc, ec="none", zorder=0))
+    ax.text((x0 + x1) / 2, y1 - 0.05, title, ha="center", va="top", fontsize=8.8,
+            weight="bold", zorder=5)
+
+
 def fig_dataflow():
     d = flow()
     c = d["cats"]
     v = pd.read_csv(RES / "exp04_validation/per_model.csv")
     acc = v[v.category == "validated"]
     both = int((acc.in_primary_sample & acc.in_expanded_sample).sum())
-    pre = pd.read_csv(RES / "exp04_final/prereg_12.csv")
-    strict = pre[pre.analysis.isin(["primary_strict", "expanded_strict"])] \
-        .groupby("analysis").models.first()
-    fig = plt.figure(figsize=(FULL, 3.75))
-    top = fig.add_axes([0, 0.665, 1, 0.335])
-    ax = fig.add_axes([0, 0, 1, 0.64])
-    for a in (top, ax):
-        a.set_axis_off(); a.set_xlim(0, 1); a.set_ylim(0, 1)
-    # (a) the whole study in one strip
-    top.text(0.004, 0.99, "(a) Study workflow", ha="left", va="top", fontsize=9, weight="bold")
-    steps = [("Source", "Leaderboard v1,\nMMLU 5-shot"), ("Lineage, time", "declared root,\nupload month"),
-             ("Freeze", "≤ 40 per root,\nhashed lists"), ("Validate", "each item vs\nstored correctness"),
-             ("Pair outcome", "P(same wrong |\nboth wrong)"), ("Pair model", "shared root, gap,\naccuracies"),
-             ("Inference", "model-level SEs;\nroot jackknife"), ("Checks", "S1, S2 planned;\nothers post hoc")]
-    n, gap = len(steps), 0.011
-    w, y0, h = (1 - gap * (n - 1) - 0.004) / n, 0.05, 0.5
-    for k, (t, body) in enumerate(steps):
-        x = 0.002 + k * (w + gap)
-        later = k >= 6
-        box(top, x, y0, w, h, f"{k + 1}  {t}\n{body}", size=8.3,
-            face="#f6f6f6" if later else BOX_FACE, edge=GREY if later else BOX_EDGE,
-            ls="--" if later else "-")
-        if k:
-            arrow(top, (x - gap + 0.001, y0 + h / 2), (x - 0.001, y0 + h / 2))
-    for k0, k1, txt, col in ((0, 5, "fixed in the dated plan and amendments before any pair "
-                            "outcome was computed", BLUE),
-                           (6, 7, "partly added after the first results", GREY)):
-        x1, x2 = 0.002 + k0 * (w + gap), 0.002 + k1 * (w + gap) + w
-        top.plot([x1, x1, x2, x2], [0.60, 0.65, 0.65, 0.60], color=col, lw=0.8)
-        top.text((x1 + x2) / 2, 0.68, txt, ha="center", va="bottom", fontsize=8.3, color=col)
-    # (b) populations, samples and validation
-    ax.text(0.004, 0.995, "(b) Populations, samples and validation", ha="left", va="top",
-            fontsize=9, weight="bold")
-    W, H = 0.163, 0.21
-    ys = {"p": 0.565, "x": 0.215}
-    box(ax, 0.017, 0.315, 0.15, 0.33, f"Leaderboard v1\n{fmt(d['total'])} models\n"
-        "MMLU, 14,042 items", size=9)
-    cols = [0.208, 0.408, 0.608]
-    for x, t in zip(cols, ("Eligible", "Frozen sample (≤ 40 per root)", "Validated")):
-        ax.text(x + W / 2, 0.86, t, ha="center", va="bottom", fontsize=9, weight="bold")
-    vals = {"p": ("Primary", [f"{fmt(d['elig_p'])} (card links)", f"{fmt(d['frozen_p'])}",
-                              f"{fmt(d['val_p'])} ({fmt(strict['primary_strict'])} strict)"]),
-            "x": ("Expanded", [f"{fmt(d['elig_x'])} (+ config links)", f"{fmt(d['frozen_x'])}",
-                               f"{fmt(d['val_x'])} ({fmt(strict['expanded_strict'])} strict)"])}
-    for key, (lab, vv) in vals.items():
-        y = ys[key]
-        arrow(ax, (0.167, 0.48 + (0.02 if key == "p" else -0.02)), (cols[0] - 0.004, y + H / 2))
-        for k, x in enumerate(cols):
-            box(ax, x, y, W, H, f"{lab}\n{vv[k]}", size=9)
-            if k:
-                arrow(ax, (cols[k - 1] + W + 0.004, y + H / 2), (x - 0.004, y + H / 2))
-    ax.text(cols[1] + W / 2 + 0.1, 0.48, "same item-level checks for both", ha="center", va="center",
-            fontsize=8.5, color=GREY, style="italic")
-    box(ax, 0.82, 0.315, 0.163, 0.33, f"Accepted\n{fmt(len(acc))} unique models\n"
-        f"({both} in both)", size=9)
-    for key in ys:
-        arrow(ax, (cols[2] + W + 0.004, ys[key] + H / 2 + (-0.02 if key == "p" else 0.02)),
-              (0.818, 0.48 + (0.03 if key == "p" else -0.03)))
+    jk = pd.read_csv(RES / "exp04_final/inference_audit.csv")
+    jk = jk[(jk.population == "primary") & (jk.term == "same_root")
+            & (jk.inference == "delete-one-root jackknife")].iloc[0]
     n_out = int(c.get("no_complete_run", 0) + c.get("repo_missing", 0) + c.get("schema_error", 0))
-    box(ax, 0.575, 0.0, 0.41, 0.165,
-        f"Excluded, logged, none replaced: {n_out} of {fmt(d['union'])} frozen\n"
-        f"{c.get('no_complete_run', 0)} no complete run, {c.get('repo_missing', 0)} repository "
-        f"missing, {c.get('schema_error', 0)} unreadable", size=8.3, face="#f6f6f6", edge=GREY,
-        ls="--")
-    arrow(ax, (cols[1] + W + 0.02, ys["x"] + H / 2 - 0.004), (0.60, 0.168), color=GREY,
-          rad=0.25)
+    W, H = FULL, 4.05
+    fig = plt.figure(figsize=(W, H))
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(0, W); ax.set_ylim(0, H); ax.set_axis_off()
+    bf = lambda n: r"$\mathbf{" + fmt(n).replace(",", "{,}") + "}$"  # noqa: E731
+
+    # ---------------- section 1: data collection and validation
+    TOP0 = 1.68
+    ax.add_patch(Rectangle((0.03, TOP0), W - 0.06, H - TOP0 - 0.03, fc="none", ec="black", lw=0.7,
+                           ls=(0, (3, 2)), zorder=0))
+    ax.text(0.1, H - 0.08, "Data Collection", ha="left", va="top", fontsize=11,
+            weight="bold", style="italic")
+    # inputs (left)
+    icons = [(_icon_monitor, 3.45, "Open LLM\nLeaderboard v1", 0.24),
+             (_icon_tree, 2.76, "Hub model cards", 0.21),
+             (_icon_clipboard, 2.1, "Research question", 0.24)]
+    for f, cy, lab, dy in icons:
+        f(ax, 0.62, cy)
+        ax.text(0.62, cy - dy, lab, ha="center", va="top", fontsize=7.6, linespacing=1.05)
+    ax.plot([0.14, 0.14], [2.1, 3.45], color="black", lw=0.7)
+    for _, cy, _, _ in icons:
+        _line_arrow(ax, [(0.14, cy), (0.33, cy)])
+    # connector to lineage resolution and the plan
+    XC = 1.62
+    ax.plot([0.9, XC], [2.76, 2.76], color="black", lw=0.7)
+    ax.plot([XC, XC], [2.1, 3.42], color="black", lw=0.7)
+    _line_arrow(ax, [(XC, 3.42), (1.9, 3.42)])
+    _line_arrow(ax, [(0.86, 2.1), (1.98, 2.1)])
+    for y, t in ((3.08, "Resolve\nlineage roots"), (2.46, "Fix sample rules\nand analysis plan")):
+        ax.text(XC, y, t, ha="center", va="center", fontsize=8, weight="bold", linespacing=1.05,
+                bbox=dict(fc="white", ec="none", pad=1.2), zorder=6)
+
+    # lineage resolution (automated)
+    _panel(ax, 1.92, 2.86, 4.72, H - 0.07, "Lineage Resolution", "#fbf1ea")
+    xs = [2.38, 3.32, 4.26]
+    ax.plot([xs[0], xs[-1]], [3.67, 3.67], color="black", lw=0.6)
+    cyl_top, cyl_h = 3.57, 0.5
+    for x, lab, out in zip(xs, ("Leaderboard\ncontents", "Model-card\nlinks", "+ first config\nlink"),
+                           (f"{bf(d['total'])} models", f"{bf(d['elig_p'])} primary",
+                            f"{bf(d['elig_x'])} expanded")):
+        ax.plot([x, x], [3.67, cyl_top + 0.045], color="black", lw=0.6)
+        _cyl(ax, x, cyl_top, 0.82, cyl_h, lab)
+        _down(ax, x, cyl_top - 0.74 * cyl_h, 3.04)
+        ax.text(x, 2.94, out, ha="center", va="center", fontsize=7.8)
+    # frozen samples
+    ax.text(4.97, 3.36, "Sample,\nfreeze", ha="center", va="bottom", fontsize=8,
+            weight="bold", linespacing=1.05)
+    _line_arrow(ax, [(4.74, 3.3), (5.2, 3.3)])
+    _panel(ax, 5.22, 2.86, W - 0.07, H - 0.07, "Frozen Samples", "#e3edf7")
+    ax.text((5.22 + W - 0.07) / 2, H - 0.25, "≤ 40 per root, SHA-256", ha="center", va="top",
+            fontsize=7.4, color=GREY, style="italic")
+    xf = [5.68, 6.62]
+    for x, lab, n in zip(xf, ("Primary", "Expanded"), (d["frozen_p"], d["frozen_x"])):
+        _cyl(ax, x, cyl_top, 0.8, cyl_h, lab)
+        _down(ax, x, cyl_top - 0.74 * cyl_h, 3.04)
+        ax.text(x, 2.94, f"{bf(n)} models", ha="center", va="center", fontsize=7.8)
+    ax.text((xf[0] + xf[1]) / 2, cyl_top - 0.2, "+", ha="center", va="center", fontsize=13,
+            color=GREY)
+
+    # download -> frozen models -> validation
+    _stack(ax, 6.22, 2.1, 0.5, 0.36, f"{bf(d['union'])}\nmodels")
+    _line_arrow(ax, [(6.45, 2.86), (6.45, 2.53)])
+    ax.text(6.5, 2.7, "Download", ha="left", va="center", fontsize=7.8, weight="bold")
+    # reconstruct / check cycle
+    cx0, cy0, r = 5.93, 2.5, 0.14
+    for (a, b, fc) in (((cx0 - 0.03, cy0 + r), (cx0 - 0.03, cy0 - r), "#efe3bf"),
+                       ((cx0 + 0.03, cy0 - r), (cx0 + 0.03, cy0 + r), "#d3d9ea")):
+        ax.add_patch(FancyArrowPatch(a, b, connectionstyle="arc3,rad=1.0",
+                                     arrowstyle="simple,head_length=4,head_width=6,tail_width=2.6",
+                                     fc=fc, ec="#6b6b6b", lw=0.5, zorder=5))
+    ax.text(cx0, cy0 + 0.2, "Reconstruct", ha="center", va="bottom", fontsize=7.6, weight="bold")
+    ax.text(cx0, cy0 - 0.2, "Check", ha="center", va="top", fontsize=7.6, weight="bold")
+    _line_arrow(ax, [(6.22, 2.2), (5.62, 2.2)])
+
+    # item-level validation
+    _panel(ax, 3.52, 1.74, 5.6, 2.8, "Item-Level Validation", "#e7f0df")
+    ax.text(4.56, 2.6, "14,042 items each", ha="center", va="top", fontsize=7.4,
+            color=GREY, style="italic")
+    xv = [4.05, 5.07]
+    for x, lab, n in zip(xv, ("Primary", "Expanded"), (d["val_p"], d["val_x"])):
+        _cyl(ax, x, 2.42, 0.78, 0.36, lab)
+        _down(ax, x, 2.42 - 0.7 * 0.36, 1.92)
+        ax.text(x, 1.83, f"{bf(n)} models", ha="center", va="center", fontsize=7.8)
+    ax.text((xv[0] + xv[1]) / 2, 2.22, "+", ha="center", va="center", fontsize=13, color=GREY)
+    # exclusions
+    _line_arrow(ax, [(6.47, 2.08), (6.47, 2.02)])
+    ax.add_patch(Rectangle((5.95, 1.73), 1.12, 0.29, fc="#f6f6f6", ec=GREY, lw=0.6,
+                           ls=(0, (3, 2)), zorder=3))
+    ax.text(6.51, 1.875, f"{n_out} excluded, logged,\nnone replaced", ha="center", va="center",
+            fontsize=7.4, zorder=4, linespacing=1.05)
+    # accepted
+    _line_arrow(ax, [(3.52, 2.2), (3.13, 2.2)])
+    _folder(ax, 2.64, 1.98, 0.42, 0.34)
+    ax.text(2.85, 1.9, f"Total {bf(len(acc))} models\n({both} in both samples)", ha="center",
+            va="top", fontsize=7.8, linespacing=1.1)
+    # plan document
+    _stack(ax, 1.98, 1.88, 0.46, 0.36, "Dated\nplan", size=7.4)
+
+    # ---------------- section 2: pair-level analysis
+    B1 = 1.55
+    ax.add_patch(Rectangle((0.03, 0.03), W - 0.06, B1 - 0.03, fc="#f4f4f4", ec="black", lw=0.7,
+                           ls=(0, (3, 2)), zorder=0))
+    ax.text(0.1, B1 - 0.06, "Pair-Level Analysis", ha="left", va="top", fontsize=11,
+            weight="bold", style="italic")
+    ax.text(W - 0.1, B1 - 0.08, "solid: fixed before any pair outcome was computed;  dashed: "
+            "partly added after the first results", ha="right", va="top", fontsize=7.4,
+            color=GREY)
+    # accepted models feed the analysis
+    _line_arrow(ax, [(2.85, 1.62), (2.85, 1.6), (0.08, 1.6), (0.08, 1.03), (0.36, 1.03)])
+    steps = [("Pair Outcome", f"{bf(d['pairs_p'])}\npairs",
+              f"P(same wrong | both\nwrong); expanded\n{fmt(d['pairs_x'])} pairs"),
+             ("Pair Model", r"$\mathbf{+13.3}$" "\npoints",
+              "shared root, adjusted\nfor accuracies and\nrelease gap"),
+             ("Inference", f"{jk.ci_low * 100:.1f}–{jk.ci_high * 100:.1f}\n95% CI",
+              "model-level SEs\nplanned; root\njackknife added"),
+             ("Robustness Checks", f"{d['n_prereg']} fixed\n+ post hoc",
+              "S1, S2 planned;\nnull models and\nheterogeneity later")]
+    bw, x0, step = 1.42, 0.36, 1.71
+    for k, (title, count, note) in enumerate(steps):
+        x = x0 + k * step
+        later = k >= 2
+        ax.add_patch(Rectangle((x, 0.9), bw, 0.27, fc="white", ec="black", lw=0.8,
+                               ls=(0, (3, 2)) if later else "-", zorder=3))
+        ax.text(x + bw / 2, 1.035, title, ha="center", va="center", fontsize=9, weight="bold",
+                zorder=4)
+        if k:
+            _line_arrow(ax, [(x - step + bw, 1.035), (x, 1.035)])
+        _line_arrow(ax, [(x + 0.33, 0.9), (x + 0.33, 0.7)])
+        _stack(ax, x + 0.06, 0.18, 0.54, 0.48, count, size=7.8, ls="--" if later else "-")
+        ax.text(x + 0.7, 0.44, note, ha="left", va="center", fontsize=7.2, color=GREY,
+                linespacing=1.1)
     return save(fig, "fig_dataflow")
 
 
